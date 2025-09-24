@@ -1,18 +1,27 @@
-# Byte-compiled / cache
+# Python
 __pycache__/
-*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.log
 
 # Virtual environment
 venv/
-
-# Environment files
 .env
-*.env
+.env.*
 
-# IDE/editor stuff
+# VSCode settings
 .vscode/
-.idea/
+*.code-workspace
 
-# OS files
+# Byte-compiled / cache
+*.sqlite3
+*.db
+
+# Testing
+.coverage
+htmlcov/
+
+# OS
 .DS_Store
 Thumbs.db
