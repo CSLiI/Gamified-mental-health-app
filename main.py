@@ -1,7 +1,10 @@
 from fastapi import FastAPI
+from app.routers import centralized_route
 import uvicorn
 
 app = FastAPI()
+
+app.include_router(centralized_route.rou)
 
 @app.get("/")
 def read_root():
