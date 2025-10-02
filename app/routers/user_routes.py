@@ -1,14 +1,70 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from .. import crud, schemas, database
+from typing import List
+from app import schemas, auth, models
+from app.database import get_db
+from app.CRUD import users as user_crud
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["Users"])
 
-def create_user_endpoint(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
-    return crud.create_user(db, user)
+@router.get("/me", response_model=schemas.User)
+def get_current_user(current_user: models.User = Depends(auth.get_current_user)):
+    """Get current user profile"""
+    return current_user
 
-def get_user_endpoint(user_id: int, db: Session = Depends(database.get_db)):
-    user = crud.get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+@router.put("/me", response_model=schemas.User)
+def update_current_user(
+    user_update: schemas.UserUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user profile"""
+    return user_crud.update_user(db, current_user.id, user_update)
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_current_user(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete current user account"""
+    user_crud.delete_user(db, current_user.id)
+    return None
+
+# ==================== User Interests ====================
+@router.get("/me/interests", response_model=List[schemas.Interest])
+def get_my_interests(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's interests"""
+    return user_crud.get_user_interests(db, current_user.id)
+
+@router.post("/me/interests/{interest_id}", status_code=status.HTTP_201_CREATED)
+def add_interest_to_user(
+    interest_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add an interest to current user"""
+    success = user_crud.add_user_interest(db, current_user.id, interest_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Interest not found"
+        )
+    return {"message": "Interest added successfully"}
+
+@router.delete("/me/interests/{interest_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_interest_from_user(
+    interest_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Remove an interest from current user"""
+    success = user_crud.remove_user_interest(db, current_user.id, interest_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Interest not found or not associated with user"
+        )
+    return None
