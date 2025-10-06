@@ -25,26 +25,46 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password_hash: str
-    age: Optional[int] = None
+    date_of_birth: Optional[date] = None  # Changed from age
     gender: Optional[GenderEnum] = None
     
-    @validator('age')
-    def validate_age(cls, v):
-        if v is not None and v <= 0:
-            raise ValueError('Age must be greater than 0')
+    @validator('date_of_birth')
+    def validate_date_of_birth(cls, v):
+        if v is None:
+            return v
+        if v > date.today():
+            raise ValueError('Date of birth cannot be in the future')
+        if v.year < 1900:
+            raise ValueError('Date of birth must be after 1900')
+        # Check if user is at least 13 years old
+        today = date.today()
+        age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
+        if age < 13:
+            raise ValueError('User must be at least 13 years old')
         return v
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    age: Optional[int] = None
+    date_of_birth: Optional[date] = None  # Changed from age
     gender: Optional[GenderEnum] = None
+    
+    @validator('date_of_birth')
+    def validate_date_of_birth(cls, v):
+        if v is None:
+            return v
+        if v > date.today():
+            raise ValueError('Date of birth cannot be in the future')
+        if v.year < 1900:
+            raise ValueError('Date of birth must be after 1900')
+        return v
 
 class User(UserBase):
     id: int
     auth_provider: str
     provider_id: Optional[str]
-    age: Optional[int]
+    date_of_birth: Optional[date] 
+    age: Optional[int] 
     gender: Optional[GenderEnum]
     created_at: datetime
     level: int

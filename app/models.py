@@ -31,7 +31,7 @@ class User(Base):
     password_hash = Column(Text)
     auth_provider = Column(String(50), default='email')
     provider_id = Column(Text)
-    age = Column(Integer, CheckConstraint('age > 0'))
+    date_of_birth = Column(Date) 
     gender = Column(SQLEnum(GenderEnum))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     level = Column(Integer, default=1)
@@ -44,7 +44,30 @@ class User(Base):
     mood_logs = relationship("MoodLog", back_populates="user", cascade="all, delete-orphan")
     todos = relationship("Todo", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
-
+    
+    @hybrid_property
+    def age(self):
+        """Calculate age from date of birth"""
+        if self.date_of_birth is None:
+            return None
+        
+        today = date.today()
+        age = today.year - self.date_of_birth.year
+        
+        if today.month < self.date_of_birth.month or \
+           (today.month == self.date_of_birth.month and today.day < self.date_of_birth.day):
+            age -= 1
+        
+        return age
+    
+    def is_birthday_today(self):
+        """Check if today is the user's birthday"""
+        if self.date_of_birth is None:
+            return False
+        
+        today = date.today()
+        return (today.month == self.date_of_birth.month and 
+                today.day == self.date_of_birth.day)
 # Characters table
 class Character(Base):
     __tablename__ = "characters"
