@@ -13,9 +13,18 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL is None:
     raise ValueError("DATABASE_URL not found in environment variables. Check your .env file.")
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,           # Test connections before using
+    pool_recycle=300,              # Recycle connections every 5 minutes
+    connect_args={
+        "options": "-c statement_timeout=30000"  # 30 second timeout
+    }
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+
 
 # Dependency for FastAPI
 def get_db():
