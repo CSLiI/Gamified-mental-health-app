@@ -221,3 +221,134 @@ class TodoStatistics(BaseModel):
     completed_tasks: int
     pending_tasks: int
     completion_rate: float
+
+# Add these to your app/schemas.py file
+
+# ==================== Character Schemas ====================
+class CharacterUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+
+# ==================== Interest Schemas ====================
+class InterestUpdate(BaseModel):
+    name: Optional[str] = None
+
+# ==================== Achievement Schemas ====================
+class AchievementCategoryEnum(str, Enum):
+    mood_tracking = "mood_tracking"
+    journaling = "journaling"
+    consistency = "consistency"
+    todos = "todos"
+    emotional_growth = "emotional_growth"
+
+class AchievementBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    category: AchievementCategoryEnum
+    icon_url: Optional[str] = None
+    xp_reward: int = 0
+    requirement_count: int = 1
+    is_hidden: bool = False
+
+class AchievementCreate(AchievementBase):
+    pass
+
+class Achievement(AchievementBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UserAchievementBase(BaseModel):
+    achievement_id: int
+    progress: int = 0
+
+class UserAchievementCreate(UserAchievementBase):
+    user_id: int
+
+class UserAchievement(UserAchievementBase):
+    id: int
+    user_id: int
+    unlocked_at: datetime
+    is_claimed: bool
+    achievement: Optional[Achievement] = None
+    
+    class Config:
+        from_attributes = True
+
+# ==================== Reward Schemas ====================
+class RewardBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    category: str  # cosmetic, pet, accessory, environment
+    image_url: Optional[str] = None
+    cost_xp: int = 0
+    rarity: str = "common"  # common, rare, epic, legendary
+    is_limited: bool = False
+
+class RewardCreate(RewardBase):
+    pass
+
+class Reward(RewardBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UserRewardBase(BaseModel):
+    reward_id: int
+
+class UserRewardCreate(UserRewardBase):
+    user_id: int
+
+class UserReward(UserRewardBase):
+    id: int
+    user_id: int
+    unlocked_at: datetime
+    is_equipped: bool
+    reward: Optional[Reward] = None
+    
+    class Config:
+        from_attributes = True
+
+# ==================== Journal Prompt Schemas ====================
+class JournalPromptBase(BaseModel):
+    prompt_text: str
+    mood: Optional[MoodEnum] = None
+    category: Optional[str] = None  # gratitude, reflection, cbt, mindfulness
+    is_active: bool = True
+
+class JournalPromptCreate(JournalPromptBase):
+    pass
+
+class JournalPromptUpdate(BaseModel):
+    prompt_text: Optional[str] = None
+    mood: Optional[MoodEnum] = None
+    category: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class JournalPrompt(JournalPromptBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# ==================== Character Mood State Schema ====================
+class CharacterMoodState(BaseModel):
+    mood_score: float
+    dominant_mood: str
+    character_state: str
+    environment: str
+    total_mood_logs: int
+    analysis_period_days: int
+
+# ==================== Collection Stats Schema ====================
+class CollectionStats(BaseModel):
+    total_unlocked: int
+    total_available: int
+    completion_percentage: float
+    by_category: dict

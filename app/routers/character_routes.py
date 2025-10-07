@@ -39,6 +39,35 @@ def get_character(
         )
     return character
 
+@router.put("/{character_id}", response_model=schemas.Character)
+def update_character(
+    character_id: int,
+    character_update: schemas.CharacterUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update a character"""
+    character = character_crud.update_character(db, character_id, character_update)
+    if not character:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Character not found"
+        )
+    return character
+
+@router.delete("/{character_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_character(
+    character_id: int,
+    db: Session = Depends(get_db)
+):
+    """Delete a character"""
+    character = character_crud.delete_character(db, character_id)
+    if not character:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Character not found"
+        )
+    return None
+
 # ==================== User Characters ====================
 @router.post("/me/choose/{character_id}", response_model=schemas.UserCharacter, status_code=status.HTTP_201_CREATED)
 def choose_character(
@@ -77,4 +106,27 @@ def get_my_current_character(
         )
     return character
 
-# ==================== Interests ====================
+@router.delete("/me/remove/{character_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_my_character(
+    character_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Remove a character from user's collection"""
+    success = character_crud.remove_user_character(db, current_user.id, character_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Character not found in user's collection"
+        )
+    return None
+
+# ==================== Character Mood Sync ====================
+@router.get("/me/mood-state", response_model=schemas.CharacterMoodState)
+def get_my_character_mood_state(
+    days: int = 7,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get character's state based on user's recent moods"""
+    return character_crud.get_character_mood_state(db, current_user.id, days)

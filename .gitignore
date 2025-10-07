@@ -10,7 +10,7 @@ venv/
 .env
 .env.*
 
-# VSCode settings
+# VSCode settings 
 .vscode/
 *.code-workspace
 

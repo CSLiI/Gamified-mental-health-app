@@ -53,3 +53,7 @@ def update_journal_entry(db: Session, entry_id: int, entry_update: schemas.Journ
 def delete_journal_entry(db: Session, entry_id: int):
     """Delete a journal entry"""
     entry = db.query(models.JournalEntry).filter(models.JournalEntry.id == entry_id).first()
+    if entry:
+        db.delete(entry)
+        db.commit()
+    return entry

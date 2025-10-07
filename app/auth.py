@@ -16,7 +16,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hashed password"""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        print(f"Password verification error: {e}")
+        return False
 
 def get_password_hash(password: str) -> str:
     """Hash a password"""
@@ -39,7 +43,8 @@ def decode_token(token: str):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
-    except JWTError:
+    except JWTError as e:
+        print(f"Token decode error: {e}")
         return None
 
 async def get_current_user(
@@ -53,16 +58,28 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    payload = decode_token(token)
-    if payload is None:
+    try:
+        payload = decode_token(token)
+        if payload is None:
+            raise credentials_exception
+        
+        # Get user_id from "sub" claim - handle both int and str
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+        
+        # Convert to int if it's a string
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            raise credentials_exception
+        
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if user is None:
+            raise credentials_exception
+        
+        return user
+        
+    except Exception as e:
+        print(f"Auth error: {e}")
         raise credentials_exception
-    
-    user_id: int = payload.get("sub")
-    if user_id is None:
-        raise credentials_exception
-    
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if user is None:
-        raise credentials_exception
-    
-    return user
