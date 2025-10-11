@@ -83,7 +83,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   decoration: BoxDecoration(
                     color: _currentPage == index
                         ? AppColors.primary
-                        : AppColors.primary.withOpacity(0.3),
+                        : AppColors.primary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -155,7 +155,7 @@ class _OnboardingPage extends StatelessWidget {
             width: 200,
             height: 200,
             decoration: BoxDecoration(
-              color: content.color.withOpacity(0.1),
+              color: content.color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(

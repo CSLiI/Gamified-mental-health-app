@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../data/services/api_service.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -11,441 +12,291 @@ class JournalScreen extends StatefulWidget {
 }
 
 class _JournalScreenState extends State<JournalScreen> with SingleTickerProviderStateMixin {
+  final ApiService _apiService = ApiService();
   late TabController _tabController;
-
+  
+  List<Map<String, dynamic>> journals = [];
+  String dailyPrompt = "";
+  bool _isLoading = true;
+  
+  final _titleController = TextEditingController();
+  final _contentController = TextEditingController();
+  
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadData();
   }
-
+  
   @override
   void dispose() {
     _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Journal'),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.primary,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          tabs: const [
-            Tab(text: 'Write'),
-            Tab(text: 'Entries'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          _WriteTab(),
-          _EntriesTab(),
-        ],
-      ),
-    );
-  }
-}
-
-// WRITE TAB - For creating new journal entries
-class _WriteTab extends StatefulWidget {
-  const _WriteTab();
-
-  @override
-  State<_WriteTab> createState() => _WriteTabState();
-}
-
-class _WriteTabState extends State<_WriteTab> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
-  String? _selectedPrompt;
-  bool _isSubmitting = false;
-
-  final List<String> _prompts = [
-    "What made you smile today?",
-    "What are you grateful for right now?",
-    "What's on your mind?",
-    "Describe your day in three words",
-    "What challenge did you overcome today?",
-    "What would make tomorrow better?",
-    "How are you really feeling?",
-  ];
-
-  @override
-  void dispose() {
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
   }
-
+  
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final [journalList, prompt] = await Future.wait([
+        _apiService.getJournalEntries(),
+        _apiService.getDailyPrompt(),
+      ]);
+      
+      setState(() {
+        journals = List<Map<String, dynamic>>.from(journalList as List);
+        dailyPrompt = (prompt as Map<String, dynamic>)['prompt_text'] ?? "What's on your mind today?";
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        journals = [
+          {
+            "id": 1,
+            "title": "A Great Day",
+            "content": "Today was amazing! I felt so accomplished.",
+            "created_at": DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+          },
+        ];
+        dailyPrompt = "What made you smile today? 😊";
+        _isLoading = false;
+      });
+      print('Error loading journal: $e');
+    }
+  }
+  
   Future<void> _saveEntry() async {
-    if (_contentController.text.isEmpty) {
+    if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please write something first'),
+          content: Text("Please fill in both title and content"),
           backgroundColor: AppColors.error,
         ),
       );
       return;
     }
-
-    setState(() => _isSubmitting = true);
     
-    // TODO: Save to API
-    await Future.delayed(const Duration(seconds: 1));
-    
-    setState(() => _isSubmitting = false);
-
-    if (mounted) {
-      _titleController.clear();
-      _contentController.clear();
-      setState(() => _selectedPrompt = null);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Journal entry saved! 📝'),
-          backgroundColor: AppColors.success,
-        ),
+    try {
+      await _apiService.createJournalEntry(
+        title: _titleController.text,
+        content: _contentController.text,
       );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Journal entry saved! +15 XP 🎉"),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        
+        _titleController.clear();
+        _contentController.clear();
+        _tabController.animateTo(0);
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: $e"),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         gradient: AppColors.backgroundGradient,
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+      child: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Date Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
+            _buildHeader(),
+            _buildTabs(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
                 children: [
-                  const Icon(Icons.calendar_today, color: AppColors.primary),
-                  const SizedBox(width: 12),
-                  Text(
-                    _formatDate(),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  _buildEntriesTab(),
+                  _buildNewEntryTab(),
                 ],
               ),
-            ).animate().fadeIn(),
-
-            const SizedBox(height: 24),
-
-            // Prompt Selector
-            Text(
-              'Need inspiration? Pick a prompt',
-              style: Theme.of(context).textTheme.titleMedium,
-            ).animate().fadeIn(delay: 100.ms),
-
-            const SizedBox(height: 12),
-
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _prompts.length,
-                itemBuilder: (context, index) {
-                  final prompt = _prompts[index];
-                  final isSelected = _selectedPrompt == prompt;
-                  
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedPrompt = prompt);
-                      _contentController.text = '$prompt\n\n';
-                    },
-                    child: Container(
-                      width: 200,
-                      margin: const EdgeInsets.only(right: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isSelected 
-                            ? AppColors.primary.withOpacity(0.1)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected 
-                              ? AppColors.primary
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline,
-                            color: isSelected 
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            prompt,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected 
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ).animate(delay: (index * 50).ms).slideX();
-                },
-              ),
             ),
-
-            const SizedBox(height: 24),
-
-            // Title Field (Optional)
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: 'Title (optional)',
-                hintText: 'Give your entry a title',
-                prefixIcon: const Icon(Icons.title),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ).animate().slideX(delay: 200.ms),
-
-            const SizedBox(height: 16),
-
-            // Content Field
-            TextField(
-              controller: _contentController,
-              maxLines: 12,
-              decoration: InputDecoration(
-                labelText: 'Your thoughts',
-                hintText: 'Start writing...',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ).animate().slideX(delay: 300.ms),
-
-            const SizedBox(height: 24),
-
-            // Character Count
-            Text(
-              '${_contentController.text.length} characters',
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.right,
-            ),
-
-            const SizedBox(height: 16),
-
-            // Save Button
-            ElevatedButton.icon(
-              onPressed: _isSubmitting ? null : _saveEntry,
-              icon: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Icon(Icons.save),
-              label: Text(_isSubmitting ? 'Saving...' : 'Save Entry'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ).animate().fadeIn(delay: 400.ms),
           ],
         ),
       ),
     );
   }
-
-  String _formatDate() {
-    final now = DateTime.now();
-    final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}, ${now.year}';
-  }
-}
-
-// ENTRIES TAB - List of past journal entries
-class _EntriesTab extends StatelessWidget {
-  const _EntriesTab();
-
-  // Mock data - Replace with API call
-  final List<JournalEntry> _entries = const [
-    JournalEntry(
-      id: '1',
-      title: 'Great Day at Work',
-      content: 'Today was amazing! I completed my project and got praised by my manager...',
-      date: '2025-10-10',
-      mood: 'happy',
-    ),
-    JournalEntry(
-      id: '2',
-      title: 'Feeling Anxious',
-      content: 'Had a rough day with lots of deadlines. Need to practice breathing exercises...',
-      date: '2025-10-09',
-      mood: 'anxious',
-    ),
-    JournalEntry(
-      id: '3',
-      title: 'Peaceful Evening',
-      content: 'Spent time meditating and reading. Felt so calm and centered...',
-      date: '2025-10-08',
-      mood: 'calm',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: AppColors.backgroundGradient,
-      ),
-      child: _entries.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.book_outlined,
-                    size: 80,
-                    color: AppColors.textTertiary,
-                  ).animate().scale(),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No journal entries yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Start writing to see your entries here',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(24),
-              itemCount: _entries.length,
-              itemBuilder: (context, index) {
-                return _JournalEntryCard(entry: _entries[index])
-                    .animate(delay: (index * 100).ms)
-                    .slideX()
-                    .fadeIn();
-              },
+  
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: AppShadows.small,
             ),
+            child: const Icon(
+              Icons.auto_stories,
+              color: AppColors.primary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "My Journal",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "${journals.length} entries",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ).animate().fadeIn(),
     );
   }
-}
-
-class _JournalEntryCard extends StatelessWidget {
-  final JournalEntry entry;
-
-  const _JournalEntryCard({required this.entry});
-
-  Color _getMoodColor() {
-    switch (entry.mood) {
-      case 'happy':
-        return AppColors.moodHappy;
-      case 'sad':
-        return AppColors.moodSad;
-      case 'anxious':
-        return AppColors.moodAnxious;
-      case 'calm':
-        return AppColors.moodCalm;
-      default:
-        return AppColors.primary;
-    }
+  
+  Widget _buildTabs() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppShadows.small,
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        labelColor: Colors.white,
+        unselectedLabelColor: AppColors.textSecondary,
+        dividerColor: Colors.transparent,
+        tabs: const [
+          Tab(text: "All Entries"),
+          Tab(text: "New Entry"),
+        ],
+      ),
+    ).animate().slideX(delay: 100.ms);
   }
-
-  IconData _getMoodIcon() {
-    switch (entry.mood) {
-      case 'happy':
-        return Icons.sentiment_very_satisfied;
-      case 'sad':
-        return Icons.sentiment_dissatisfied;
-      case 'anxious':
-        return Icons.psychology;
-      case 'calm':
-        return Icons.spa;
-      default:
-        return Icons.sentiment_neutral;
+  
+  Widget _buildEntriesTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
     }
+    
+    if (journals.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.edit_note,
+                size: 64,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "No journal entries yet",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Start writing to track your journey",
+              style: TextStyle(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _tabController.animateTo(1),
+              icon: const Icon(Icons.add),
+              label: const Text("Write First Entry"),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: journals.length,
+        itemBuilder: (context, index) {
+          return _buildJournalCard(journals[index], index);
+        },
+      ),
+    );
   }
-
-  @override
-  Widget build(BuildContext context) {
+  
+  Widget _buildJournalCard(Map<String, dynamic> journal, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppShadows.small,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            // TODO: Navigate to detail screen
-          },
+          onTap: () => _viewJournalDetail(journal),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Row
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: _getMoodColor().withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
-                        _getMoodIcon(),
-                        color: _getMoodColor(),
-                        size: 24,
+                      child: const Icon(
+                        Icons.book,
+                        color: AppColors.primary,
+                        size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -453,80 +304,297 @@ class _JournalEntryCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (entry.title.isNotEmpty)
-                            Text(
-                              entry.title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
                           Text(
-                            entry.date,
+                            journal['title'] ?? 'Untitled',
                             style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            _formatDate(journal['created_at']),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.more_vert),
-                      onPressed: () {
-                        // TODO: Show options (edit, delete)
-                      },
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: AppColors.textTertiary,
                     ),
                   ],
                 ),
-                
                 const SizedBox(height: 12),
-                
-                // Content Preview
                 Text(
-                  entry.content,
+                  journal['content'] ?? '',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    height: 1.5,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Read More
-                Text(
-                  'Read more →',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: _getMoodColor(),
-                  ),
                 ),
               ],
             ),
           ),
         ),
       ),
+    ).animate(delay: (index * 100).ms).slideY(duration: 400.ms);
+  }
+  
+  Widget _buildNewEntryTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Daily Prompt
+          if (dailyPrompt.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.accentGold.withValues(alpha: 0.2),
+                    AppColors.accentMint.withValues(alpha: 0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.accentGold.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.wb_incandescent,
+                        color: AppColors.accentGold,
+                        size: 24,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        "Today's Prompt",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.accentGold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    dailyPrompt,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().slideY(duration: 400.ms),
+          
+          const SizedBox(height: 24),
+          
+          // Entry Form
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: AppShadows.small,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Write Your Thoughts",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Title Field
+                TextField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: "Give your entry a title...",
+                    filled: true,
+                    fillColor: AppColors.backgroundEnd,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Content Field
+                TextField(
+                  controller: _contentController,
+                  maxLines: 12,
+                  decoration: InputDecoration(
+                    hintText: "Start writing...",
+                    filled: true,
+                    fillColor: AppColors.backgroundEnd,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          _titleController.clear();
+                          _contentController.clear();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text("Clear"),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: _saveEntry,
+                        icon: const Icon(Icons.save),
+                        label: const Text("Save Entry"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ).animate().slideY(delay: 200.ms, duration: 400.ms),
+        ],
+      ),
     );
   }
-}
-
-// Data Model
-class JournalEntry {
-  final String id;
-  final String title;
-  final String content;
-  final String date;
-  final String mood;
-
-  const JournalEntry({
-    required this.id,
-    required this.title,
-    required this.content,
-    required this.date,
-    required this.mood,
-  });
+  
+  void _viewJournalDetail(Map<String, dynamic> journal) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.book,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        journal['title'] ?? 'Untitled',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        _formatDate(journal['created_at']),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  journal['content'] ?? '',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.6,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return '';
+    
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      
+      if (diff.inDays == 0) {
+        return "Today";
+      } else if (diff.inDays == 1) {
+        return "Yesterday";
+      } else if (diff.inDays < 7) {
+        return "${diff.inDays} days ago";
+      } else {
+        return "${date.day}/${date.month}/${date.year}";
+      }
+    } catch (e) {
+      return '';
+    }
+  }
 }

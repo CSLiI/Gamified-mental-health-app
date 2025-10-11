@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const MyApp()); 
 }
 
 class MyApp extends StatelessWidget {
@@ -19,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Mental Health App',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.theme, // Changed from AppTheme.primaryLight (which is a Color, not ThemeData)
       routerConfig: AppRouter.router,
     );
   }

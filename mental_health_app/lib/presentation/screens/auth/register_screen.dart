@@ -95,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   
                   const SizedBox(height: 32),
                   
-                  // Name Fields
+                  // Name Fields - Changed from slideX to fadeIn
                   Row(
                     children: [
                       Expanded(
@@ -130,11 +130,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ],
-                  ).animate().slideX(delay: 200.ms, duration: 400.ms),
+                  ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
                   
                   const SizedBox(height: 16),
                   
-                  // Email
+                  // Email - Changed from slideX to fadeIn
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -151,11 +151,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       }
                       return null;
                     },
-                  ).animate().slideX(delay: 300.ms, duration: 400.ms),
+                  ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
                   
                   const SizedBox(height: 16),
                   
-                  // Password
+                  // Password - Changed from slideX to fadeIn
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
@@ -182,11 +182,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       }
                       return null;
                     },
-                  ).animate().slideX(delay: 400.ms, duration: 400.ms),
+                  ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
                   
                   const SizedBox(height: 16),
                   
-                  // Confirm Password
+                  // Confirm Password - Changed from slideX to fadeIn
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: !_isConfirmPasswordVisible,
@@ -210,7 +210,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       }
                       return null;
                     },
-                  ).animate().slideX(delay: 500.ms, duration: 400.ms),
+                  ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
                   
                   const SizedBox(height: 24),
                   

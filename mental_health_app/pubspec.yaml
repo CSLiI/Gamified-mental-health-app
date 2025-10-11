@@ -1,76 +1,43 @@
 name: mental_health_app
-description: A gamified mental health application for students
+description: A gamified mental health wellness app for students
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # UI
+  # UI & Icons
   cupertino_icons: ^1.0.6
-
-  # State Management
-  flutter_riverpod: ^2.4.9
-  riverpod_annotation: ^2.3.3
-
-  # API & Network
-  dio: ^5.4.0
-  retrofit: ^4.0.3
-  json_annotation: ^4.8.1
-
-  # Storage
-  shared_preferences: ^2.2.2
-  flutter_secure_storage: ^9.0.0
-
-  # Navigation
-  go_router: ^12.1.3
-
-  # Utils
-  intl: ^0.19.0
-  logger: ^2.0.2
-  freezed_annotation: ^2.4.1
-
-  # UI Enhancements
-  flutter_animate: ^4.5.0
-  lottie: ^3.0.0
-  shimmer: ^3.0.0
-  cached_network_image: ^3.3.1
   
-  # Charts
-  fl_chart: ^0.66.0
+  # Backend connection
+  dio: ^5.4.0
+  flutter_secure_storage: ^9.0.0
+  
+  # Navigation
+  go_router: ^14.0.0
+  
+  # Date & Time
+  intl: ^0.19.0
+  
+  # Animations
+  flutter_animate: ^4.3.0
+  
+  # Charts (for stats screen)
+  fl_chart: ^0.68.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^3.0.0
-  
-  # Code Generation
-  build_runner: ^2.4.7
-  retrofit_generator: ^8.0.6
-  json_serializable: ^6.7.1
-  riverpod_generator: ^2.3.9
-  freezed: ^2.4.6
 
 flutter:
   uses-material-design: true
-
-  # Add your assets here
-  assets:
-    - assets/images/
-    - assets/animations/
-    - assets/characters/
-    - assets/achievements/
-    - assets/rewards/
-
-  # Add custom fonts here
-  # fonts:
-  #   - family: CustomFont
-  #     fonts:
-  #       - asset: assets/fonts/CustomFont-Regular.ttf
-  #       - asset: assets/fonts/CustomFont-Bold.ttf
-  #         weight: 700
+  
+  # If you have assets, add them here:
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/

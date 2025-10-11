@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   const SizedBox(height: 48),
                   
-                  // Email Field
+                  // Email Field - Changed from slideX to fadeIn
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -111,11 +111,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
-                  ).animate().slideX(delay: 400.ms, duration: 400.ms),
+                  ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
                   
                   const SizedBox(height: 16),
                   
-                  // Password Field
+                  // Password Field - Changed from slideX to fadeIn
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
-                  ).animate().slideX(delay: 500.ms, duration: 400.ms),
+                  ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
                   
                   const SizedBox(height: 8),
                   

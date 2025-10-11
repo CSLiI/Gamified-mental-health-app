@@ -108,7 +108,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              _selectedColor.withOpacity(0.1),
+              _selectedColor.withValues(alpha: .1),
               AppColors.background,
             ],
           ),
@@ -209,7 +209,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: _selectedColor.withOpacity(0.2),
+                                color: _selectedColor.withValues(alpha: .2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -226,9 +226,9 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                         SliderTheme(
                           data: SliderThemeData(
                             activeTrackColor: _selectedColor,
-                            inactiveTrackColor: _selectedColor.withOpacity(0.2),
+                            inactiveTrackColor: _selectedColor.withValues(alpha: 0.2),
                             thumbColor: _selectedColor,
-                            overlayColor: _selectedColor.withOpacity(0.2),
+                            overlayColor: _selectedColor.withValues(alpha: 0.2),
                             trackHeight: 8,
                           ),
                           child: Slider(
@@ -241,7 +241,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                             },
                           ),
                         ),
-                        Row(
+                        const Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
@@ -335,25 +335,25 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withOpacity(0.1),
+                    color: AppColors.info.withValues(alpha: .1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.info.withOpacity(0.3),
+                      color: AppColors.info.withValues(alpha: .3),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(
+                       Icon(
                         Icons.lightbulb_outline,
                         color: AppColors.info,
                         size: 32,
                       ),
-                      const SizedBox(width: 16),
+                       SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Tip',
                               style: TextStyle(
                                 fontSize: 16,
@@ -361,7 +361,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
                                 color: AppColors.info,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               'Track your mood daily to understand patterns and triggers',
                               style: TextStyle(
@@ -426,7 +426,7 @@ class _MoodCard extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? mood.color.withOpacity(0.2) : Colors.white,
+          color: isSelected ? mood.color.withValues(alpha: 0.2) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? mood.color : Colors.transparent,
@@ -435,14 +435,14 @@ class _MoodCard extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: mood.color.withOpacity(0.3),
+                    color: mood.color.withValues(alpha: .3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
