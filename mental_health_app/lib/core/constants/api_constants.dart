@@ -2,7 +2,7 @@ class ApiConstants {
   // Base URL - Change this to your computer's IP when testing on physical device
   // Use 'localhost' or '127.0.0.1' for emulator
   // Use your computer's IP (e.g., '192.168.1.x') for physical device
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'http://10.0.2.2:8000';
   
   // For Android Emulator, use: 'http://10.0.2.2:8000'
   // For iOS Simulator, use: 'http://localhost:8000'
