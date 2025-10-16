@@ -121,7 +121,9 @@ def get_character_mood_state(db: Session, user_id: int, days: int = 7):
             "mood_score": 50,
             "dominant_mood": "calm",
             "character_state": "neutral",
-            "environment": "peaceful"
+            "environment": "peaceful",
+            "total_mood_logs": 0,
+            "analysis_period_days": days
         }
     
     mood_scores = {

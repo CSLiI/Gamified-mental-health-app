@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include all routers
+# ⚠️ IMPORTANT: Include all routers
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
 app.include_router(mood_routes.router)
@@ -74,7 +74,7 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {
-        "status": "healthy", 
+        "status": "healthy",
         "database": "connected",
         "version": "2.0.0"
     }
@@ -82,5 +82,6 @@ def health_check():
 import os
 print(f"✓ JWT_SECRET is set: {bool(os.getenv('JWT_SECRET'))}")
 print(f"✓ JWT_SECRET length: {len(os.getenv('JWT_SECRET', ''))}")
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

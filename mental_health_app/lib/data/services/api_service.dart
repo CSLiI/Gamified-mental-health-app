@@ -5,52 +5,50 @@ import 'dio_client.dart';
 class ApiService {
   final DioClient _dioClient = DioClient();
 
-// ==================== Auth ====================
+  // ==================== Auth ====================
 
-Future<Map<String, dynamic>> register({
-  required String firstName,
-  required String lastName,
-  required String email,
-  required String password,
-}) async {
-  try {
-    // Backend expects 'password_hash' field, not 'password'
-    final response = await _dioClient.post(ApiConstants.register, data: {
-      'first_name': firstName,
-      'last_name': lastName,
-      'email': email,
-      'password_hash': password,  // ⬅️ Backend expects this field name
-    });
-    return response.data as Map<String, dynamic>;
-  } on DioException catch (e) {
-    throw _handleError(e);
+  Future<Map<String, dynamic>> register({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _dioClient.post(ApiConstants.register, data: {
+        'first_name': firstName,
+        'last_name': lastName,
+        'email': email,
+        'password_hash': password,
+      });
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
   }
-}
 
-Future<Map<String, dynamic>> login({
-  required String email,
-  required String password,
-}) async {
-  try {
-    // FastAPI OAuth2 expects form data, not JSON
-    final response = await _dioClient.post(
-      ApiConstants.login,
-      data: {
-        'username': email,  // ⬅️ OAuth2 uses 'username' field
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      print('🔐 ApiService: Starting login process...');
+
+      // Use DioClient's login method (which saves the token)
+      final response = await _dioClient.login({
+        'username': email,
         'password': password,
-      },
-      options: Options(
-        contentType: 'application/x-www-form-urlencoded',  // ⬅️ Important!
-      ),
-    );
-    return response.data as Map<String, dynamic>;
-  } on DioException catch (e) {
-    throw _handleError(e);
+      });
+
+      print('✅ ApiService: Login successful');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      print('❌ ApiService: Login failed - ${e.message}');
+      throw _handleError(e);
+    }
   }
-}
 
   // ==================== User ====================
-  
+
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
       final response = await _dioClient.get(ApiConstants.me);
@@ -73,7 +71,7 @@ Future<Map<String, dynamic>> login({
   }
 
   // ==================== Characters ====================
-  
+
   Future<List<dynamic>> getCharacters() async {
     try {
       final response = await _dioClient.get(ApiConstants.characters);
@@ -82,7 +80,7 @@ Future<Map<String, dynamic>> login({
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> getCurrentCharacter() async {
     try {
       final response = await _dioClient.get(ApiConstants.currentCharacter);
@@ -91,16 +89,19 @@ Future<Map<String, dynamic>> login({
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> chooseCharacter(int characterId) async {
     try {
+      print('🎯 Choosing character $characterId...');
       final response = await _dioClient.post('${ApiConstants.chooseCharacter}/$characterId');
+      print('✅ Character chosen successfully');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
+      print('❌ Choose character failed: ${e.message}');
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> getCharacterMoodState() async {
     try {
       final response = await _dioClient.get(ApiConstants.characterMoodState);
@@ -111,7 +112,7 @@ Future<Map<String, dynamic>> login({
   }
 
   // ==================== Moods ====================
-  
+
   Future<Map<String, dynamic>> createMood(Map<String, dynamic> moodData) async {
     try {
       final response = await _dioClient.post(
@@ -137,7 +138,7 @@ Future<Map<String, dynamic>> login({
   }
 
   // ==================== Journals ====================
-  
+
   Future<Map<String, dynamic>> createJournal(Map<String, dynamic> journalData) async {
     try {
       final response = await _dioClient.post(
@@ -175,7 +176,7 @@ Future<Map<String, dynamic>> login({
   }
 
   // ==================== Achievements ====================
-  
+
   Future<List<dynamic>> getMyAchievements() async {
     try {
       final response = await _dioClient.get(ApiConstants.myAchievements);
@@ -195,7 +196,7 @@ Future<Map<String, dynamic>> login({
   }
 
   // ==================== Interests ====================
-  
+
   Future<List<dynamic>> getAllInterests() async {
     try {
       final response = await _dioClient.get(ApiConstants.interests);
@@ -204,7 +205,7 @@ Future<Map<String, dynamic>> login({
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> addUserInterest(int interestId) async {
     try {
       final response = await _dioClient.post('${ApiConstants.userInterests}/$interestId');
@@ -215,7 +216,7 @@ Future<Map<String, dynamic>> login({
   }
 
   // ==================== Rewards ====================
-  
+
   Future<List<dynamic>> getAvailableRewards() async {
     try {
       final response = await _dioClient.get(ApiConstants.availableRewards);
@@ -224,7 +225,7 @@ Future<Map<String, dynamic>> login({
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> unlockReward(int rewardId) async {
     try {
       final response = await _dioClient.post('${ApiConstants.unlockReward}/$rewardId');
@@ -233,7 +234,7 @@ Future<Map<String, dynamic>> login({
       throw _handleError(e);
     }
   }
-  
+
   Future<Map<String, dynamic>> getCollectionStats() async {
     try {
       final response = await _dioClient.get(ApiConstants.collectionStats);
@@ -244,33 +245,32 @@ Future<Map<String, dynamic>> login({
   }
 
   // Error handler
-String _handleError(DioException error) {
-  if (error.response != null) {
-    final data = error.response!.data;
-    
-    // Handle validation errors (422)
-    if (error.response!.statusCode == 422 && data is Map) {
-      if (data.containsKey('detail')) {
-        // Extract validation error messages
-        final detail = data['detail'];
-        if (detail is List) {
-          final errors = detail.map((e) => e['msg'] ?? e.toString()).join(', ');
-          return 'Validation error: $errors';
+  String _handleError(DioException error) {
+    if (error.response != null) {
+      final data = error.response!.data;
+
+      // Handle validation errors (422)
+      if (error.response!.statusCode == 422 && data is Map) {
+        if (data.containsKey('detail')) {
+          final detail = data['detail'];
+          if (detail is List) {
+            final errors = detail.map((e) => e['msg'] ?? e.toString()).join(', ');
+            return 'Validation error: $errors';
+          }
+          return data['detail'].toString();
         }
+      }
+
+      if (data is Map && data.containsKey('detail')) {
         return data['detail'].toString();
       }
+      return 'Server error: ${error.response!.statusCode}';
+    } else if (error.type == DioExceptionType.connectionTimeout) {
+      return 'Connection timeout';
+    } else if (error.type == DioExceptionType.receiveTimeout) {
+      return 'Receive timeout';
+    } else {
+      return 'Network error: ${error.message}';
     }
-    
-    if (data is Map && data.containsKey('detail')) {
-      return data['detail'].toString();
-    }
-    return 'Server error: ${error.response!.statusCode}';
-  } else if (error.type == DioExceptionType.connectionTimeout) {
-    return 'Connection timeout';
-  } else if (error.type == DioExceptionType.receiveTimeout) {
-    return 'Receive timeout';
-  } else {
-    return 'Network error: ${error.message}';
   }
-}
 }

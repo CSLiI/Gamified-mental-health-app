@@ -35,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Step 1: Register user
       await _apiService.register(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
@@ -42,10 +43,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text,
       );
 
+      print('✅ Registration successful');
+
+      // Step 2: Login to get token
+      await _apiService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      print('✅ Login successful, token saved');
+
       if (!mounted) return;
+
+      // Step 3: Go to onboarding
       context.go('/onboarding');
+
     } catch (e) {
+      print('❌ Registration/Login error: $e');
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Registration failed: ${e.toString()}'),

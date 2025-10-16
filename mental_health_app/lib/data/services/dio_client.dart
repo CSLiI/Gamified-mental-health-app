@@ -27,6 +27,9 @@ class DioClient {
           final token = await _storage.read(key: 'auth_token');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+            print('🔑 Token added to request: ${token.substring(0, 20)}...');
+          } else {
+            print('⚠️ No token found in storage');
           }
           print('📤 REQUEST: ${options.method} ${options.path}');
           return handler.next(options);
@@ -38,13 +41,14 @@ class DioClient {
         onError: (error, handler) async {
           print('❌ ERROR: ${error.response?.statusCode} ${error.requestOptions.path}');
           print('   Message: ${error.message}');
-          
+
           // Handle 401 Unauthorized
           if (error.response?.statusCode == 401) {
+            print('🚨 401 Unauthorized - Token may be invalid or expired');
             // Token expired or invalid - clear it
             await _storage.delete(key: 'auth_token');
           }
-          
+
           return handler.next(error);
         },
       ),
@@ -59,6 +63,8 @@ class DioClient {
   }
 
   Future<Response> login(Map<String, dynamic> data) async {
+    print('🔐 Attempting login...');
+
     final response = await _dio.post(
       ApiConstants.login,
       data: data,
@@ -66,24 +72,46 @@ class DioClient {
         contentType: 'application/x-www-form-urlencoded',
       ),
     );
-    
+
+    print('✅ Login response received');
+    print('📦 Response data: ${response.data}');
+
     // Save token
     if (response.data['access_token'] != null) {
+      final token = response.data['access_token'];
       await _storage.write(
         key: 'auth_token',
-        value: response.data['access_token'],
+        value: token,
       );
+      print('💾 Token saved: ${token.substring(0, 20)}...');
+
+      // Verify token was saved
+      final savedToken = await _storage.read(key: 'auth_token');
+      if (savedToken != null) {
+        print('✅ Token verified in storage');
+      } else {
+        print('❌ Token NOT saved to storage!');
+      }
+    } else {
+      print('⚠️ No access_token in response!');
     }
-    
+
     return response;
   }
 
   Future<void> logout() async {
     await _storage.delete(key: 'auth_token');
+    print('🚪 Token deleted - logged out');
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: 'auth_token');
+    final token = await _storage.read(key: 'auth_token');
+    if (token != null) {
+      print('🔑 Token retrieved: ${token.substring(0, 20)}...');
+    } else {
+      print('❌ No token in storage');
+    }
+    return token;
   }
 
   Future<bool> isAuthenticated() async {
@@ -147,59 +175,5 @@ class DioClient {
       queryParameters: queryParameters,
       options: options,
     );
-  }
-  // Add these methods to your lib/data/services/api_service.dart file
-// Add them after the existing methods, before the closing brace
-
-  // ==================== Characters ====================
-  
-  Future<List<dynamic>> getCharacters() async {
-    final response = await _dio.get('/characters/');
-    return response.data;
-  }
-  
-  Future<Map<String, dynamic>> chooseCharacter(int characterId) async {
-    final response = await _dio.post('/characters/me/choose/$characterId');
-    return response.data;
-  }
-  
-  Future<Map<String, dynamic>> getCurrentCharacter() async {
-    final response = await _dio.get('/characters/me/current');
-    return response.data;
-  }
-  
-  // Update the existing getCharacterMoodState if it's not there
-  Future<Map<String, dynamic>> getCharacterMoodState() async {
-    final response = await _dio.get('/characters/me/mood-state');
-    return response.data;
-  }
-  
-  // ==================== Interests ====================
-  
-  Future<List<dynamic>> getAllInterests() async {
-    final response = await _dio.get('/interests/');
-    return response.data;
-  }
-  
-  Future<Map<String, dynamic>> addUserInterest(int interestId) async {
-    final response = await _dio.post('/users/me/interests/$interestId');
-    return response.data;
-  }
-  
-  // ==================== Rewards ====================
-  
-  Future<List<dynamic>> getAvailableRewards() async {
-    final response = await _dio.get('/rewards/me/available');
-    return response.data;
-  }
-  
-  Future<Map<String, dynamic>> unlockReward(int rewardId) async {
-    final response = await _dio.post('/rewards/me/unlock/$rewardId');
-    return response.data;
-  }
-  
-  Future<Map<String, dynamic>> getCollectionStats() async {
-    final response = await _dio.get('/rewards/me/collection-stats');
-    return response.data;
   }
 }
