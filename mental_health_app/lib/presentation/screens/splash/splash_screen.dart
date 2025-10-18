@@ -22,34 +22,43 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    // Show splash for 2 seconds
+    // Show splash for at least 2 seconds
     await Future.delayed(const Duration(seconds: 2));
 
-    try {
-      // Check if user is authenticated
-      final isAuthenticated = await _dioClient.isAuthenticated();
+    if (!mounted) return;
 
-      if (isAuthenticated) {
-        // Try to get user data to verify token is valid
-        try {
-          await _apiService.getCurrentUser();
-          // Use mounted check or just navigate
-          if (mounted) {
-            context.go('/home');
-          }
-        } catch (e) {
-          // Token invalid, go to login
-          if (mounted) {
-            context.go('/login');
-          }
+    try {
+      // Check if token exists
+      final token = await _dioClient.getToken();
+
+      if (token == null || token.isEmpty) {
+        // No token, go to login
+        print('🚫 No token found, redirecting to login');
+        context.go('/login');
+        return;
+      }
+
+      print('🔑 Token found, validating...');
+
+      // Try to get user data to verify token is valid
+      try {
+        final user = await _apiService.getCurrentUser();
+        print('✅ Token valid, user: ${user['first_name']}');
+
+        // Token is valid, go to home
+        if (mounted) {
+          context.go('/home');
         }
-      } else {
-        // Not authenticated
+      } catch (e) {
+        // Token is invalid or expired
+        print('❌ Token invalid: $e');
+        await _dioClient.logout(); // Clear invalid token
         if (mounted) {
           context.go('/login');
         }
       }
     } catch (e) {
+      print('❌ Auth check error: $e');
       if (mounted) {
         context.go('/login');
       }

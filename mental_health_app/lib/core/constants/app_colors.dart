@@ -11,16 +11,16 @@ class AppColors {
   static const Color secondaryLight = Color(0xFFFF9BBD);
   static const Color secondaryDark = Color(0xFFCC4A7A);
   
-  // Background Colors
-  static const Color background = Color(0xFFF8F9FE);
+  // Background Colors - Sky Blue Theme (Darker/More Visible)
+  static const Color background = Color(0xFFB3E5FC); // Medium sky blue
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF0F2F8);
-  
+  static const Color surfaceVariant = Color(0xFFE1F5FE); // Light cyan
+
   // Text Colors
   static const Color textPrimary = Color(0xFF1A1D2E);
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textTertiary = Color(0xFF9CA3AF);
-  
+
   // Mood Colors
   static const Color moodHappy = Color(0xFFFFC107);
   static const Color moodSad = Color(0xFF64B5F6);
@@ -28,47 +28,55 @@ class AppColors {
   static const Color moodCalm = Color(0xFF66BB6A);
   static const Color moodAngry = Color(0xFFEF5350);
   static const Color moodTired = Color(0xFF9575CD);
-  
+
   // Character States
   static const Color stateThriving = Color(0xFF4CAF50);
   static const Color stateContent = Color(0xFF8BC34A);
   static const Color stateStruggling = Color(0xFFFF9800);
   static const Color stateNeedsSupport = Color(0xFFFF5252);
-  
+
   // Environment Colors
   static const Color envVibrant = Color(0xFFFFD54F);
   static const Color envPeaceful = Color(0xFF81C784);
   static const Color envCloudy = Color(0xFFB0BEC5);
   static const Color envStormy = Color(0xFF78909C);
-  
+
   // Status Colors
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
-  
+
   // Rarity Colors (for rewards)
   static const Color rarityCommon = Color(0xFF9E9E9E);
   static const Color rarityRare = Color(0xFF2196F3);
   static const Color rarityEpic = Color(0xFF9C27B0);
   static const Color rarityLegendary = Color(0xFFFF9800);
-  
+
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, primaryLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   static const LinearGradient secondaryGradient = LinearGradient(
     colors: [secondary, secondaryLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
+  // Sky Blue Background Gradient (More visible)
   static const LinearGradient backgroundGradient = LinearGradient(
-    colors: [Color(0xFFF8F9FE), Color(0xFFE8EAFC)],
+    colors: [Color(0xFF81D4FA), Color(0xFF4FC3F7)], // Medium to vibrant sky blue
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
+  );
+
+  // Alternative Sky Blue Gradient
+  static const LinearGradient skyBlueGradient = LinearGradient(
+    colors: [Color(0xFF80DEEA), Color(0xFF4DD0E1)], // Cyan sky blue
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
 }
