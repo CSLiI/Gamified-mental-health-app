@@ -4,8 +4,8 @@ class ApiConstants {
   // ⚠️ IMPORTANT: Change this based on your testing device
 
   // FOR ANDROID EMULATOR (default):
-  static const String baseUrl = 'http://10.200.235.213:8000';
-
+  //static const String baseUrl = 'http://10.200.235.213:8000';
+  static const String baseUrl = 'http://10.0.2.2:8000';
   // FOR iOS SIMULATOR (uncomment this and comment above):
   // static const String baseUrl = 'http://localhost:8000';
 

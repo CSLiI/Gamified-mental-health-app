@@ -82,16 +82,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFF8F9FE),
-              Color(0xFFE8EAFC),
+              Color(0xFFB0E0FF), // Lighter baby blue at top
+              Color(0xFF89CFF0), // Baby blue at bottom
             ],
           ),
         ),
         child: SafeArea(
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                  child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ))
               : RefreshIndicator(
                   onRefresh: _loadData,
+                  color: const Color(0xFF5CACEE),
+                  backgroundColor: Colors.white,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(
@@ -121,12 +126,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary.withOpacity(0.8),
-            AppColors.primaryLight,
+            Color(0xFF5CACEE),
+            Color(0xFF4A9CDE),
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -135,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: const Color(0xFF5CACEE).withAlpha(90),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -154,13 +159,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.3),
-                  Colors.white.withOpacity(0.1),
+                  Colors.white.withAlpha(76), // ~30% opacity
+                  Colors.white.withAlpha(25), // ~10% opacity
                 ],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withAlpha(50),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),
@@ -186,14 +191,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             email,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withAlpha(230),
             ),
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withAlpha(50),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -236,7 +241,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Expanded(
             child: _buildStatCard(
               icon: Icons.emoji_events,
-              value: _achievements.where((a) => a['is_claimed'] == true).length.toString(),
+              value: _achievements
+                  .where((a) => a['is_claimed'] == true)
+                  .length
+                  .toString(),
               label: 'Achievements',
               color: AppColors.moodHappy,
             ),
@@ -255,11 +263,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withAlpha(220),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(20),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -270,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withAlpha(60),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 28),
@@ -281,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: Color(0xFF0078D7),
             ),
           ),
           const SizedBox(height: 4),
@@ -289,7 +297,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label,
             style: const TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: Colors.black54,
             ),
             textAlign: TextAlign.center,
           ),
@@ -303,7 +311,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return const SizedBox.shrink();
     }
 
-    final unlockedAchievements = _achievements.where((a) => a['is_claimed'] == true).toList();
+    final unlockedAchievements =
+        _achievements.where((a) => a['is_claimed'] == true).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -318,14 +327,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: Colors.white,
                 ),
               ),
               TextButton(
                 onPressed: () {
                   // Navigate to full achievements screen
                 },
-                child: const Text('See All'),
+                child: const Text('See All',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -342,11 +352,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   margin: const EdgeInsets.only(right: 12),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.white.withAlpha(220),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withAlpha(20),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -358,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.moodHappy.withOpacity(0.1),
+                          color: AppColors.moodHappy.withAlpha(60),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -373,7 +383,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: Color(0xFF0078D7),
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -438,11 +448,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withAlpha(220),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(20),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -460,12 +470,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: (color ?? AppColors.primary).withOpacity(0.1),
+                    color: (color ?? const Color(0xFF5CACEE)).withAlpha(60),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    color: color ?? AppColors.primary,
+                    color: color ?? const Color(0xFF5CACEE),
                     size: 24,
                   ),
                 ),
@@ -476,13 +486,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: color ?? AppColors.textPrimary,
+                      color: color ?? const Color(0xFF0078D7),
                     ),
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.chevron_right,
-                  color: AppColors.textSecondary,
+                  color: Colors.black54,
                 ),
               ],
             ),

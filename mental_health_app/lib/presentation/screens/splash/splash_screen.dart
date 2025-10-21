@@ -11,14 +11,26 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   final DioClient _dioClient = DioClient();
+  late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
     _checkAuth();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkAuth() async {
@@ -70,19 +82,52 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFB0E0FF), // Lighter baby blue at top
+              Color(0xFF89CFF0), // Baby blue at bottom
+            ],
+          ),
         ),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.favorite,
-                size: 80,
-                color: Colors.white,
+              // Animated pulsing icon
+              AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  return Container(
+                    width: 120 + (10 * _pulseController.value),
+                    height: 120 + (10 * _pulseController.value),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(50),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 4,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withAlpha(
+                              (100 * _pulseController.value).round()),
+                          blurRadius: 30,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.favorite,
+                      size: 60,
+                      color: Colors.white,
+                    ),
+                  );
+                },
               ),
-              SizedBox(height: 24),
-              Text(
+              const SizedBox(height: 24),
+              const Text(
                 'Mental Health',
                 style: TextStyle(
                   fontSize: 32,
@@ -90,15 +135,15 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Colors.white,
                 ),
               ),
-              Text(
+              const Text(
                 'Your Journey to Wellness',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white70,
+                  color: Colors.white,
                 ),
               ),
-              SizedBox(height: 40),
-              CircularProgressIndicator(
+              const SizedBox(height: 40),
+              const CircularProgressIndicator(
                 color: Colors.white,
               ),
             ],

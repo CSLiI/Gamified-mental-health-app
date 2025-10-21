@@ -10,7 +10,8 @@ class MoodScreen extends StatefulWidget {
   State<MoodScreen> createState() => _MoodScreenState();
 }
 
-class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateMixin {
+class _MoodScreenState extends State<MoodScreen>
+    with SingleTickerProviderStateMixin {
   final _apiService = ApiService();
   final _noteController = TextEditingController();
   late TabController _tabController;
@@ -151,8 +152,8 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFF8F9FE),
-              Color(0xFFE8EAFC),
+              Color(0xFFB0E0FF), // Lighter baby blue at top
+              Color(0xFF89CFF0), // Baby blue at bottom
             ],
           ),
         ),
@@ -160,51 +161,80 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
           child: Column(
             children: [
               // Header
-              Padding(
-                padding: const EdgeInsets.all(24.0),
+              const Padding(
+                padding: EdgeInsets.all(24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'How are you feeling?',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 3.0,
+                            color: Color(0x55000000),
+                            offset: Offset(1, 1),
+                          )
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'Track your emotions and see patterns',
                       style: TextStyle(
                         fontSize: 16,
-                        color: AppColors.textSecondary,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 2.0,
+                            color: Color(0x55000000),
+                            offset: Offset(1, 1),
+                          )
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // Tab Bar
+              // Tab Bar - Styled like todo screen
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white.withAlpha(220),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
-                    color: AppColors.primary,
+                    color: const Color(0xFF5CACEE), // Baby blue theme
                     borderRadius: BorderRadius.circular(10),
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  unselectedLabelColor: const Color(
+                      0xFF0A4B80), // Darker blue for better contrast
+                  indicatorSize: TabBarIndicatorSize.tab, // Match Todo screen
+                  dividerColor: Colors.transparent, // Match Todo screen
                   tabs: const [
-                    Tab(child: Text('Log Mood', style: TextStyle(fontWeight: FontWeight.bold))),
-                    Tab(child: Text('History', style: TextStyle(fontWeight: FontWeight.bold))),
+                    Tab(
+                      child: Text(
+                        'Log Mood',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ),
+                    Tab(
+                      child: Text(
+                        'History',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -258,19 +288,18 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                   decoration: BoxDecoration(
                     color: isSelected
                         ? moodData['color']
-                        : Colors.white,
+                        : Colors.white.withAlpha(220),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected
-                          ? moodData['color']
-                          : Colors.transparent,
+                      color:
+                          isSelected ? moodData['color'] : Colors.transparent,
                       width: 3,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: isSelected
-                            ? (moodData['color'] as Color).withOpacity(0.3)
-                            : Colors.black.withOpacity(0.05),
+                            ? (moodData['color'] as Color).withValues(alpha: .3)
+                            : Colors.black.withValues(alpha: .05),
                         blurRadius: isSelected ? 12 : 8,
                         offset: const Offset(0, 4),
                       ),
@@ -282,9 +311,7 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                       Icon(
                         moodData['icon'],
                         size: 40,
-                        color: isSelected
-                            ? Colors.white
-                            : moodData['color'],
+                        color: isSelected ? Colors.white : moodData['color'],
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -294,7 +321,8 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                           fontWeight: FontWeight.bold,
                           color: isSelected
                               ? Colors.white
-                              : AppColors.textPrimary,
+                              : const Color(
+                                  0xFF0A4B80), // Dark blue for better contrast
                         ),
                       ),
                     ],
@@ -310,11 +338,11 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withAlpha(220),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: .05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -328,7 +356,7 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Color(0xFF0A4B80), // Dark blue for better contrast
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -339,18 +367,23 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                     hintText: 'What\'s on your mind?',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.surfaceVariant),
+                      borderSide: BorderSide(color: Colors.grey.withAlpha(100)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.surfaceVariant),
+                      borderSide: BorderSide(color: Colors.grey.withAlpha(100)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF5CACEE), width: 2),
                     ),
                     filled: true,
-                    fillColor: AppColors.surfaceVariant,
+                    fillColor: Colors.white,
+                  ),
+                  style: const TextStyle(
+                    color: Color(0xFF0A4B80),
+                    fontSize: 16,
                   ),
                 ),
               ],
@@ -363,8 +396,8 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
           ElevatedButton(
             onPressed: _isLoading ? null : _logMood,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF5CACEE),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -377,7 +410,7 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: Color(0xFF5CACEE),
                     ),
                   )
                 : const Text(
@@ -401,7 +434,10 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
 
   Widget _buildHistoryTab() {
     if (_isLoadingHistory) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+          child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      ));
     }
 
     if (_moodHistory.isEmpty) {
@@ -412,7 +448,7 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
             Icon(
               Icons.mood_outlined,
               size: 80,
-              color: AppColors.textSecondary.withOpacity(0.5),
+              color: Colors.white.withAlpha(150),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -420,7 +456,14 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textSecondary,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 2.0,
+                    color: Color(0x55000000),
+                    offset: Offset(1, 1),
+                  )
+                ],
               ),
             ),
             const SizedBox(height: 8),
@@ -428,7 +471,14 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
               'Start tracking your moods!',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textSecondary,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 2.0,
+                    color: Color(0x55000000),
+                    offset: Offset(1, 1),
+                  )
+                ],
               ),
             ),
           ],
@@ -438,6 +488,8 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
 
     return RefreshIndicator(
       onRefresh: _loadData,
+      color: const Color(0xFF5CACEE),
+      backgroundColor: Colors.white,
       child: ListView.builder(
         padding: const EdgeInsets.all(24.0),
         itemCount: _moodHistory.length,
@@ -452,11 +504,11 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withAlpha(220),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: .05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -467,13 +519,14 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (moodData?['color'] as Color?)?.withOpacity(0.1) ??
-                        AppColors.surfaceVariant,
+                    color:
+                        (moodData?['color'] as Color?)?.withValues(alpha: .1) ??
+                            Colors.grey.withAlpha(50),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     moodData?['icon'] ?? Icons.mood,
-                    color: moodData?['color'] ?? AppColors.textSecondary,
+                    color: moodData?['color'] ?? Colors.grey,
                     size: 32,
                   ),
                 ),
@@ -490,14 +543,15 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                              color: Color(
+                                  0xFF0A4B80), // Dark blue for better contrast
                             ),
                           ),
                           Text(
                             _formatDate(loggedAt),
                             style: const TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: Colors.black54, // Better contrast
                             ),
                           ),
                         ],
@@ -508,7 +562,7 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                           note,
                           style: const TextStyle(
                             fontSize: 14,
-                            color: AppColors.textSecondary,
+                            color: Colors.black54, // Better contrast
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -527,16 +581,17 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
 
   Widget _buildStatsCard() {
     final totalEntries = _moodStats!['total_entries'] ?? 0;
-    final distribution = _moodStats!['mood_distribution'] as Map<String, dynamic>? ?? {};
+    final distribution =
+        _moodStats!['mood_distribution'] as Map<String, dynamic>? ?? {};
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withAlpha(220),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: .05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -550,7 +605,7 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: Color(0xFF0A4B80), // Dark blue for better contrast
             ),
           ),
           const SizedBox(height: 16),
@@ -558,7 +613,7 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
             '$totalEntries mood logs',
             style: const TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: Colors.black54, // Better contrast
             ),
           ),
           const SizedBox(height: 16),
@@ -581,14 +636,15 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: Color(
+                              0xFF0A4B80), // Dark blue for better contrast
                         ),
                       ),
                       Text(
                         '${(percentage * 100).toStringAsFixed(0)}%',
                         style: const TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: Colors.black54, // Better contrast
                         ),
                       ),
                     ],
@@ -598,9 +654,9 @@ class _MoodScreenState extends State<MoodScreen> with SingleTickerProviderStateM
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percentage,
-                      backgroundColor: AppColors.surfaceVariant,
+                      backgroundColor: Colors.grey.withAlpha(50),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        moodData?['color'] ?? AppColors.primary,
+                        moodData?['color'] ?? const Color(0xFF5CACEE),
                       ),
                       minHeight: 8,
                     ),

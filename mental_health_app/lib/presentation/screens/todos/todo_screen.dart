@@ -9,7 +9,8 @@ class TodoScreen extends StatefulWidget {
   State<TodoScreen> createState() => _TodoScreenState();
 }
 
-class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateMixin {
+class _TodoScreenState extends State<TodoScreen>
+    with SingleTickerProviderStateMixin {
   final _apiService = ApiService();
   final _taskController = TextEditingController();
   late TabController _tabController;
@@ -132,7 +133,8 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
         if (todoIndex != -1) {
           _todos[todoIndex]['is_completed'] = isCompleted;
           if (isCompleted) {
-            _todos[todoIndex]['completed_at'] = DateTime.now().toIso8601String();
+            _todos[todoIndex]['completed_at'] =
+                DateTime.now().toIso8601String();
           } else {
             _todos[todoIndex]['completed_at'] = null;
           }
@@ -184,8 +186,8 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFF8F9FE),
-              Color(0xFFE8EAFC),
+              Color(0xFFB0E0FF), // Lighter baby blue at top
+              Color(0xFF89CFF0), // Baby blue at bottom
             ],
           ),
         ),
@@ -198,12 +200,20 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Enhanced contrast header text with shadow for better visibility
                     const Text(
                       'My Tasks',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 3.0,
+                            color: Color(0x55000000),
+                            offset: Offset(1, 1),
+                          )
+                        ],
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -211,7 +221,15 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                       'Complete tasks to earn XP',
                       style: TextStyle(
                         fontSize: 16,
-                        color: AppColors.textSecondary,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 2.0,
+                            color: Color(0x55000000),
+                            offset: Offset(1, 1),
+                          )
+                        ],
                       ),
                     ),
 
@@ -221,13 +239,15 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primary.withOpacity(0.1),
-                              AppColors.secondary.withOpacity(0.1),
-                            ],
-                          ),
+                          color: Colors.white.withAlpha(220),
                           borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(20),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -261,11 +281,11 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.white.withAlpha(220),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withAlpha(20),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -280,8 +300,13 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                             hintText: 'Add a new task...',
                             border: InputBorder.none,
                             hintStyle: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: Colors.black54,
                             ),
+                          ),
+                          style: const TextStyle(
+                            color: Color(
+                                0xFF0A4B80), // Darker blue for better contrast
+                            fontSize: 16,
                           ),
                           onSubmitted: (_) => _addTodo(),
                         ),
@@ -292,11 +317,15 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Color(0xFF5CACEE)),
+                                ),
                               )
                             : const Icon(
                                 Icons.add_circle,
-                                color: AppColors.primary,
+                                color: Color(0xFF5CACEE),
                                 size: 32,
                               ),
                       ),
@@ -305,44 +334,44 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-              // Tab Bar
+              // Tab Bar - with improved spacing and contrast
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white.withAlpha(180),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
-                    color: AppColors.primary,
+                    color: const Color(0xFF5CACEE),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textSecondary,
+                  unselectedLabelColor: const Color(
+                      0xFF0A4B80), // Darker color for better contrast
                   indicatorSize: TabBarIndicatorSize.tab,
+                  labelPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8), // More padding
                   dividerColor: Colors.transparent,
                   tabs: const [
-                    Tab(
-                      child: Text(
-                        'All',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
+                    Text(
+                      'All',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
-                    Tab(
-                      child: Text(
-                        'Active',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
+                    Text(
+                      'Active',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
-                    Tab(
-                      child: Text(
-                        'Done',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
+                    Text(
+                      'Done',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ],
                 ),
@@ -371,21 +400,21 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: AppColors.primary, size: 24),
+        Icon(icon, color: const Color(0xFF5CACEE), size: 24),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: Color(0xFF0A4B80), // Darker blue for better contrast
           ),
         ),
         Text(
           label,
           style: const TextStyle(
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: Colors.black54, // Darker for better contrast
           ),
         ),
       ],
@@ -394,7 +423,10 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
 
   Widget _buildTaskList(bool? completed) {
     if (_isLoadingTodos) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+          child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      ));
     }
 
     final filteredTodos = completed == null
@@ -409,19 +441,26 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                completed == true ? Icons.check_circle_outline : Icons.assignment_outlined,
+                completed == true
+                    ? Icons.check_circle_outline
+                    : Icons.assignment_outlined,
                 size: 64,
-                color: AppColors.textSecondary.withOpacity(0.5),
+                color: Colors.white.withAlpha(150), // Better contrast
               ),
               const SizedBox(height: 16),
               Text(
-                completed == true
-                    ? 'No completed tasks yet'
-                    : 'No tasks yet',
+                completed == true ? 'No completed tasks yet' : 'No tasks yet',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textSecondary,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 2.0,
+                      color: Color(0x55000000),
+                      offset: Offset(1, 1),
+                    )
+                  ],
                 ),
               ),
               const SizedBox(height: 8),
@@ -429,7 +468,14 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                 'Add a task to get started!',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 2.0,
+                      color: Color(0x55000000),
+                      offset: Offset(1, 1),
+                    )
+                  ],
                 ),
               ),
             ],
@@ -440,6 +486,8 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
 
     return RefreshIndicator(
       onRefresh: _loadData,
+      color: const Color(0xFF5CACEE),
+      backgroundColor: Colors.white,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         itemCount: filteredTodos.length,
@@ -472,11 +520,11 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
             child: Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white.withAlpha(220),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withAlpha(20),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -500,12 +548,13 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: isCompleted
-                                  ? AppColors.success
-                                  : AppColors.textSecondary,
+                                  ? const Color(
+                                      0xFF28A745) // Success green with better contrast
+                                  : const Color(0xFF5CACEE),
                               width: 2,
                             ),
                             color: isCompleted
-                                ? AppColors.success
+                                ? const Color(0xFF28A745) // Success green
                                 : Colors.transparent,
                           ),
                           child: isCompleted
@@ -526,8 +575,8 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: isCompleted
-                                      ? AppColors.textSecondary
-                                      : AppColors.textPrimary,
+                                      ? Colors.black54 // Better contrast
+                                      : const Color(0xFF0A4B80), // Darker blue
                                   decoration: isCompleted
                                       ? TextDecoration.lineThrough
                                       : null,
@@ -539,7 +588,7 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                                 _formatDate(createdAt),
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textSecondary,
+                                  color: Colors.black54, // Better contrast
                                 ),
                               ),
                             ],
@@ -552,7 +601,7 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.secondary.withOpacity(0.1),
+                              color: const Color(0xFF5CACEE).withAlpha(40),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
@@ -560,7 +609,7 @@ class _TodoScreenState extends State<TodoScreen> with SingleTickerProviderStateM
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.secondary,
+                                color: Color(0xFF5CACEE),
                               ),
                             ),
                           ),

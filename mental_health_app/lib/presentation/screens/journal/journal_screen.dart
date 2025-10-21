@@ -77,21 +77,37 @@ class _JournalScreenState extends State<JournalScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _apiService.createJournal({
-        'title': _titleController.text.trim().isEmpty
-            ? 'Journal Entry'
-            : _titleController.text.trim(),
-        'content': _contentController.text.trim(),
-      });
+      // Check if we're editing an existing journal or creating a new one
+      if (_editingJournalId != null) {
+        // Update existing journal
+        await _apiService.updateJournal(_editingJournalId!, {
+          'title': _titleController.text.trim().isEmpty
+              ? 'Journal Entry'
+              : _titleController.text.trim(),
+          'content': _contentController.text.trim(),
+        });
+      } else {
+        // Create new journal
+        await _apiService.createJournal({
+          'title': _titleController.text.trim().isEmpty
+              ? 'Journal Entry'
+              : _titleController.text.trim(),
+          'content': _contentController.text.trim(),
+        });
+      }
 
       if (!mounted) return;
 
       // Check for achievements silently
       _apiService.checkAchievements();
 
+      // Clear data and reset state
       _titleController.clear();
       _contentController.clear();
-      setState(() => _showNewEntry = false);
+      setState(() {
+        _showNewEntry = false;
+        _editingJournalId = null; // Reset editing ID
+      });
 
       await _loadJournals();
     } catch (e) {
@@ -119,8 +135,8 @@ class _JournalScreenState extends State<JournalScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFF8F9FE),
-              Color(0xFFE8EAFC),
+              Color(0xFFB0E0FF), // Lighter baby blue at top
+              Color(0xFF89CFF0), // Baby blue at bottom
             ],
           ),
         ),
@@ -142,7 +158,14 @@ class _JournalScreenState extends State<JournalScreen> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 3.0,
+                                  color: Color(0x55000000),
+                                  offset: Offset(1, 1),
+                                )
+                              ],
                             ),
                           ),
                           SizedBox(height: 4),
@@ -150,7 +173,15 @@ class _JournalScreenState extends State<JournalScreen> {
                             'Express your thoughts freely',
                             style: TextStyle(
                               fontSize: 16,
-                              color: AppColors.textSecondary,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 2.0,
+                                  color: Color(0x55000000),
+                                  offset: Offset(1, 1),
+                                )
+                              ],
                             ),
                           ),
                         ],
@@ -162,8 +193,8 @@ class _JournalScreenState extends State<JournalScreen> {
                           setState(() => _showNewEntry = true);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF5CACEE),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 12,
@@ -186,7 +217,8 @@ class _JournalScreenState extends State<JournalScreen> {
 
               // Content
               Expanded(
-                child: _showNewEntry ? _buildNewEntryView() : _buildJournalList(),
+                child:
+                    _showNewEntry ? _buildNewEntryView() : _buildJournalList(),
               ),
             ],
           ),
@@ -196,34 +228,72 @@ class _JournalScreenState extends State<JournalScreen> {
   }
 
   Widget _buildNewEntryView() {
+    // Add a title that changes based on whether we're editing or creating
+    final isEditing = _editingJournalId != null;
+    final actionTitle = isEditing ? 'Edit Journal Entry' : 'New Journal Entry';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Action title
+          if (isEditing)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5CACEE).withAlpha(40),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFF5CACEE),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit, size: 18, color: Color(0xFF5CACEE)),
+                    const SizedBox(width: 8),
+                    Text(
+                      actionTitle,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5CACEE),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Daily Prompt Card
-          if (_dailyPrompt != null)
+          if (_dailyPrompt != null && !isEditing)
             Container(
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary.withOpacity(0.1),
-                    AppColors.secondary.withOpacity(0.1),
-                  ],
-                ),
+                color: Colors.white.withAlpha(220),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: const Color(0xFF5CACEE).withAlpha(100),
                   width: 2,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(20),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
                   const Icon(
                     Icons.lightbulb_outline,
-                    color: AppColors.primary,
+                    color: Color(0xFF5CACEE),
                     size: 28,
                   ),
                   const SizedBox(width: 12),
@@ -236,7 +306,7 @@ class _JournalScreenState extends State<JournalScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color: Color(0xFF5CACEE),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -244,7 +314,7 @@ class _JournalScreenState extends State<JournalScreen> {
                           _dailyPrompt!['prompt_text'] ?? '',
                           style: const TextStyle(
                             fontSize: 14,
-                            color: AppColors.textPrimary,
+                            color: Color(0xFF0A4B80),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -259,11 +329,11 @@ class _JournalScreenState extends State<JournalScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withAlpha(220),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withAlpha(20),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -275,7 +345,7 @@ class _JournalScreenState extends State<JournalScreen> {
                 hintText: 'Title (optional)',
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: Colors.black54,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -283,23 +353,24 @@ class _JournalScreenState extends State<JournalScreen> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Color(0xFF0A4B80),
               ),
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // Content Input
+          // Content Input - LARGER TEXT AREA
           Container(
             padding: const EdgeInsets.all(16),
-            constraints: const BoxConstraints(minHeight: 300),
+            constraints: const BoxConstraints(
+                minHeight: 350), // Increased from 300 to 350
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withAlpha(220),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withAlpha(20),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -312,13 +383,13 @@ class _JournalScreenState extends State<JournalScreen> {
                 hintText: 'Write your thoughts here...',
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: Colors.black54,
                   fontSize: 16,
                 ),
               ),
               style: const TextStyle(
                 fontSize: 16,
-                color: AppColors.textPrimary,
+                color: Color(0xFF0A4B80),
                 height: 1.5,
               ),
             ),
@@ -334,11 +405,14 @@ class _JournalScreenState extends State<JournalScreen> {
                   onPressed: () {
                     _titleController.clear();
                     _contentController.clear();
-                    setState(() => _showNewEntry = false);
+                    setState(() {
+                      _showNewEntry = false;
+                      _editingJournalId = null; // Reset editing ID
+                    });
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.textSecondary),
+                    side: const BorderSide(color: Colors.white),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -348,7 +422,7 @@ class _JournalScreenState extends State<JournalScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textSecondary,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -359,8 +433,8 @@ class _JournalScreenState extends State<JournalScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveJournal,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF5CACEE),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -373,12 +447,12 @@ class _JournalScreenState extends State<JournalScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Color(0xFF5CACEE),
                           ),
                         )
-                      : const Text(
-                          'Save Entry',
-                          style: TextStyle(
+                      : Text(
+                          isEditing ? 'Update Entry' : 'Save Entry',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -396,7 +470,10 @@ class _JournalScreenState extends State<JournalScreen> {
 
   Widget _buildJournalList() {
     if (_isLoadingJournals) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+          child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      ));
     }
 
     if (_journals.isEmpty) {
@@ -407,7 +484,7 @@ class _JournalScreenState extends State<JournalScreen> {
             Icon(
               Icons.book_outlined,
               size: 80,
-              color: AppColors.textSecondary.withOpacity(0.5),
+              color: Colors.white.withAlpha(150),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -415,7 +492,14 @@ class _JournalScreenState extends State<JournalScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textSecondary,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 2.0,
+                    color: Color(0x55000000),
+                    offset: Offset(1, 1),
+                  )
+                ],
               ),
             ),
             const SizedBox(height: 8),
@@ -423,7 +507,14 @@ class _JournalScreenState extends State<JournalScreen> {
               'Start writing your thoughts!',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textSecondary,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 2.0,
+                    color: Color(0x55000000),
+                    offset: Offset(1, 1),
+                  )
+                ],
               ),
             ),
           ],
@@ -433,6 +524,8 @@ class _JournalScreenState extends State<JournalScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadJournals,
+      color: const Color(0xFF5CACEE),
+      backgroundColor: Colors.white,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         itemCount: _journals.length,
@@ -445,11 +538,11 @@ class _JournalScreenState extends State<JournalScreen> {
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withAlpha(220),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withAlpha(20),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -476,7 +569,7 @@ class _JournalScreenState extends State<JournalScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
+                                color: Color(0xFF0A4B80),
                               ),
                             ),
                           ),
@@ -484,7 +577,7 @@ class _JournalScreenState extends State<JournalScreen> {
                             _formatDate(createdAt),
                             style: const TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: Colors.black54,
                             ),
                           ),
                         ],
@@ -494,7 +587,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         content,
                         style: const TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: Colors.black54,
                           height: 1.5,
                         ),
                         maxLines: 3,
@@ -533,7 +626,7 @@ class _JournalScreenState extends State<JournalScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.textSecondary.withOpacity(0.3),
+                color: Colors.black54,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -550,7 +643,7 @@ class _JournalScreenState extends State<JournalScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit, color: AppColors.primary),
+                        icon: const Icon(Icons.edit, color: Color(0xFF5CACEE)),
                         onPressed: () {
                           Navigator.pop(context);
                           _editJournal(journal);
@@ -580,7 +673,7 @@ class _JournalScreenState extends State<JournalScreen> {
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: Color(0xFF0A4B80),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -588,7 +681,7 @@ class _JournalScreenState extends State<JournalScreen> {
                       _formatDate(DateTime.parse(journal['created_at'])),
                       style: const TextStyle(
                         fontSize: 14,
-                        color: AppColors.textSecondary,
+                        color: Colors.black54,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -596,7 +689,7 @@ class _JournalScreenState extends State<JournalScreen> {
                       journal['content'] ?? '',
                       style: const TextStyle(
                         fontSize: 17,
-                        color: AppColors.textPrimary,
+                        color: Color(0xFF0A4B80),
                         height: 1.6,
                         letterSpacing: 0.3,
                       ),
@@ -617,7 +710,7 @@ class _JournalScreenState extends State<JournalScreen> {
     _contentController.text = journal['content'] ?? '';
     setState(() {
       _showNewEntry = true;
-      _editingJournalId = journal['id'];
+      _editingJournalId = journal['id']; // Set the ID of the journal to edit
     });
   }
 
@@ -626,7 +719,8 @@ class _JournalScreenState extends State<JournalScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Journal'),
-        content: const Text('Are you sure you want to delete this journal entry?'),
+        content:
+            const Text('Are you sure you want to delete this journal entry?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

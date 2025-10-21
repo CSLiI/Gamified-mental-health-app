@@ -5,12 +5,12 @@ class AppColors {
   static const Color primary = Color(0xFF6B4EFF);
   static const Color primaryLight = Color(0xFF9B7EFF);
   static const Color primaryDark = Color(0xFF4A2FCC);
-  
+
   // Secondary Colors - Warm accent
   static const Color secondary = Color(0xFFFF6B9D);
   static const Color secondaryLight = Color(0xFFFF9BBD);
   static const Color secondaryDark = Color(0xFFCC4A7A);
-  
+
   // Background Colors - Sky Blue Theme (Darker/More Visible)
   static const Color background = Color(0xFFB3E5FC); // Medium sky blue
   static const Color surface = Color(0xFFFFFFFF);
@@ -53,6 +53,13 @@ class AppColors {
   static const Color rarityEpic = Color(0xFF9C27B0);
   static const Color rarityLegendary = Color(0xFFFF9800);
 
+  // Game Theme Colors (new)
+  static const Color gameBlue = Color(0xFF5B8CFF);
+  static const Color gamePurple = Color(0xFF9678FF);
+  static const Color gameGreen = Color(0xFF4ECDC4);
+  static const Color gamePink = Color(0xFFFF6B8B);
+  static const Color gameYellow = Color(0xFFFFD166);
+
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, primaryLight],
@@ -68,7 +75,10 @@ class AppColors {
 
   // Sky Blue Background Gradient (More visible)
   static const LinearGradient backgroundGradient = LinearGradient(
-    colors: [Color(0xFF81D4FA), Color(0xFF4FC3F7)], // Medium to vibrant sky blue
+    colors: [
+      Color(0xFF81D4FA),
+      Color(0xFF4FC3F7)
+    ], // Medium to vibrant sky blue
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -78,5 +88,30 @@ class AppColors {
     colors: [Color(0xFF80DEEA), Color(0xFF4DD0E1)], // Cyan sky blue
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
+  );
+
+  // Game Theme Gradients (new)
+  static const LinearGradient softGameGradient = LinearGradient(
+    colors: [Color(0xFF8093F1), Color(0xFF6DD3CE)], // Soft blue to teal
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient dreamyGradient = LinearGradient(
+    colors: [Color(0xFF7F7FD5), Color(0xFF91EAE4)], // Purple to aqua
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient galaxyGradient = LinearGradient(
+    colors: [Color(0xFF434343), Color(0xFF394879)], // Dark to space blue
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient pastelsGradient = LinearGradient(
+    colors: [Color(0xFFA8E6CF), Color(0xFFDCEDC8)], // Mint to pale green
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
 }

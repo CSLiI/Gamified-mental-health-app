@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import 'home_screen.dart';
 import '../mood/mood_screen.dart';
@@ -20,6 +21,8 @@ class _HomeNavigationState extends State<HomeNavigation> {
     setState(() {
       _currentIndex = index;
     });
+    // Add haptic feedback
+    HapticFeedback.lightImpact();
   }
 
   late final List<Widget> _screens;
@@ -39,21 +42,42 @@ class _HomeNavigationState extends State<HomeNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        // Baby blue gradient background
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFB0E0FF), // Lighter baby blue at top
+              Color(0xFF89CFF0), // Baby blue at bottom
+            ],
+          ),
+        ),
+        child: _screens[_currentIndex],
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFF5CACEE), // Darker baby blue
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, -4),
+              color: Colors.black.withAlpha(40),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
             ),
           ],
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withAlpha(50),
+              width: 1,
+            ),
+          ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -78,7 +102,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
                 _buildNavItem(
                   icon: Icons.checklist_outlined,
                   activeIcon: Icons.checklist,
-                  label: 'Tasks',
+                  label: 'Quests',
                   index: 3,
                 ),
                 _buildNavItem(
@@ -102,45 +126,53 @@ class _HomeNavigationState extends State<HomeNavigation> {
     required int index,
   }) {
     final isActive = _currentIndex == index;
+
+    // Gamified nav item with glow effect
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: isActive
-                ? LinearGradient(
-                    colors: [
-                      AppColors.primary.withOpacity(0.1),
-                      AppColors.primaryLight.withOpacity(0.1),
-                    ],
-                  )
-                : null,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
+        onTap: () => _onTabSelected(index),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Gamified container with glow
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isActive ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                border: isActive
+                    ? Border.all(
+                        color: const Color(0xFF5CACEE),
+                        width: 2,
+                      )
+                    : null,
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: Colors.white.withAlpha(100),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        )
+                      ]
+                    : null,
+              ),
+              child: Icon(
                 isActive ? activeIcon : icon,
-                color: isActive ? AppColors.primary : AppColors.textSecondary,
-                size: 26,
+                color: isActive ? const Color(0xFF5CACEE) : Colors.white,
+                size: 24,
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                  color: isActive ? AppColors.primary : AppColors.textSecondary,
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? Colors.white : Colors.white.withAlpha(200),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
