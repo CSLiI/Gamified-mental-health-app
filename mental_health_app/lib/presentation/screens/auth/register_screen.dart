@@ -205,21 +205,32 @@ class _RegisterScreenState extends State<RegisterScreen>
               controller: _firstNameController,
               decoration: InputDecoration(
                 labelText: 'First Name',
-                hintText: 'Enter your hero\'s first name',
-                prefixIcon: const Icon(Icons.person_outlined,
-                    color: AppColors.gamePurple),
+                labelStyle: const TextStyle(
+                  color: Color(0xFF0A4B80),
+                ),
+                prefixIcon:
+                    const Icon(Icons.person_outlined, color: Color(0xFF5CACEE)),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                labelStyle: const TextStyle(
-                  fontFamily: 'Roboto',
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.grey, width: 1),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF5CACEE), width: 2),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
               style: const TextStyle(
-                fontFamily: 'Roboto',
+                color: Color(0xFF0A4B80),
+                fontSize: 16,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {

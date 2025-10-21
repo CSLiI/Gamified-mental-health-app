@@ -1,10 +1,10 @@
 name: mental_health_app
 description: A gamified mental health application for students
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -39,7 +39,7 @@ dependencies:
   lottie: ^3.0.0
   shimmer: ^3.0.0
   cached_network_image: ^3.3.1
-  
+
   # Charts
   fl_chart: ^0.66.0
 
@@ -48,7 +48,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^3.0.0
-  
+
   # Code Generation
   build_runner: ^2.4.7
   retrofit_generator: ^8.0.6
@@ -61,7 +61,8 @@ flutter:
 
   # Add your assets here
   assets:
-    - assets/images/
+    - assets/images/Boy_Gif_33FPS/
+    - assets/images/Girl_Gif_33FPS/
     - assets/animations/
     - assets/characters/
     - assets/achievements/

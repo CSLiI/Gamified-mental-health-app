@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
-import 'dart:math' as math;
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -12,65 +11,76 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with TickerProviderStateMixin {
+class _OnboardingScreenState extends State<OnboardingScreen> {
   final _apiService = ApiService();
   final _pageController = PageController();
   int _currentPage = 0;
-  List<dynamic> _characters = [];
+
+  // Character selection variables
+  List<Map<String, dynamic>> _characterOptions = [];
   int? _selectedCharacterId;
   bool _isLoading = false;
-
-  late AnimationController _blinkController;
-  late AnimationController _rotateController;
 
   @override
   void initState() {
     super.initState();
-    _loadCharacters();
+    _setupCharacterOptions();
+  }
 
-    _blinkController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _rotateController = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    )..repeat();
+  void _setupCharacterOptions() {
+    // Define character options (ID, gender, number, name, description)
+    _characterOptions = [
+      {
+        'id': 1,
+        'gender': 'Boy',
+        'number': 1,
+        'name': 'Calm Boy 1',
+        'description': 'A focused and mindful companion for your journey',
+        'color': const Color(0xFF5CACEE), // Blue
+        'gifPath': 'assets/images/Boy_Gif_33FPS/CalmBoy1.gif',
+      },
+      {
+        'id': 2,
+        'gender': 'Boy',
+        'number': 2,
+        'name': 'Calm Boy 2',
+        'description': 'A reliable friend who helps you stay grounded',
+        'color': const Color(0xFF66BB6A), // Green
+        'gifPath': 'assets/images/Boy_Gif_33FPS/CalmBoy2.gif',
+      },
+      {
+        'id': 3,
+        'gender': 'Girl',
+        'number': 1,
+        'name': 'Calm Girl 1',
+        'description': 'A supportive guide for your wellness journey',
+        'color': const Color(0xFFFF8EC4), // Pink
+        'gifPath': 'assets/images/Girl_Gif_33FPS/CalmGirl1.gif',
+      },
+      {
+        'id': 4,
+        'gender': 'Girl',
+        'number': 2,
+        'name': 'Calm Girl 2',
+        'description': 'An encouraging partner for your daily goals',
+        'color': const Color(0xFFFFD54F), // Yellow
+        'gifPath': 'assets/images/Girl_Gif_33FPS/CalmGirl2.gif',
+      },
+    ];
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _blinkController.dispose();
-    _rotateController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadCharacters() async {
-    try {
-      final characters = await _apiService.getCharacters();
-      setState(() {
-        _characters = characters;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to find companions: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
   }
 
   Future<void> _selectCharacter() async {
     if (_selectedCharacterId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You must choose a companion for your journey!'),
-          backgroundColor: AppColors.warning,
+          content: Text('Please select a character'),
+          backgroundColor: Color(0xFFFF9800), // Warning color
         ),
       );
       return;
@@ -79,15 +89,31 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     setState(() => _isLoading = true);
 
     try {
+      // Find the selected character option
+      final selectedCharacter = _characterOptions.firstWhere(
+        (char) => char['id'] == _selectedCharacterId,
+        orElse: () => _characterOptions[0],
+      );
+
+      // Store character details in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('selected_character_id', selectedCharacter['id']);
+      await prefs.setString(
+          'selected_character_gender', selectedCharacter['gender']);
+      await prefs.setInt(
+          'selected_character_number', selectedCharacter['number']);
+
+      // Send to backend API
       await _apiService.chooseCharacter(_selectedCharacterId!);
+
       if (!mounted) return;
       context.go('/home');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to bond with companion: ${e.toString()}'),
-          backgroundColor: AppColors.error,
+          content: Text('Failed to select character: ${e.toString()}'),
+          backgroundColor: const Color(0xFFF44336), // Error color
         ),
       );
     } finally {
@@ -100,10 +126,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void _nextPage() {
     if (_currentPage < 2) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      HapticFeedback.mediumImpact();
     } else {
       _selectCharacter();
     }
@@ -112,11 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        // Baby blue gradient background
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -143,55 +164,28 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ],
                 ),
               ),
-              Container(
+              Padding(
                 padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5CACEE),
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.white.withAlpha(50),
-                      width: 1,
-                    ),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(60),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         3,
-                        (index) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
+                        (index) => Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           width: _currentPage == index ? 24 : 8,
                           height: 8,
                           decoration: BoxDecoration(
                             color: _currentPage == index
                                 ? Colors.white
-                                : Colors.white.withAlpha(70),
+                                : Colors.white.withValues(alpha: 102),
                             borderRadius: BorderRadius.circular(4),
-                            boxShadow: _currentPage == index
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.white.withAlpha(100),
-                                      blurRadius: 8,
-                                      spreadRadius: 1,
-                                    )
-                                  ]
-                                : null,
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Gamified button
                     ElevatedButton(
                       onPressed: _isLoading ? null : _nextPage,
                       style: ElevatedButton.styleFrom(
@@ -200,29 +194,24 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         minimumSize: const Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 5,
-                        shadowColor: Colors.black,
+                        elevation: 4,
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              height: 24,
-                              width: 24,
+                              height: 20,
+                              width: 20,
                               child: CircularProgressIndicator(
-                                strokeWidth: 3,
+                                strokeWidth: 2,
                                 color: Color(0xFF5CACEE),
                               ),
                             )
                           : Text(
-                              _currentPage == 2
-                                  ? 'START YOUR JOURNEY'
-                                  : 'CONTINUE',
+                              _currentPage == 2 ? 'Get Started' : 'Next',
                               style: const TextStyle(
-                                fontFamily: 'Roboto',
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
                               ),
                             ),
                     ),
@@ -242,129 +231,65 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Animated glowing logo
-          AnimatedBuilder(
-            animation: _blinkController,
-            builder: (context, child) {
-              final glowOpacity = 0.4 +
-                  (_blinkController.value * 0.4); // Ranges from 0.4 to 0.8
-
-              return Container(
-                height: 140,
-                width: 140,
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(30),
-                  borderRadius: BorderRadius.circular(70),
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 3,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          Colors.white.withAlpha((glowOpacity * 255).round()),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.psychology,
-                    size: 70,
-                    color: Colors.white,
-                  ),
-                ),
-              );
-            },
+          Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 25),
+                  blurRadius: 15,
+                  spreadRadius: 5,
+                )
+              ],
+            ),
+            child: const Icon(
+              Icons.favorite,
+              size: 80,
+              color: Color(0xFF5CACEE),
+            ),
           ),
-          const SizedBox(height: 40),
-          // Title card
+          const SizedBox(height: 32),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(50),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(15),
+              color: Colors.white.withValues(alpha: 204),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withAlpha(30),
+                  color: Colors.black.withValues(alpha: 25),
                   blurRadius: 10,
-                  offset: const Offset(3, 3),
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: const Column(
-              children: [
-                Text(
-                  'WELCOME TO YOUR',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'MENTAL HEALTH ADVENTURE',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Track your moods, complete quests,\nand evolve with your companion',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w400,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          // Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.gameYellow.withAlpha(100),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
+            child: const Text(
+              'Welcome to Your\nWellness Journey',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0A4B80),
               ),
+              textAlign: TextAlign.center,
             ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.auto_awesome,
-                  color: Colors.white,
-                  size: 16,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'GAMIFIED MENTAL WELLNESS',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF5CACEE).withValues(alpha: 38),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF5CACEE)),
+            ),
+            child: const Text(
+              'Track your mood, journal your thoughts,\nand grow with your character',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0A4B80),
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -377,78 +302,59 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       padding: const EdgeInsets.all(24.0),
       child: Column(
         children: [
-          // Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(50),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(15),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withAlpha(30),
-                  blurRadius: 5,
-                  offset: const Offset(2, 2),
+                  color: Colors.black.withValues(alpha: 25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.star,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'KEY FEATURES',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+            child: const Text(
+              'Key Features',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0A4B80),
+              ),
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
           Expanded(
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
                   _buildFeatureCard(
                     Icons.mood,
-                    'Mood Tracking',
-                    'Monitor your emotions and see patterns over time',
-                    AppColors.gameYellow,
+                    'Track Your Mood',
+                    'Log your emotions and see patterns over time',
+                    const Color(0xFFFFD54F), // Yellow
                   ),
                   const SizedBox(height: 16),
                   _buildFeatureCard(
                     Icons.book,
-                    'Daily Journal',
-                    'Record your thoughts and reflections',
-                    AppColors.gameBlue,
+                    'Journal Daily',
+                    'Write your thoughts and reflections',
+                    const Color(0xFF5CACEE), // Blue
                   ),
                   const SizedBox(height: 16),
                   _buildFeatureCard(
-                    Icons.checklist,
-                    'Task Manager',
-                    'Organize to-do lists and track your progress',
-                    Colors.white,
+                    Icons.star,
+                    'Earn Rewards',
+                    'Complete tasks and unlock achievements',
+                    const Color(0xFF66BB6A), // Green
                   ),
                   const SizedBox(height: 16),
                   _buildFeatureCard(
-                    Icons.emoji_events,
-                    'Achievements',
-                    'Complete goals and earn rewards',
-                    AppColors.gameGreen,
+                    Icons.psychology,
+                    'Character Companion',
+                    'Watch your companion grow and change with you',
+                    const Color(0xFFFFA726), // Orange
                   ),
                 ],
               ),
@@ -462,36 +368,28 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Widget _buildFeatureCard(
       IconData icon, String title, String description, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(50),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.white,
-          width: 2,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 127)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(30),
-            blurRadius: 8,
-            offset: const Offset(3, 3),
+            color: color.withValues(alpha: 51),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          // Icon
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(100),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
+              color: color.withValues(alpha: 51),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
+            child: Icon(icon, color: color, size: 32),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -500,20 +398,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontFamily: 'Roboto',
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: color.withValues(alpha: 204),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
                   style: const TextStyle(
-                    fontFamily: 'Roboto',
                     fontSize: 14,
-                    color: Colors.white,
+                    color: Color(0xFF0A4B80),
                   ),
                 ),
               ],
@@ -524,218 +420,164 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
+  // Updated Character Selection Page without flutter_gif
   Widget _buildCharacterSelectionPage() {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         children: [
-          // Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(50),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(15),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withAlpha(30),
-                  blurRadius: 5,
-                  offset: const Offset(2, 2),
+                  color: Colors.black.withValues(alpha: 25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: const Text(
-              'CHOOSE YOUR COMPANION',
+              'Choose Your Character',
               style: TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 18,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Color(0xFF0A4B80),
               ),
               textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Your companion will evolve as you progress',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w400,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A4B80).withValues(alpha: 25),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: const Color(0xFF0A4B80).withValues(alpha: 76)),
             ),
-            textAlign: TextAlign.center,
+            child: const Text(
+              'Your character will grow and change with you',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF0A4B80),
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 24),
           Expanded(
-            child: _characters.isEmpty
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: _characters.length,
-                    itemBuilder: (context, index) {
-                      final character = _characters[index];
-                      final isSelected =
-                          _selectedCharacterId == character['id'];
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: _characterOptions.length,
+              itemBuilder: (context, index) {
+                final character = _characterOptions[index];
+                final isSelected = _selectedCharacterId == character['id'];
 
-                      // Character colors
-                      final List<Color> characterColors = [
-                        AppColors.gameYellow,
-                        AppColors.gameBlue,
-                        Colors.white,
-                        AppColors.gameGreen,
-                      ];
-                      final characterColor =
-                          characterColors[index % characterColors.length];
-
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedCharacterId = character['id'];
-                          });
-                          HapticFeedback.mediumImpact();
-                        },
-                        child: AnimatedBuilder(
-                          animation: _blinkController,
-                          builder: (context, child) {
-                            final glowOpacity = isSelected
-                                ? (0.4 + (_blinkController.value * 0.4))
-                                : 0.1;
-
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(50),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? characterColor
-                                      : Colors.white,
-                                  width: isSelected ? 3 : 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: isSelected
-                                        ? Colors.white.withAlpha(
-                                            (glowOpacity * 255).round())
-                                        : Colors.black.withAlpha(30),
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
-                                  )
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Character icon with rotation for selected
-                                  AnimatedBuilder(
-                                    animation: _rotateController,
-                                    builder: (context, child) {
-                                      return Transform.rotate(
-                                        angle: isSelected
-                                            ? _rotateController.value *
-                                                2 *
-                                                math.pi
-                                            : 0,
-                                        child: Container(
-                                          width: 70,
-                                          height: 70,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withAlpha(100),
-                                            borderRadius:
-                                                BorderRadius.circular(15),
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            Icons.pets,
-                                            size: 36,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Character name box
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withAlpha(100),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      character['name'] ?? 'Companion',
-                                      style: const TextStyle(
-                                        fontFamily: 'Roboto',
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    child: Text(
-                                      character['description'] ?? '',
-                                      style: const TextStyle(
-                                        fontFamily: 'Roboto',
-                                        fontSize: 12,
-                                        color: Colors.white,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Text(
-                                        'SELECTED',
-                                        style: TextStyle(
-                                          fontFamily: 'Roboto',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF5CACEE),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedCharacterId = character['id'];
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? character['color']
+                            : Colors.grey.withValues(alpha: 76),
+                        width: isSelected ? 3 : 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? (character['color'] as Color)
+                                  .withValues(alpha: 76)
+                              : Colors.black.withValues(alpha: 13),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      );
-                    },
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Character GIF - using standard Image.asset
+                        Container(
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border:
+                                Border.all(color: character['color'], width: 2),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(45),
+                            child: Image.asset(
+                              character['gifPath'],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          character['name'],
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: character['color'],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            character['description'],
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF0A4B80),
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isSelected)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: character['color'],
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                'SELECTED',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
+                );
+              },
+            ),
           ),
         ],
       ),

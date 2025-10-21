@@ -32,7 +32,14 @@ class _HomeNavigationState extends State<HomeNavigation> {
     super.initState();
     _screens = [
       HomeScreen(onNavigate: _onTabSelected),
-      const MoodScreen(),
+      MoodScreen(
+        characterId: 1, // Replace with the actual character ID
+        characterGender: 'Boy', // Replace with the actual character gender
+        characterNumber: 1, // Replace with the actual character number
+        onMoodSelected: (mood) {
+          // Handle mood selection if needed
+        },
+      ),
       const JournalScreen(),
       const TodoScreen(),
       const ProfileScreen(),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
-import 'dart:math' as math;
+import '../mood/mood_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -13,30 +13,46 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   final _apiService = ApiService();
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _characterState;
   Map<String, dynamic>? _currentCharacter;
   bool _isLoading = true;
-  late AnimationController _blinkController;
+
+  // Character details from shared preferences
+  int _characterId = 1;
+  String _characterGender = 'Boy';
+  int _characterNumber = 1;
+  bool _characterDetailsLoaded = false;
 
   @override
   void initState() {
     super.initState();
+    _loadCharacterDetails();
     _loadData();
-
-    // Setup blink animation for effect
-    _blinkController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
   }
 
-  @override
-  void dispose() {
-    _blinkController.dispose();
-    super.dispose();
+  void _updateCharacterMood(String mood) {
+    setState(() {
+      // Update the character state based on the selected mood
+      _characterState?['character_state'] = mood; // Update the character state
+    });
+  }
+
+  Future<void> _loadCharacterDetails() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _characterId = prefs.getInt('selected_character_id') ?? 1;
+        _characterGender =
+            prefs.getString('selected_character_gender') ?? 'Boy';
+        _characterNumber = prefs.getInt('selected_character_number') ?? 1;
+        _characterDetailsLoaded = true;
+      });
+    } catch (e) {
+      print('Error loading character details: $e');
+    }
   }
 
   Future<void> _loadData() async {
@@ -70,41 +86,54 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  // Get the appropriate character GIF path based on mood state
+  String _getCharacterGifPath(String moodState) {
+    // Default to "calm" mood if not recognized
+    String mood = 'Calm';
+
+    switch (moodState) {
+      case 'thriving':
+        mood = 'Happy';
+        break;
+      case 'content':
+        mood = 'Calm';
+        break;
+      case 'struggling':
+        mood = 'Tired';
+        break;
+      case 'needs_support':
+        mood = 'Sad';
+        break;
+    }
+
+    // Construct path based on character gender, number and mood
+    return 'assets/images/${_characterGender}_Gif_33FPS/$mood$_characterGender$_characterNumber.gif';
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: _isLoading
           ? const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ))
           : RefreshIndicator(
               onRefresh: _loadData,
-              color: Colors.white,
-              backgroundColor: const Color(0xFF89CFF0),
+              color: const Color(0xFF5CACEE),
+              backgroundColor: Colors.white,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTopBar(),
-                    Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeader(),
-                          const SizedBox(height: 24),
-                          _buildCharacterCard(),
-                          const SizedBox(height: 24),
-                          _buildDailyQuests(),
-                          const SizedBox(height: 24),
-                          _buildQuickActions(),
-                          const SizedBox(height: 30),
-                        ],
-                      ),
-                    ),
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildCharacterCard(),
+                    const SizedBox(height: 24),
+                    _buildQuickActions(),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -112,114 +141,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTopBar() {
-    final level = _userData?['level'] ?? 1;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF89CFF0).withAlpha(180),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withAlpha(50),
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(30),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Gamified level badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF5CACEE),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(40),
-                  blurRadius: 4,
-                  offset: const Offset(2, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.star,
-                  color: Colors.white,
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'LVL $level',
-                  style: const TextStyle(
-                    fontFamily: 'Roboto',
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Coin counter
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.gameYellow,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(40),
-                  blurRadius: 4,
-                  offset: const Offset(2, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.monetization_on,
-                  color: Colors.white,
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${_userData?['coins'] ?? 0}',
-                  style: const TextStyle(
-                    fontFamily: 'Roboto',
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildHeader() {
-    final firstName = _userData?['first_name'] ?? 'Hero';
+    final firstName = _userData?['first_name'] ?? 'User';
     final hour = DateTime.now().hour;
     String greeting;
 
@@ -237,54 +160,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Text(
           '$greeting,',
           style: const TextStyle(
-            fontFamily: 'Roboto',
             fontSize: 20,
             color: Colors.white,
             fontWeight: FontWeight.w500,
+            shadows: [
+              Shadow(
+                blurRadius: 3.0,
+                color: Color(0x55000000),
+                offset: Offset(1, 1),
+              )
+            ],
           ),
         ),
         const SizedBox(height: 4),
-        // Gamified name display
         Text(
           firstName,
           style: const TextStyle(
-            fontFamily: 'Roboto',
             fontSize: 32,
             fontWeight: FontWeight.bold,
             color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Dialogue box
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(230),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: const Color(0xFF89CFF0),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(30),
-                blurRadius: 5,
-                offset: const Offset(2, 2),
-              ),
+            shadows: [
+              Shadow(
+                blurRadius: 3.0,
+                color: Color(0x55000000),
+                offset: Offset(1, 1),
+              )
             ],
           ),
-          child: const Row(
-            children: [
-              Icon(Icons.auto_awesome, size: 18, color: Color(0xFF5CACEE)),
-              SizedBox(width: 8),
-              Text(
-                'How is your adventure today?',
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 16,
-                  color: Color(0xFF0078D7),
-                ),
-              ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'How are you feeling today?',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            shadows: [
+              Shadow(
+                blurRadius: 2.0,
+                color: Color(0x55000000),
+                offset: Offset(1, 1),
+              )
             ],
           ),
         ),
@@ -295,214 +211,172 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildCharacterCard() {
     final characterState = _characterState?['character_state'] ?? 'content';
     final moodScore = _characterState?['mood_score'] ?? 50.0;
-    final characterName =
-        _currentCharacter?['character']?['name'] ?? 'Your Companion';
+    final firstName = _userData?['first_name'] ?? 'User';
 
     // Get XP and Level
     final level = _userData?['level'] ?? 1;
     final xp = _userData?['xp'] ?? 0;
     final xpForNextLevel = level * 100;
-    final xpProgress = xp / xpForNextLevel;
+    final double xpProgress = xpForNextLevel > 0 ? (xp / xpForNextLevel) : 0.0;
 
-    // Determine card style based on character state
     Color stateColor;
-    String stateEmoji;
 
     switch (characterState) {
       case 'thriving':
-        stateColor = AppColors.gameGreen;
-        stateEmoji = '🌟';
+        stateColor = const Color(0xFF4CAF50); // Green
         break;
       case 'struggling':
-        stateColor = AppColors.gameYellow;
-        stateEmoji = '💪';
+        stateColor = const Color(0xFFFFA726); // Orange
         break;
       case 'needs_support':
-        stateColor = AppColors.gamePink;
-        stateEmoji = '🤗';
+        stateColor = const Color(0xFFF44336); // Red
         break;
       default:
-        stateColor = AppColors.gameBlue;
-        stateEmoji = '😊';
+        stateColor = const Color(0xFF5CACEE); // Baby blue
     }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(230),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: stateColor,
-          width: 3,
-        ),
+        color: Colors.white.withValues(alpha: 230),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(40),
-            blurRadius: 10,
-            offset: const Offset(4, 4),
+            color: Colors.black.withValues(alpha: 25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(color: stateColor.withValues(alpha: 76), width: 2),
       ),
       child: Column(
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Character sprite
-              AnimatedBuilder(
-                animation: _blinkController,
-                builder: (context, child) {
-                  final glowOpacity = 0.3 +
-                      (_blinkController.value * 0.3); // Ranges from 0.3 to 0.6
-
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(
-                        color: stateColor,
-                        width: 3,
-                      ),
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              stateColor.withAlpha((glowOpacity * 255).round()),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(
-                          Icons.pets,
-                          size: 60,
-                          color: stateColor,
-                        ),
-                        Positioned(
-                          bottom: 5,
-                          right: 5,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(
-                                color: stateColor,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              stateEmoji,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+              // Character GIF Display (removed overlay chip)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                clipBehavior: Clip.hardEdge,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  color: Colors.grey[200],
+                  child: _characterDetailsLoaded
+                      ? Image.asset(
+                          _getCharacterGifPath(characterState),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(Icons.person,
+                                  size: 50, color: Colors.grey),
+                            );
+                          },
+                        )
+                      : const Center(child: CircularProgressIndicator()),
+                ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      characterName,
-                      style: const TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0078D7),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: stateColor.withAlpha(51), // ~20% opacity
-                        border: Border.all(
-                          color: stateColor,
-                          width: 2,
+                    // Username (next to character, above Level)
+                    Row(
+                      children: [
+                        const Icon(Icons.person,
+                            size: 18, color: Color(0xFF0A4B80)),
+                        const SizedBox(width: 6),
+                        Text(
+                          firstName,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0A4B80), // not white
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Level Display (fully centered in the pill)
+                    Container(
+                      width: double.infinity,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5CACEE).withValues(alpha: 51),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            stateEmoji,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _getGamefiedState(characterState),
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: stateColor,
+                          // Left: high-contrast star badge (and reserved width)
+                          SizedBox(
+                            width: 32,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: stateColor, // solid background
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: Colors.white, width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: stateColor.withValues(alpha: 76),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.star,
+                                    size: 14, color: Colors.white),
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Level badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF5CACEE),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF5CACEE).withAlpha(76),
-                            blurRadius: 4,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star, color: Colors.white, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Level $level  •  $xp XP',
-                            style: const TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          // Center: text truly centered
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                'Level $level',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0A4B80),
+                                  height: 1.0,
+                                ),
+                              ),
                             ),
                           ),
+                          // Right: mirror the left space to keep symmetry
+                          const SizedBox(width: 32),
                         ],
                       ),
                     ),
                     const SizedBox(height: 8),
+                    // XP Display
                     Text(
-                      _getCharacterMessage(characterState),
+                      '$xp / $xpForNextLevel XP',
                       style: const TextStyle(
-                        fontFamily: 'Roboto',
                         fontSize: 12,
                         color: Colors.black54,
-                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w500,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    // XP Progress Bar with high contrast
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: xpProgress.clamp(0.0, 1.0).toDouble(),
+                        minHeight: 8,
+                        backgroundColor: Colors.grey[300],
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF0A4B80),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -510,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 20),
-          // Status bars
+          // Mood Score Section
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -520,26 +394,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Row(
                     children: [
                       Icon(
-                        Icons.favorite,
-                        color: stateColor,
+                        _getMoodIcon(characterState),
                         size: 18,
+                        color: stateColor,
                       ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'Energy',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0078D7),
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: _getFormattedState(characterState),
+                        child: Text(
+                          'Mood: $characterState',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0A4B80),
+                          ),
                         ),
                       ),
                     ],
                   ),
                   Text(
-                    '${moodScore.toStringAsFixed(0)}/100',
+                    '${moodScore.toStringAsFixed(0)}%',
                     style: TextStyle(
-                      fontFamily: 'Roboto',
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: stateColor,
@@ -548,175 +423,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
               const SizedBox(height: 8),
-              // Energy bar
-              Stack(
-                children: [
-                  // Background
-                  Container(
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withAlpha(51),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.grey.withAlpha(128),
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  // Progress
-                  AnimatedBuilder(
-                    animation: _blinkController,
-                    builder: (context, child) {
-                      // Calculate the width based on mood score
-                      final barWidth = MediaQuery.of(context).size.width *
-                          0.8 *
-                          moodScore /
-                          100;
-
-                      // Get slightly darker color for low health
-                      final barColor = moodScore < 30 ? Colors.red : stateColor;
-
-                      return Container(
-                        height: 16,
-                        width: barWidth,
-                        decoration: BoxDecoration(
-                          color: barColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      );
-                    },
-                  ),
-                  // Segmentation lines
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(
-                      10,
-                      (index) => Container(
-                        width: 1,
-                        height: 16,
-                        color: Colors.black.withAlpha(26),
-                        margin: EdgeInsets.only(
-                          left: index == 0
-                              ? 0
-                              : MediaQuery.of(context).size.width * 0.068,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: moodScore / 100,
+                  backgroundColor: Colors.grey[200],
+                  valueColor: AlwaysStoppedAnimation<Color>(stateColor),
+                  minHeight: 12,
+                ),
               ),
-              const SizedBox(height: 16),
-              // XP Progress Bar
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.trending_up,
-                            color: Color(0xFF5CACEE),
-                            size: 18,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'XP Progress',
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF0078D7),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '${(xpProgress * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF5CACEE),
-                        ),
-                      ),
-                    ],
+              const SizedBox(height: 12),
+              // Character message
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: stateColor.withValues(alpha: 26),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _getCharacterMessage(characterState),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFFFFFFFF),
                   ),
-                  const SizedBox(height: 8),
-                  // XP bar
-                  Stack(
-                    children: [
-                      // Background
-                      Container(
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withAlpha(51),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.grey.withAlpha(128),
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                      // Progress
-                      AnimatedBuilder(
-                        animation: _blinkController,
-                        builder: (context, child) {
-                          final barWidth = MediaQuery.of(context).size.width *
-                              0.8 *
-                              xpProgress;
-
-                          return Container(
-                            height: 16,
-                            width: barWidth,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF5CACEE),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          );
-                        },
-                      ),
-                      // Segmentation lines
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(
-                          10,
-                          (index) => Container(
-                            width: 1,
-                            height: 16,
-                            color: Colors.black.withAlpha(26),
-                            margin: EdgeInsets.only(
-                              left: index == 0
-                                  ? 0
-                                  : MediaQuery.of(context).size.width * 0.068,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${xpForNextLevel - xp} XP to level ${level + 1}',
-                        style: const TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 11,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      const Icon(
-                        Icons.arrow_upward,
-                        size: 12,
-                        color: Color(0xFF5CACEE),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -725,264 +457,71 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildDailyQuests() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Quest header - using book icon instead of Pokemon ball
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(230),
-                border: Border.all(
-                  color: const Color(0xFF5CACEE),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(20),
-                    blurRadius: 5,
-                    offset: const Offset(2, 2),
-                  ),
-                ],
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.menu_book, // Quest book icon
-                    color: Color(0xFF5CACEE),
-                    size: 20,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'DAILY QUESTS',
-                    style: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0078D7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.gameGreen.withAlpha(51),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: AppColors.gameGreen,
-                  width: 2,
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.check_box,
-                    size: 14,
-                    color: AppColors.gameGreen,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    '2/3',
-                    style: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gameGreen,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildQuestItem(
-          title: 'Log your mood',
-          description: 'Record how you feel today',
-          iconData: Icons.mood,
-          color: AppColors.gameYellow,
-          rewardXP: 10,
-          isCompleted: true,
-        ),
-        const SizedBox(height: 10),
-        _buildQuestItem(
-          title: 'Write in journal',
-          description: 'Share your thoughts today',
-          iconData: Icons.book,
-          color: AppColors.gameBlue,
-          rewardXP: 15,
-          isCompleted: true,
-        ),
-        const SizedBox(height: 10),
-        _buildQuestItem(
-          title: 'Complete 3 tasks',
-          description: 'Check off items from your list',
-          iconData: Icons.checklist,
-          color: const Color(0xFF5CACEE),
-          rewardXP: 20,
-          isCompleted: false,
-        ),
-      ],
-    );
+  IconData _getMoodIcon(String state) {
+    switch (state) {
+      case 'thriving':
+        return Icons.sentiment_very_satisfied;
+      case 'content':
+        return Icons.sentiment_satisfied;
+      case 'struggling':
+        return Icons.sentiment_neutral;
+      case 'needs_support':
+        return Icons.sentiment_dissatisfied;
+      default:
+        return Icons.sentiment_satisfied;
+    }
   }
 
-  Widget _buildQuestItem({
-    required String title,
-    required String description,
-    required IconData iconData,
-    required Color color,
-    required int rewardXP,
-    required bool isCompleted,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(230),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isCompleted ? color : Colors.grey.withAlpha(76),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 4,
-            offset: const Offset(2, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Icon container
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isCompleted ? color : Colors.grey.withAlpha(51),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              iconData,
-              color: isCompleted ? Colors.white : Colors.grey,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isCompleted ? const Color(0xFF0078D7) : Colors.grey,
-                    decoration: isCompleted
-                        ? TextDecoration.none
-                        : TextDecoration.lineThrough,
-                  ),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 13,
-                    color: isCompleted
-                        ? Colors.black54
-                        : Colors.grey.withAlpha(178),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // XP badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isCompleted ? color : Colors.grey.withAlpha(51),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isCompleted
-                    ? color.withAlpha(178)
-                    : Colors.grey.withAlpha(76),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.stars,
-                  color: isCompleted ? Colors.white : Colors.grey,
-                  size: 14,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '+$rewardXP',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: isCompleted ? Colors.white : Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  String _getFormattedState(String state) {
+    final words = state.split('_');
+    return words
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+
+  String _getCharacterMessage(String state) {
+    switch (state) {
+      case 'thriving':
+        return "You're doing amazing! Keep up the great work! ✨";
+      case 'content':
+        return "Life is good. You're on the right path! 🌱";
+      case 'struggling':
+        return "Hang in there. Take it one step at a time. 💪";
+      case 'needs_support':
+        return "Remember, it's okay to ask for help. You're not alone. 🤗";
+      default:
+        return "I'm here with you on this journey. 🌟";
+    }
   }
 
   Widget _buildQuickActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Action header
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(230),
-            border: Border.all(
-              color: const Color(0xFF5CACEE),
-              width: 2,
+        const Row(
+          children: [
+            Icon(
+              Icons.bolt,
+              size: 24,
+              color: Colors.white,
             ),
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(20),
-                blurRadius: 5,
-                offset: const Offset(2, 2),
+            SizedBox(width: 8),
+            Text(
+              'Quick Actions',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 3.0,
+                    color: Color(0x55000000),
+                    offset: Offset(1, 1),
+                  )
+                ],
               ),
-            ],
-          ),
-          child: const Row(
-            children: [
-              Icon(
-                Icons.flash_on,
-                color: Color(0xFF5CACEE),
-                size: 20,
-              ),
-              SizedBox(width: 6),
-              Text(
-                'QUICK ACTIONS',
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0078D7),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         GridView.count(
@@ -991,30 +530,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.0,
+          childAspectRatio: 1.2,
           children: [
             _buildActionCard(
               icon: Icons.mood,
               label: 'Log Mood',
-              color: AppColors.gameYellow,
+              color: const Color(0xFF5CACEE), // Blue
+              borderColor: const Color(0xFF5CACEE), // Blue outline
               index: 1,
             ),
             _buildActionCard(
               icon: Icons.book,
               label: 'Journal',
-              color: AppColors.gameBlue,
+              color: const Color(0xFF4CAF50), // Green
+              borderColor: const Color(0xFF4CAF50), // Green outline
               index: 2,
             ),
             _buildActionCard(
               icon: Icons.checklist,
               label: 'Tasks',
-              color: const Color(0xFF5CACEE),
+              color: const Color(0xFFFFA726), // Orange
+              borderColor: const Color(0xFFFFA726), // Orange outline
               index: 3,
             ),
             _buildActionCard(
               icon: Icons.emoji_events,
               label: 'Achievements',
-              color: AppColors.gameGreen,
+              color: const Color(0xFFF44336), // Red
+              borderColor: const Color(0xFFF44336), // Red outline
               index: 4,
             ),
           ],
@@ -1027,87 +570,71 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required IconData icon,
     required String label,
     required Color color,
+    required Color borderColor,
     required int index,
   }) {
-    return GestureDetector(
-      onTap: () {
-        if (widget.onNavigate != null) {
-          widget.onNavigate!(index);
-        }
-        // Add haptic feedback
-        HapticFeedback.mediumImpact();
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: Colors.white,
-            width: 3,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white, // White background
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor, width: 3), // Thicker outline
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(25),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(40),
-              blurRadius: 6,
-              offset: const Offset(3, 3),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(15),
-            onTap: () {
-              if (widget.onNavigate != null) {
-                widget.onNavigate!(index);
-              }
-              HapticFeedback.mediumImpact();
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Item icon
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(76),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2,
-                      ),
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 32),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            if (label == 'Log Mood') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MoodScreen(
+                    characterId: _characterId, // Pass the characterId
+                    characterGender: _characterGender,
+                    characterNumber:
+                        _characterNumber, // Pass the characterNumber
+                    onMoodSelected: (mood) {
+                      _updateCharacterMood(mood); // Update mood in HomeScreen
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  // Button label
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(51),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                ),
+              );
+            } else if (widget.onNavigate != null) {
+              widget.onNavigate!(index);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color, // Solid color for icon background
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ],
-              ),
+                  child: Icon(icon,
+                      color: Colors.white, size: 32), // White icon color
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: borderColor, // Text color matches outline
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ),
@@ -1115,33 +642,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  String _getGamefiedState(String state) {
-    switch (state) {
-      case 'thriving':
-        return "ENERGIZED";
-      case 'content':
-        return "BALANCED";
-      case 'struggling':
-        return "PERSISTING";
-      case 'needs_support':
-        return "RESTING";
-      default:
-        return "READY";
-    }
-  }
-
-  String _getCharacterMessage(String state) {
-    switch (state) {
-      case 'thriving':
-        return "Your companion is in peak condition! Keep it up! ✨";
-      case 'content':
-        return "Your journey progresses well, brave adventurer! 🌱";
-      case 'struggling':
-        return "Your companion is hanging in there. Don't give up! 💪";
-      case 'needs_support':
-        return "Time to recharge and restore your energy! 🤗";
-      default:
-        return "I'm your faithful companion on this quest! 🌟";
-    }
+  Color _accessibleOnWhite(Color base) {
+    final hsl = HSLColor.fromColor(base);
+    // Target a darker lightness for bright colors to improve contrast on white
+    final double targetLightness = hsl.lightness > 0.6
+        ? 0.38
+        : (hsl.lightness < 0.25 ? 0.30 : hsl.lightness);
+    return hsl.withLightness(targetLightness).toColor();
   }
 }
