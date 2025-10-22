@@ -112,32 +112,46 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ))
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              color: const Color(0xFF5CACEE),
-              backgroundColor: Colors.white,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 24),
-                    _buildCharacterCard(),
-                    const SizedBox(height: 24),
-                    _buildQuickActions(),
-                    const SizedBox(height: 24),
-                  ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFFFFFFF), // Pure white at top
+            Color(0xFFF5FAFF), // Very light blue-white
+            Color(0xFFEBF5FF), // Soft pastel blue-white
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: [0.0, 0.5, 1.0],
+        ),
+      ),
+      child: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ))
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                color: const Color(0xFF5CACEE),
+                backgroundColor: Colors.white,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 24),
+                      _buildCharacterCard(),
+                      const SizedBox(height: 24),
+                      _buildQuickActions(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 
@@ -161,15 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
           '$greeting,',
           style: const TextStyle(
             fontSize: 20,
-            color: Colors.white,
+            color: AppColors
+                .textPrimary, // Dark text for contrast with white background
             fontWeight: FontWeight.w500,
-            shadows: [
-              Shadow(
-                blurRadius: 3.0,
-                color: Color(0x55000000),
-                offset: Offset(1, 1),
-              )
-            ],
           ),
         ),
         const SizedBox(height: 4),
@@ -178,14 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
-            shadows: [
-              Shadow(
-                blurRadius: 3.0,
-                color: Color(0x55000000),
-                offset: Offset(1, 1),
-              )
-            ],
+            color: AppColors
+                .textPrimary, // Dark text for contrast with white background
           ),
         ),
         const SizedBox(height: 8),
@@ -193,15 +195,8 @@ class _HomeScreenState extends State<HomeScreen> {
           'How are you feeling today?',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.white,
+            color: AppColors.textSecondary, // Slightly lighter dark text
             fontWeight: FontWeight.w500,
-            shadows: [
-              Shadow(
-                blurRadius: 2.0,
-                color: Color(0x55000000),
-                offset: Offset(1, 1),
-              )
-            ],
           ),
         ),
       ],
@@ -238,16 +233,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 230),
+        // Use a more visible pastel surface color
+        color: AppColors.background
+            .withValues(alpha: 0.6), // Medium sky blue with transparency
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 25),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(color: stateColor.withValues(alpha: 76), width: 2),
+        border: Border.all(color: stateColor.withValues(alpha: 0.8), width: 2),
       ),
       child: Column(
         children: [
@@ -322,13 +312,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                       color: Colors.white, width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: stateColor.withValues(alpha: 76),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
                                 ),
                                 child: const Icon(Icons.star,
                                     size: 14, color: Colors.white),
@@ -503,7 +486,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(
               Icons.bolt,
               size: 24,
-              color: Colors.white,
+              color: AppColors
+                  .textPrimary, // Dark icon for contrast with white background
             ),
             SizedBox(width: 8),
             Text(
@@ -511,14 +495,8 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [
-                  Shadow(
-                    blurRadius: 3.0,
-                    color: Color(0x55000000),
-                    offset: Offset(1, 1),
-                  )
-                ],
+                color: AppColors
+                    .textPrimary, // Dark text for contrast with white background
               ),
             ),
           ],
@@ -535,29 +513,29 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildActionCard(
               icon: Icons.mood,
               label: 'Log Mood',
-              color: const Color(0xFF5CACEE), // Blue
-              borderColor: const Color(0xFF5CACEE), // Blue outline
+              color: AppColors.info, // Blue from AppColors
+              borderColor: AppColors.info, // Blue outline
               index: 1,
             ),
             _buildActionCard(
               icon: Icons.book,
               label: 'Journal',
-              color: const Color(0xFF4CAF50), // Green
-              borderColor: const Color(0xFF4CAF50), // Green outline
+              color: AppColors.success, // Green from AppColors
+              borderColor: AppColors.success, // Green outline
               index: 2,
             ),
             _buildActionCard(
               icon: Icons.checklist,
               label: 'Tasks',
-              color: const Color(0xFFFFA726), // Orange
-              borderColor: const Color(0xFFFFA726), // Orange outline
+              color: AppColors.warning, // Orange from AppColors
+              borderColor: AppColors.warning, // Orange outline
               index: 3,
             ),
             _buildActionCard(
               icon: Icons.emoji_events,
               label: 'Achievements',
-              color: const Color(0xFFF44336), // Red
-              borderColor: const Color(0xFFF44336), // Red outline
+              color: AppColors.error, // Red from AppColors
+              borderColor: AppColors.error, // Red outline
               index: 4,
             ),
           ],
@@ -575,16 +553,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // White background
+        // Use a more visible pastel version of the card's theme color
+        color: color.withValues(
+            alpha: 0.25), // 25% opacity for more visible pastel effect
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: borderColor, width: 3), // Thicker outline
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(25),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -640,14 +613,5 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  Color _accessibleOnWhite(Color base) {
-    final hsl = HSLColor.fromColor(base);
-    // Target a darker lightness for bright colors to improve contrast on white
-    final double targetLightness = hsl.lightness > 0.6
-        ? 0.38
-        : (hsl.lightness < 0.25 ? 0.30 : hsl.lightness);
-    return hsl.withLightness(targetLightness).toColor();
   }
 }
