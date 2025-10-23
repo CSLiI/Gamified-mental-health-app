@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors - Calming blue/purple theme
-  static const Color primary = Color(0xFF6B4EFF);
-  static const Color primaryLight = Color(0xFF9B7EFF);
-  static const Color primaryDark = Color(0xFF4A2FCC);
+  // Primary Colors - Calming sage green theme
+  static const Color primary = Color(0xFF7FB3A7);
+  static const Color primaryLight = Color(0xFFA8D5C9);
+  static const Color primaryDark = Color(0xFF5A9488);
 
-  // Secondary Colors - Warm accent
-  static const Color secondary = Color(0xFFFF6B9D);
-  static const Color secondaryLight = Color(0xFFFF9BBD);
-  static const Color secondaryDark = Color(0xFFCC4A7A);
+  // Secondary Colors - Soft lavender accent
+  static const Color secondary = Color(0xFFB4A5D8);
+  static const Color secondaryLight = Color(0xFFD4C9E8);
+  static const Color secondaryDark = Color(0xFF9382BC);
 
   // Background Colors - Sky Blue Theme (Darker/More Visible)
   static const Color background = Color(0xFFB3E5FC); // Medium sky blue
@@ -21,31 +21,31 @@ class AppColors {
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textTertiary = Color(0xFF9CA3AF);
 
-  // Mood Colors
-  static const Color moodHappy = Color(0xFFFFC107);
-  static const Color moodSad = Color(0xFF64B5F6);
-  static const Color moodAnxious = Color(0xFFFF7043);
-  static const Color moodCalm = Color(0xFF66BB6A);
-  static const Color moodAngry = Color(0xFFEF5350);
-  static const Color moodTired = Color(0xFF9575CD);
+  // Mood Colors - Softer, therapeutic tones
+  static const Color moodHappy = Color(0xFFFDD88C);
+  static const Color moodSad = Color(0xFF8BAED1);
+  static const Color moodAnxious = Color(0xFFE8A598);
+  static const Color moodCalm = Color(0xFF9BC9A3);
+  static const Color moodAngry = Color(0xFFD9897C);
+  static const Color moodTired = Color(0xFFB2A1CD);
 
-  // Character States
-  static const Color stateThriving = Color(0xFF4CAF50);
-  static const Color stateContent = Color(0xFF8BC34A);
-  static const Color stateStruggling = Color(0xFFFF9800);
-  static const Color stateNeedsSupport = Color(0xFFFF5252);
+  // Character States - Gentle wellness indicators
+  static const Color stateThriving = Color(0xFF81C784);
+  static const Color stateContent = Color(0xFFA5D6A7);
+  static const Color stateStruggling = Color(0xFFFFB74D);
+  static const Color stateNeedsSupport = Color(0xFFEF9A9A);
 
-  // Environment Colors
-  static const Color envVibrant = Color(0xFFFFD54F);
-  static const Color envPeaceful = Color(0xFF81C784);
-  static const Color envCloudy = Color(0xFFB0BEC5);
-  static const Color envStormy = Color(0xFF78909C);
+  // Environment Colors - Nature-inspired calm
+  static const Color envVibrant = Color(0xFFFEE8A7);
+  static const Color envPeaceful = Color(0xFFA8D5BA);
+  static const Color envCloudy = Color(0xFFD4DBE5);
+  static const Color envStormy = Color(0xFFA4B0BE);
 
-  // Status Colors
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
+  // Status Colors - Softer feedback
+  static const Color success = Color(0xFF66BB6A);
+  static const Color warning = Color(0xFFFFB74D);
+  static const Color error = Color(0xFFE57373);
+  static const Color info = Color(0xFF64B5F6);
 
   // Rarity Colors (for rewards)
   static const Color rarityCommon = Color(0xFF9E9E9E);
@@ -53,12 +53,12 @@ class AppColors {
   static const Color rarityEpic = Color(0xFF9C27B0);
   static const Color rarityLegendary = Color(0xFFFF9800);
 
-  // Game Theme Colors (new)
-  static const Color gameBlue = Color(0xFF5B8CFF);
-  static const Color gamePurple = Color(0xFF9678FF);
-  static const Color gameGreen = Color(0xFF4ECDC4);
-  static const Color gamePink = Color(0xFFFF6B8B);
-  static const Color gameYellow = Color(0xFFFFD166);
+  // Game Theme Colors - Calming pastels
+  static const Color gameBlue = Color(0xFF90CAF9);
+  static const Color gamePurple = Color(0xFFB39DDB);
+  static const Color gameGreen = Color(0xFF80CBC4);
+  static const Color gamePink = Color(0xFFF48FB1);
+  static const Color gameYellow = Color(0xFFFFF59D);
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
@@ -90,27 +90,30 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
-  // Game Theme Gradients (new)
+  // Game Theme Gradients - Therapeutic and calming
   static const LinearGradient softGameGradient = LinearGradient(
-    colors: [Color(0xFF8093F1), Color(0xFF6DD3CE)], // Soft blue to teal
+    colors: [Color(0xFFB3E5F0), Color(0xFFC5E8D4)], // Sky to sage
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static const LinearGradient dreamyGradient = LinearGradient(
-    colors: [Color(0xFF7F7FD5), Color(0xFF91EAE4)], // Purple to aqua
+    colors: [Color(0xFFD4C5E8), Color(0xFFB3E5F0)], // Lavender to sky
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static const LinearGradient galaxyGradient = LinearGradient(
-    colors: [Color(0xFF434343), Color(0xFF394879)], // Dark to space blue
+    colors: [
+      Color(0xFF7986A6),
+      Color(0xFF8BA3C4)
+    ], // Muted indigo to periwinkle
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static const LinearGradient pastelsGradient = LinearGradient(
-    colors: [Color(0xFFA8E6CF), Color(0xFFDCEDC8)], // Mint to pale green
+    colors: [Color(0xFFBFE3D0), Color(0xFFE8F5E0)], // Mint to pale green
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );

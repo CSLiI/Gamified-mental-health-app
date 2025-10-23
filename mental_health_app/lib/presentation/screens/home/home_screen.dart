@@ -115,22 +115,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFFFFFF), // Pure white at top
-            Color(0xFFF5FAFF), // Very light blue-white
-            Color(0xFFEBF5FF), // Soft pastel blue-white
+            Color(0xFFF8F9FE),
+            Color(0xFFE8EAFC),
           ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: [0.0, 0.5, 1.0],
         ),
       ),
       child: SafeArea(
         child: _isLoading
             ? const Center(
                 child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ))
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
             : RefreshIndicator(
                 onRefresh: _loadData,
                 color: const Color(0xFF5CACEE),
@@ -218,26 +217,63 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (characterState) {
       case 'thriving':
-        stateColor = const Color(0xFF4CAF50); // Green
+        stateColor = AppColors.stateThriving;
         break;
       case 'struggling':
-        stateColor = const Color(0xFFFFA726); // Orange
+        stateColor = AppColors.stateStruggling;
         break;
       case 'needs_support':
-        stateColor = const Color(0xFFF44336); // Red
+        stateColor = AppColors.stateNeedsSupport;
         break;
       default:
-        stateColor = const Color(0xFF5CACEE); // Baby blue
+        stateColor = AppColors.gameBlue; // brighter baby blue
     }
+
+    // Compute a contrasting text color against the mood-tinted background
+    final Color contrastTextColor = stateColor.computeLuminance() > 0.5
+        ? AppColors.textPrimary
+        : Colors.white;
+
+    // Brighter versions of state color for card background
+    final Color brighterStateColor =
+        Color.lerp(stateColor, Colors.white, 0.3) ?? stateColor;
+    final Color lightestStateColor =
+        Color.lerp(stateColor, Colors.white, 0.5) ?? stateColor;
+
+    // Slightly darker but still vibrant for level display text contrast
+    final Color darkerStateColor =
+        Color.lerp(stateColor, Colors.black, 0.15) ?? stateColor;
+
+    // Very light background for progress bars (lighter than card)
+    final Color progressBarBackground =
+        Color.lerp(stateColor, Colors.white, 0.7) ?? stateColor;
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        // Use a more visible pastel surface color
-        color: AppColors.background
-            .withValues(alpha: 0.6), // Medium sky blue with transparency
+        gradient: LinearGradient(
+          colors: [
+            lightestStateColor.withValues(alpha: 0.9),
+            brighterStateColor.withValues(alpha: 0.9),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: stateColor.withValues(alpha: 0.8), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: stateColor.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 3,
+          ),
+          BoxShadow(
+            color: stateColor.withValues(alpha: 0.18),
+            blurRadius: 40,
+            offset: const Offset(0, 16),
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -293,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: double.infinity,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5CACEE).withValues(alpha: 51),
+                        color: stateColor.withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -324,10 +360,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Text(
                                 'Level $level',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0A4B80),
+                                  color: darkerStateColor,
                                   height: 1.0,
                                 ),
                               ),
@@ -342,9 +378,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     // XP Display
                     Text(
                       '$xp / $xpForNextLevel XP',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.black54,
+                        color: contrastTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -355,9 +391,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: LinearProgressIndicator(
                         value: xpProgress.clamp(0.0, 1.0).toDouble(),
                         minHeight: 8,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF0A4B80),
+                        backgroundColor:
+                            progressBarBackground.withValues(alpha: 0.5),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          stateColor,
                         ),
                       ),
                     ),
@@ -379,17 +416,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(
                         _getMoodIcon(characterState),
                         size: 18,
-                        color: stateColor,
+                        color: darkerStateColor,
                       ),
                       const SizedBox(width: 8),
                       Tooltip(
                         message: _getFormattedState(characterState),
                         child: Text(
                           'Mood: $characterState',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF0A4B80),
+                            color: contrastTextColor,
                           ),
                         ),
                       ),
@@ -400,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: stateColor,
+                      color: contrastTextColor,
                     ),
                   ),
                 ],
@@ -410,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(10),
                 child: LinearProgressIndicator(
                   value: moodScore / 100,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: progressBarBackground.withValues(alpha: 0.5),
                   valueColor: AlwaysStoppedAnimation<Color>(stateColor),
                   minHeight: 12,
                 ),
@@ -427,9 +464,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Text(
                   _getCharacterMessage(characterState),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFFFFFFFF),
+                    color: contrastTextColor,
                   ),
                 ),
               ),
@@ -551,13 +588,29 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color borderColor,
     required int index,
   }) {
+    // Darker version of the color for better contrast
+    final Color darkerColor = Color.lerp(color, Colors.black, 0.15) ?? color;
+
     return Container(
       decoration: BoxDecoration(
-        // Use a more visible pastel version of the card's theme color
-        color: color.withValues(
-            alpha: 0.25), // 25% opacity for more visible pastel effect
+        // Gradient background with the action card color
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.7),
+            color.withValues(alpha: 0.85),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 3), // Thicker outline
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -591,7 +644,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: color, // Solid color for icon background
+                    color: darkerColor, // Darker color for icon background
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(icon,
@@ -603,7 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: borderColor, // Text color matches outline
+                    color: darkerColor, // Darker text for better contrast
                   ),
                   textAlign: TextAlign.center,
                 ),
