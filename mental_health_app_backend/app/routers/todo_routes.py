@@ -90,6 +90,30 @@ def complete_todo(
     
     return completed_todo
 
+@router.post("/{todo_id}/uncomplete", response_model=schemas.Todo)
+def uncomplete_todo(
+    todo_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Mark a todo as incomplete and deduct XP"""
+    todo = todo_crud.get_todo(db, todo_id)
+    if not todo or todo.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Todo not found"
+        )
+    
+    # Only deduct XP if the todo was actually completed before
+    if todo.is_completed:
+        # Deduct XP (10 XP per uncompleted todo)
+        user_crud.update_user_xp(db, current_user.id, -10)
+    
+    # Mark todo as incomplete
+    uncompleted_todo = todo_crud.uncomplete_todo(db, todo_id)
+    
+    return uncompleted_todo
+
 @router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_todo(
     todo_id: int,

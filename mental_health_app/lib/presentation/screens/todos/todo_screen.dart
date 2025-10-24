@@ -112,7 +112,7 @@ class _TodoScreenState extends State<TodoScreen>
 
     try {
       if (!isCompleted) {
-        // Completing the todo
+        // Completing the todo - awards XP
         await _apiService.completeTodo(todoId);
 
         if (!mounted) return;
@@ -120,12 +120,12 @@ class _TodoScreenState extends State<TodoScreen>
         // Check achievements silently
         _apiService.checkAchievements();
       } else {
-        // Uncompleting - mark as incomplete
-        await _apiService.updateTodo(todoId, {
-          'task_text': _todos.firstWhere((t) => t['id'] == todoId)['task_text'],
-          'is_completed': false,
-        });
+        // Uncompleting - deducts XP
+        await _apiService.uncompleteTodo(todoId);
       }
+
+      // Reload data to get updated XP from backend
+      await _loadData();
     } catch (e) {
       // Revert on error
       setState(() {

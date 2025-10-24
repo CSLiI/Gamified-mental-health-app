@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import 'home_screen.dart';
 import '../mood/mood_screen.dart';
@@ -16,6 +17,7 @@ class HomeNavigation extends StatefulWidget {
 
 class _HomeNavigationState extends State<HomeNavigation> {
   int _currentIndex = 0;
+  String? _lastSelectedMood; // Store mood at navigation level
 
   void _onTabSelected(int index) {
     setState(() {
@@ -23,6 +25,29 @@ class _HomeNavigationState extends State<HomeNavigation> {
     });
     // Add haptic feedback
     HapticFeedback.lightImpact();
+  }
+
+  void _onMoodSelected(String mood) async {
+    print('🎭 NAVIGATION: Mood selected: "$mood" (length: ${mood.length})');
+    print('🔍 NAVIGATION: Mood bytes: ${mood.codeUnits}');
+
+    // Save to SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_selected_mood', mood);
+      final saved = prefs.getString('last_selected_mood');
+      print('💾 NAVIGATION: Saved mood: "$mood"');
+      print('✅ NAVIGATION: Read back mood: "$saved"');
+
+      // Update local state
+      setState(() {
+        _lastSelectedMood = mood;
+      });
+
+      // DON'T auto-switch back to Home tab - let user stay on mood screen
+    } catch (e) {
+      print('Error saving mood: $e');
+    }
   }
 
   late final List<Widget> _screens;
@@ -36,9 +61,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
         characterId: 1, // Replace with the actual character ID
         characterGender: 'Boy', // Replace with the actual character gender
         characterNumber: 1, // Replace with the actual character number
-        onMoodSelected: (mood) {
-          // Handle mood selection if needed
-        },
+        onMoodSelected: _onMoodSelected, // Connect the callback
       ),
       const JournalScreen(),
       const TodoScreen(),

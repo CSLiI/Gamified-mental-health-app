@@ -69,7 +69,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
+  Future<Map<String, dynamic>> updateProfile(
+      Map<String, dynamic> profileData) async {
     try {
       final response = await _dioClient.put(
         '${ApiConstants.users}/me',
@@ -104,7 +105,8 @@ class ApiService {
   Future<Map<String, dynamic>> chooseCharacter(int characterId) async {
     try {
       print('🎯 Choosing character $characterId...');
-      final response = await _dioClient.post('${ApiConstants.chooseCharacter}/$characterId');
+      final response =
+          await _dioClient.post('${ApiConstants.chooseCharacter}/$characterId');
       print('✅ Character chosen successfully');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -167,7 +169,8 @@ class ApiService {
 
   // ==================== Journals ====================
 
-  Future<Map<String, dynamic>> createJournal(Map<String, dynamic> journalData) async {
+  Future<Map<String, dynamic>> createJournal(
+      Map<String, dynamic> journalData) async {
     try {
       final response = await _dioClient.post(
         '${ApiConstants.journals}/',
@@ -204,9 +207,11 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> updateJournal(int journalId, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateJournal(
+      int journalId, Map<String, dynamic> data) async {
     try {
-      final response = await _dioClient.put('${ApiConstants.journals}/$journalId', data: data);
+      final response = await _dioClient
+          .put('${ApiConstants.journals}/$journalId', data: data);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -235,7 +240,8 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> getTodos({int? skip, int? limit, bool? completed}) async {
+  Future<List<dynamic>> getTodos(
+      {int? skip, int? limit, bool? completed}) async {
     try {
       final queryParams = <String, dynamic>{};
       if (skip != null) queryParams['skip'] = skip;
@@ -254,16 +260,29 @@ class ApiService {
 
   Future<Map<String, dynamic>> completeTodo(int todoId) async {
     try {
-      final response = await _dioClient.post('${ApiConstants.todos}/$todoId/complete');
+      final response =
+          await _dioClient.post('${ApiConstants.todos}/$todoId/complete');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Map<String, dynamic>> updateTodo(int todoId, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> uncompleteTodo(int todoId) async {
     try {
-      final response = await _dioClient.put('${ApiConstants.todos}/$todoId', data: data);
+      final response =
+          await _dioClient.post('${ApiConstants.todos}/$todoId/uncomplete');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateTodo(
+      int todoId, Map<String, dynamic> data) async {
+    try {
+      final response =
+          await _dioClient.put('${ApiConstants.todos}/$todoId', data: data);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -329,7 +348,8 @@ class ApiService {
 
   Future<Map<String, dynamic>> addUserInterest(int interestId) async {
     try {
-      final response = await _dioClient.post('${ApiConstants.userInterests}/$interestId');
+      final response =
+          await _dioClient.post('${ApiConstants.userInterests}/$interestId');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -349,7 +369,8 @@ class ApiService {
 
   Future<Map<String, dynamic>> unlockReward(int rewardId) async {
     try {
-      final response = await _dioClient.post('${ApiConstants.unlockReward}/$rewardId');
+      final response =
+          await _dioClient.post('${ApiConstants.unlockReward}/$rewardId');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -374,7 +395,8 @@ class ApiService {
         if (data.containsKey('detail')) {
           final detail = data['detail'];
           if (detail is List) {
-            final errors = detail.map((e) => e['msg'] ?? e.toString()).join(', ');
+            final errors =
+                detail.map((e) => e['msg'] ?? e.toString()).join(', ');
             return 'Validation error: $errors';
           }
           return data['detail'].toString();

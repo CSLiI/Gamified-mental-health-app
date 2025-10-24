@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
-import '../mood/mood_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -26,18 +25,80 @@ class _HomeScreenState extends State<HomeScreen> {
   int _characterNumber = 1;
   bool _characterDetailsLoaded = false;
 
+  // Store the last selected mood temporarily
+  String? _lastSelectedMood;
+
   @override
   void initState() {
     super.initState();
     _loadCharacterDetails();
+    _loadLastSelectedMood(); // Load persisted mood
     _loadData();
   }
 
-  void _updateCharacterMood(String mood) {
+  Future<void> _loadLastSelectedMood() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedMood = prefs.getString('last_selected_mood');
+      if (savedMood != null) {
+        setState(() {
+          _lastSelectedMood = savedMood;
+        });
+        print('📱 Loaded persisted mood: $savedMood');
+      }
+    } catch (e) {
+      print('Error loading last mood: $e');
+    }
+  }
+
+  void _updateCharacterMood(String mood) async {
+    print('🎭 HOME SCREEN: Updating character mood to: $mood');
+
+    // Map mood to character state
+    String characterState;
+    switch (mood.toLowerCase()) {
+      case 'happy':
+        characterState = 'thriving';
+        break;
+      case 'calm':
+        characterState = 'content';
+        break;
+      case 'tired':
+      case 'anxious':
+        characterState = 'struggling';
+        break;
+      case 'sad':
+      case 'angry':
+        characterState = 'needs_support';
+        break;
+      default:
+        characterState = 'content';
+    }
+
+    print('📊 Mapped $mood → $characterState');
+
+    // Save to SharedPreferences for persistence
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_selected_mood', mood);
+      print('💾 Saved mood to SharedPreferences: $mood');
+    } catch (e) {
+      print('Error saving mood: $e');
+    }
+
     setState(() {
-      // Update the character state based on the selected mood
-      _characterState?['character_state'] = mood; // Update the character state
+      // Store the selected mood
+      _lastSelectedMood = mood;
+
+      // Update the character state
+      if (_characterState == null) {
+        _characterState = {};
+      }
+      _characterState!['character_state'] = characterState;
     });
+
+    print('✅ HOME SCREEN: Character state updated to: $characterState');
+    print('📝 _lastSelectedMood is now: $_lastSelectedMood');
   }
 
   Future<void> _loadCharacterDetails() async {
@@ -87,27 +148,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Get the appropriate character GIF path based on mood state
-  String _getCharacterGifPath(String moodState) {
-    // Default to "calm" mood if not recognized
-    String mood = 'Calm';
+  String _getCharacterGifPath(String mood) {
+    // Capitalize the mood for the GIF filename
+    String capitalizedMood;
 
-    switch (moodState) {
+    switch (mood.toLowerCase()) {
+      case 'happy':
+        capitalizedMood = 'Happy';
+        break;
+      case 'calm':
+        capitalizedMood = 'Calm';
+        break;
+      case 'tired':
+        capitalizedMood = 'Tired';
+        break;
+      case 'anxious':
+        capitalizedMood = 'Anxious';
+        break;
+      case 'sad':
+        capitalizedMood = 'Sad';
+        break;
+      case 'angry':
+        capitalizedMood = 'Angry';
+        break;
+      // Handle backend states (fallback)
       case 'thriving':
-        mood = 'Happy';
+        capitalizedMood = 'Happy';
         break;
       case 'content':
-        mood = 'Calm';
+        capitalizedMood = 'Calm';
         break;
       case 'struggling':
-        mood = 'Tired';
+        capitalizedMood = 'Tired';
         break;
       case 'needs_support':
-        mood = 'Sad';
+        capitalizedMood = 'Sad';
         break;
+      default:
+        capitalizedMood = 'Calm';
     }
 
     // Construct path based on character gender, number and mood
-    return 'assets/images/${_characterGender}_Gif_33FPS/$mood$_characterGender$_characterNumber.gif';
+    return 'assets/images/${_characterGender}_Gif_33FPS/$capitalizedMood$_characterGender$_characterNumber.gif';
   }
 
   @override
@@ -203,7 +285,65 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCharacterCard() {
-    final characterState = _characterState?['character_state'] ?? 'content';
+    print('🎨 Building character card...');
+    print('   _lastSelectedMood: $_lastSelectedMood');
+
+    // Use the last selected mood if available, otherwise use backend data
+    String displayMood;
+    Color moodColor;
+
+    if (_lastSelectedMood != null) {
+      print(
+          '   Using last selected mood: "$_lastSelectedMood" (length: ${_lastSelectedMood!.length})');
+      print('   Mood bytes: ${_lastSelectedMood!.codeUnits}');
+      displayMood = _lastSelectedMood!;
+
+      // Map mood to its specific color
+      switch (_lastSelectedMood!.toLowerCase()) {
+        case 'happy':
+          moodColor = const Color(0xFFFFD54F); // Yellow
+          break;
+        case 'calm':
+          moodColor = const Color(0xFF42A5F5); // Blue
+          break;
+        case 'tired':
+          moodColor = const Color(0xFF78909C); // Blue Grey
+          break;
+        case 'anxious':
+          moodColor = const Color(0xFFFFA726); // Orange
+          break;
+        case 'sad':
+          moodColor = const Color(0xFF9575CD); // Purple
+          break;
+        case 'angry':
+          moodColor = const Color(0xFFEF5350); // Red
+          break;
+        default:
+          moodColor = const Color(0xFF42A5F5); // Default blue
+      }
+    } else {
+      print('   Using backend data');
+      // Use backend data with state colors
+      final characterState = _characterState?['character_state'] ?? 'content';
+      displayMood = characterState;
+
+      switch (characterState) {
+        case 'thriving':
+          moodColor = AppColors.stateThriving;
+          break;
+        case 'struggling':
+          moodColor = AppColors.stateStruggling;
+          break;
+        case 'needs_support':
+          moodColor = AppColors.stateNeedsSupport;
+          break;
+        default:
+          moodColor = AppColors.gameBlue;
+      }
+    }
+
+    print('   Final displayMood: $displayMood, color: $moodColor');
+
     final moodScore = _characterState?['mood_score'] ?? 50.0;
     final firstName = _userData?['first_name'] ?? 'User';
 
@@ -213,21 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final xpForNextLevel = level * 100;
     final double xpProgress = xpForNextLevel > 0 ? (xp / xpForNextLevel) : 0.0;
 
-    Color stateColor;
-
-    switch (characterState) {
-      case 'thriving':
-        stateColor = AppColors.stateThriving;
-        break;
-      case 'struggling':
-        stateColor = AppColors.stateStruggling;
-        break;
-      case 'needs_support':
-        stateColor = AppColors.stateNeedsSupport;
-        break;
-      default:
-        stateColor = AppColors.gameBlue; // brighter baby blue
-    }
+    // Use moodColor from above (already set based on mood/state)
+    final Color stateColor = moodColor;
 
     // Compute a contrasting text color against the mood-tinted background
     final Color contrastTextColor = stateColor.computeLuminance() > 0.5
@@ -236,9 +363,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Brighter versions of state color for card background
     final Color brighterStateColor =
-        Color.lerp(stateColor, Colors.white, 0.3) ?? stateColor;
-    final Color lightestStateColor =
         Color.lerp(stateColor, Colors.white, 0.5) ?? stateColor;
+    final Color lightestStateColor =
+        Color.lerp(stateColor, Colors.white, 0.7) ?? stateColor;
 
     // Slightly darker but still vibrant for level display text contrast
     final Color darkerStateColor =
@@ -262,13 +389,13 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: stateColor.withValues(alpha: 0.35),
+            color: stateColor.withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
             spreadRadius: 3,
           ),
           BoxShadow(
-            color: stateColor.withValues(alpha: 0.18),
+            color: stateColor.withValues(alpha: 0.08),
             blurRadius: 40,
             offset: const Offset(0, 16),
             spreadRadius: 1,
@@ -290,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.grey[200],
                   child: _characterDetailsLoaded
                       ? Image.asset(
-                          _getCharacterGifPath(characterState),
+                          _getCharacterGifPath(displayMood),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return const Center(
@@ -414,15 +541,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       Icon(
-                        _getMoodIcon(characterState),
+                        _getMoodIcon(displayMood),
                         size: 18,
                         color: darkerStateColor,
                       ),
                       const SizedBox(width: 8),
                       Tooltip(
-                        message: _getFormattedState(characterState),
+                        message: _getFormattedState(displayMood),
                         child: Text(
-                          'Mood: $characterState',
+                          'Mood: ${displayMood.toLowerCase()}',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -463,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _getCharacterMessage(characterState),
+                  _getCharacterMessage(displayMood),
                   style: TextStyle(
                     fontSize: 13,
                     color: contrastTextColor,
@@ -477,14 +604,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  IconData _getMoodIcon(String state) {
-    switch (state) {
+  IconData _getMoodIcon(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'happy':
       case 'thriving':
         return Icons.sentiment_very_satisfied;
+      case 'calm':
       case 'content':
         return Icons.sentiment_satisfied;
+      case 'tired':
+      case 'anxious':
       case 'struggling':
         return Icons.sentiment_neutral;
+      case 'sad':
+      case 'angry':
       case 'needs_support':
         return Icons.sentiment_dissatisfied;
       default:
@@ -492,21 +625,27 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _getFormattedState(String state) {
-    final words = state.split('_');
+  String _getFormattedState(String mood) {
+    final words = mood.split('_');
     return words
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
   }
 
-  String _getCharacterMessage(String state) {
-    switch (state) {
+  String _getCharacterMessage(String mood) {
+    switch (mood.toLowerCase()) {
+      case 'happy':
       case 'thriving':
         return "You're doing amazing! Keep up the great work! ✨";
+      case 'calm':
       case 'content':
         return "Life is good. You're on the right path! 🌱";
+      case 'tired':
+      case 'anxious':
       case 'struggling':
         return "Hang in there. Take it one step at a time. 💪";
+      case 'sad':
+      case 'angry':
       case 'needs_support':
         return "Remember, it's okay to ask for help. You're not alone. 🤗";
       default:
@@ -618,20 +757,10 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             if (label == 'Log Mood') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MoodScreen(
-                    characterId: _characterId, // Pass the characterId
-                    characterGender: _characterGender,
-                    characterNumber:
-                        _characterNumber, // Pass the characterNumber
-                    onMoodSelected: (mood) {
-                      _updateCharacterMood(mood); // Update mood in HomeScreen
-                    },
-                  ),
-                ),
-              );
+              // Use the bottom navigation to switch to Mood tab instead of Navigator.push
+              if (widget.onNavigate != null) {
+                widget.onNavigate!(1); // Switch to Mood tab (index 1)
+              }
             } else if (widget.onNavigate != null) {
               widget.onNavigate!(index);
             }

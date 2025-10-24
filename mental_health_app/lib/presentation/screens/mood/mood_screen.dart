@@ -100,7 +100,7 @@ class _MoodScreenState extends State<MoodScreen>
       },
       'sad': {
         'icon': Icons.sentiment_dissatisfied,
-        'color': const Color(0xFF5C6BC0), // Indigo
+        'color': const Color(0xFF9575CD), // Purple
         'label': 'Sad',
         'gifPath': '$basePath/Sad$_characterGender$_characterNumber.gif',
       },
@@ -159,7 +159,7 @@ class _MoodScreenState extends State<MoodScreen>
           width: 400, // Fixed width
           constraints: const BoxConstraints(
             maxWidth: 400,
-            maxHeight: 400, // Fixed max height
+            maxHeight: 500, // Fixed max height
           ),
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -172,27 +172,35 @@ class _MoodScreenState extends State<MoodScreen>
                     // Use character GIF if available, else fallback to icon
                     if (gifPath != null && _characterLoaded)
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: 160,
+                        height: 160,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: moodColor, width: 2),
+                          color: moodColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: moodColor, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: moodColor.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(40),
+                          borderRadius: BorderRadius.circular(17),
                           child: Image.asset(
                             gifPath,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               // Fallback to icon if image fails
                               return Icon(moodData['icon'],
-                                  color: moodColor, size: 40);
+                                  color: moodColor, size: 80);
                             },
                           ),
                         ),
                       )
                     else
-                      Icon(moodData['icon'], color: moodColor, size: 48),
+                      Icon(moodData['icon'], color: moodColor, size: 80),
 
                     const SizedBox(height: 8),
                     Text(
@@ -229,22 +237,22 @@ class _MoodScreenState extends State<MoodScreen>
                 height: 120, // Fixed height for text field
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: moodColor.withValues(alpha: 127),
-                    width: 1,
+                    color: moodColor,
+                    width: 2.5,
                   ),
                   borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[50],
                 ),
                 child: TextField(
                   controller: _noteController,
                   maxLines: null, // Allow multiple lines
                   expands: true, // Fill the available space
                   textAlignVertical: TextAlignVertical.top,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: "I'm feeling...",
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(12),
-                    filled: true,
-                    fillColor: Colors.grey[50],
+                    contentPadding: EdgeInsets.all(12),
+                    filled: false,
                   ),
                   style: const TextStyle(
                     fontSize: 16,
@@ -304,7 +312,8 @@ class _MoodScreenState extends State<MoodScreen>
 
       // Notify the HomeScreen about the selected mood
       if (widget.onMoodSelected != null) {
-        widget.onMoodSelected!(mood); // Call the callback
+        widget.onMoodSelected!(mood);
+        print('🎭 MOOD SCREEN: Callback triggered with mood: $mood');
       }
 
       // Check for achievements silently
@@ -457,23 +466,24 @@ class _MoodScreenState extends State<MoodScreen>
 
               return GestureDetector(
                 onTap: () {
-                  // Show note dialog directly when mood is selected
+                  // Show note dialog
                   _showNoteDialog(mood);
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 230),
+                    // Use the mood color as background with high opacity
+                    color: (moodData['color'] as Color).withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color:
-                            (moodData['color'] as Color).withValues(alpha: 51),
+                            (moodData['color'] as Color).withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
                     ],
                     border:
-                        Border.all(color: moodData['color'] as Color, width: 2),
+                        Border.all(color: moodData['color'] as Color, width: 3),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -481,24 +491,22 @@ class _MoodScreenState extends State<MoodScreen>
                       // Show GIF if available, otherwise show icon
                       if (gifPath != null)
                         Container(
-                          width: 60,
-                          height: 60,
+                          width: 70,
+                          height: 70,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: moodData['color'] as Color,
-                              width: 2,
-                            ),
+                            color: (moodData['color'] as Color)
+                                .withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(12),
                             child: Image.asset(
                               gifPath,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 // Fallback to icon if image fails
                                 return Icon(moodData['icon'],
-                                    size: 32, color: moodData['color']);
+                                    size: 35, color: Colors.white);
                               },
                             ),
                           ),
@@ -506,16 +514,23 @@ class _MoodScreenState extends State<MoodScreen>
                       else
                         Icon(
                           moodData['icon'],
-                          size: 40,
-                          color: moodData['color'],
+                          size: 45,
+                          color: Colors.white,
                         ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         moodData['label'],
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: const TextStyle(
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: moodData['color'],
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 2.0,
+                              color: Color(0x88000000),
+                              offset: Offset(1, 1),
+                            ),
+                          ],
                         ),
                       ),
                     ],

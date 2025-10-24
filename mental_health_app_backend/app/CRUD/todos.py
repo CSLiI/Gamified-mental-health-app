@@ -69,6 +69,19 @@ def complete_todo(db: Session, todo_id: int):
     db.refresh(todo)
     return todo
 
+def uncomplete_todo(db: Session, todo_id: int):
+    """Mark a todo as incomplete"""
+    todo = db.query(models.Todo).filter(models.Todo.id == todo_id).first()
+    if not todo:
+        return None
+    
+    todo.is_completed = False
+    todo.completed_at = None
+    
+    db.commit()
+    db.refresh(todo)
+    return todo
+
 def get_completion_stats(db: Session, user_id: int):
     """Get todo completion statistics"""
     total = db.query(models.Todo).filter(models.Todo.user_id == user_id).count()
