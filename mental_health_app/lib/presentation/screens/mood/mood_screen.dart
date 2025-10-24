@@ -718,7 +718,8 @@ class _MoodScreenState extends State<MoodScreen>
                             _formatDate(loggedAt),
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.black54,
+                              color: Color(
+                                  0xFF0A4B80), // Darker for better contrast
                             ),
                           ),
                         ],
@@ -729,7 +730,8 @@ class _MoodScreenState extends State<MoodScreen>
                           note,
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.black54,
+                            color:
+                                Color(0xFF0A4B80), // Darker for better contrast
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -782,7 +784,7 @@ class _MoodScreenState extends State<MoodScreen>
             '$totalEntries mood logs',
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.black54,
+              color: Color(0xFF0A4B80), // Darker for better contrast
             ),
           ),
           const SizedBox(height: 16),
@@ -812,7 +814,8 @@ class _MoodScreenState extends State<MoodScreen>
                         '${(percentage * 100).toStringAsFixed(0)}%',
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.black54,
+                          color:
+                              Color(0xFF0A4B80), // Darker for better contrast
                         ),
                       ),
                     ],

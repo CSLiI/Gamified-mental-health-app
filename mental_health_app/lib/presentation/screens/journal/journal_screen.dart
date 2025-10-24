@@ -345,7 +345,7 @@ class _JournalScreenState extends State<JournalScreen> {
                 hintText: 'Title (optional)',
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: Colors.black54,
+                  color: Color(0xFF0A4B80), // Darker for better contrast
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -383,7 +383,7 @@ class _JournalScreenState extends State<JournalScreen> {
                 hintText: 'Write your thoughts here...',
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: Colors.black54,
+                  color: Color(0xFF0A4B80), // Darker for better contrast
                   fontSize: 16,
                 ),
               ),
@@ -577,7 +577,8 @@ class _JournalScreenState extends State<JournalScreen> {
                             _formatDate(createdAt),
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.black54,
+                              color: Color(
+                                  0xFF0A4B80), // Darker for better contrast
                             ),
                           ),
                         ],
@@ -587,7 +588,8 @@ class _JournalScreenState extends State<JournalScreen> {
                         content,
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.black54,
+                          color:
+                              Color(0xFF0A4B80), // Darker for better contrast
                           height: 1.5,
                         ),
                         maxLines: 3,
@@ -626,7 +628,7 @@ class _JournalScreenState extends State<JournalScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.black54,
+                color: const Color(0xFF0A4B80), // Darker for better contrast
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -681,7 +683,7 @@ class _JournalScreenState extends State<JournalScreen> {
                       _formatDate(DateTime.parse(journal['created_at'])),
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Color(0xFF0A4B80), // Darker for better contrast
                       ),
                     ),
                     const SizedBox(height: 24),

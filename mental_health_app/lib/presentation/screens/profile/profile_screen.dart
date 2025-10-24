@@ -289,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0078D7),
+              color: Color(0xFF0A4B80), // Darker blue for better contrast
             ),
           ),
           const SizedBox(height: 4),
@@ -297,7 +297,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label,
             style: const TextStyle(
               fontSize: 12,
-              color: Colors.black54,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF0A4B80), // Darker blue for better contrast
             ),
             textAlign: TextAlign.center,
           ),
@@ -383,7 +384,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0078D7),
+                          color: Color(
+                              0xFF0A4B80), // Darker blue for better contrast
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -486,13 +488,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: color ?? const Color(0xFF0078D7),
+                      color: color ??
+                          const Color(
+                              0xFF0A4B80), // Darker blue for better contrast
                     ),
                   ),
                 ),
                 const Icon(
                   Icons.chevron_right,
-                  color: Colors.black54,
+                  color: Color(0xFF0A4B80), // Darker for better contrast
                 ),
               ],
             ),
