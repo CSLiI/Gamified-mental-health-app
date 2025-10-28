@@ -241,12 +241,13 @@ class ApiService {
   }
 
   Future<List<dynamic>> getTodos(
-      {int? skip, int? limit, bool? completed}) async {
+      {int? skip, int? limit, bool? completed, String? periodType}) async {
     try {
       final queryParams = <String, dynamic>{};
       if (skip != null) queryParams['skip'] = skip;
       if (limit != null) queryParams['limit'] = limit;
       if (completed != null) queryParams['completed'] = completed;
+      if (periodType != null) queryParams['period_type'] = periodType;
 
       final response = await _dioClient.get(
         '${ApiConstants.todos}/',

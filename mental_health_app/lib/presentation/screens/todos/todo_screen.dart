@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../../../data/services/api_service.dart';
+import 'todo_list_screen.dart';
+import 'weekly_goals_screen.dart';
+import 'monthly_goals_screen.dart';
+import 'yearly_goals_screen.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -9,605 +13,481 @@ class TodoScreen extends StatefulWidget {
   State<TodoScreen> createState() => _TodoScreenState();
 }
 
-class _TodoScreenState extends State<TodoScreen>
-    with SingleTickerProviderStateMixin {
+class _TodoScreenState extends State<TodoScreen> {
   final _apiService = ApiService();
-  final _taskController = TextEditingController();
-  late TabController _tabController;
-
-  bool _isLoading = false;
   bool _isLoadingTodos = true;
   List<dynamic> _todos = [];
-  Map<String, dynamic>? _stats;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _loadData();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _taskController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    await Future.wait([
-      _loadTodos(),
-      _loadStats(),
-    ]);
+    _selectedDay = _focusedDay;
+    _loadTodos();
   }
 
   Future<void> _loadTodos() async {
     try {
-      final todos = await _apiService.getTodos(limit: 100);
-      setState(() {
-        _todos = todos;
-        _isLoadingTodos = false;
-      });
-    } catch (e) {
-      setState(() => _isLoadingTodos = false);
-    }
-  }
-
-  Future<void> _loadStats() async {
-    try {
-      final stats = await _apiService.getTodoStatistics();
-      setState(() => _stats = stats);
-    } catch (e) {
-      print('Error loading stats: $e');
-    }
-  }
-
-  Future<void> _addTodo() async {
-    if (_taskController.text.trim().isEmpty) {
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      await _apiService.createTodo({
-        'task_text': _taskController.text.trim(),
-        'is_completed': false,
-      });
-
-      _taskController.clear();
-
-      if (!mounted) return;
-
-      await _loadData();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to add task: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } finally {
+      // Load only 'daily' period type tasks for calendar
+      final todos = await _apiService.getTodos(limit: 500, periodType: 'daily');
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _todos = todos;
+          _isLoadingTodos = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingTodos = false);
       }
     }
   }
 
-  Future<void> _toggleTodo(int todoId, bool isCompleted) async {
-    // Optimistic update - update UI immediately
-    setState(() {
-      final todoIndex = _todos.indexWhere((t) => t['id'] == todoId);
-      if (todoIndex != -1) {
-        _todos[todoIndex]['is_completed'] = !isCompleted;
-        if (!isCompleted) {
-          _todos[todoIndex]['completed_at'] = DateTime.now().toIso8601String();
-        } else {
-          _todos[todoIndex]['completed_at'] = null;
-        }
-      }
+  List<dynamic> _getTasksForDay(DateTime day) {
+    return _todos.where((todo) {
+      final createdAt = DateTime.parse(todo['created_at']).toLocal();
+      return createdAt.year == day.year &&
+          createdAt.month == day.month &&
+          createdAt.day == day.day;
+    }).toList();
+  }
+
+  bool _hasTasks(DateTime day) {
+    return _todos.any((todo) {
+      final createdAt = DateTime.parse(todo['created_at']).toLocal();
+      return createdAt.year == day.year &&
+          createdAt.month == day.month &&
+          createdAt.day == day.day;
     });
-
-    try {
-      if (!isCompleted) {
-        // Completing the todo - awards XP
-        await _apiService.completeTodo(todoId);
-
-        if (!mounted) return;
-
-        // Check achievements silently
-        _apiService.checkAchievements();
-      } else {
-        // Uncompleting - deducts XP
-        await _apiService.uncompleteTodo(todoId);
-      }
-
-      // Reload data to get updated XP from backend
-      await _loadData();
-    } catch (e) {
-      // Revert on error
-      setState(() {
-        final todoIndex = _todos.indexWhere((t) => t['id'] == todoId);
-        if (todoIndex != -1) {
-          _todos[todoIndex]['is_completed'] = isCompleted;
-          if (isCompleted) {
-            _todos[todoIndex]['completed_at'] =
-                DateTime.now().toIso8601String();
-          } else {
-            _todos[todoIndex]['completed_at'] = null;
-          }
-        }
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
-  Future<void> _deleteTodo(int todoId) async {
-    try {
-      await _apiService.deleteTodo(todoId);
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Task deleted'),
-          backgroundColor: AppColors.info,
-        ),
-      );
-
-      await _loadData();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    if (date.year == now.year && date.month == now.month && date.day == now.day)
+      return 'Today';
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day + 1) return 'Tomorrow';
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day - 1) return 'Yesterday';
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final completedCount =
+        _todos.where((t) => t['is_completed'] == true).length;
+    final totalCount = _todos.length;
+    final pendingCount = totalCount - completedCount;
+
     return Scaffold(
-      body: SafeArea(
-        child: Column(
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: _isLoadingTodos
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF5CACEE)))
+          : RefreshIndicator(
+              onRefresh: _loadTodos,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Header Section
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF5CACEE),
+                            const Color(0xFF0A4B80),
+                          ],
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'My Calendar',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Track your daily tasks and goals',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              // Stats Cards
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Total',
+                                      totalCount.toString(),
+                                      Icons.task_alt,
+                                      Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Done',
+                                      completedCount.toString(),
+                                      Icons.check_circle,
+                                      const Color(0xFF28A745),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Todo',
+                                      pendingCount.toString(),
+                                      Icons.pending_actions,
+                                      const Color(0xFFFF9800),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Calendar Card
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: TableCalendar(
+                          firstDay: DateTime.utc(2020, 1, 1),
+                          lastDay: DateTime.utc(2030, 12, 31),
+                          focusedDay: _focusedDay,
+                          selectedDayPredicate: (day) =>
+                              isSameDay(_selectedDay, day),
+                          calendarFormat: CalendarFormat.month,
+                          availableCalendarFormats: const {
+                            CalendarFormat.month: 'Month'
+                          },
+                          sixWeekMonthsEnforced: true,
+                          onDaySelected: (selectedDay, focusedDay) {
+                            setState(() {
+                              _selectedDay = selectedDay;
+                              _focusedDay = focusedDay;
+                            });
+                            // Navigate to DAILY tasks only for selected date
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    TodoListScreen(selectedDate: selectedDay),
+                              ),
+                            ).then((_) => _loadTodos());
+                          },
+                          onPageChanged: (focusedDay) {
+                            setState(() {
+                              _focusedDay = focusedDay;
+                            });
+                          },
+                          calendarStyle: CalendarStyle(
+                            todayDecoration: BoxDecoration(
+                              color: const Color(0xFF5CACEE).withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            todayTextStyle: const TextStyle(
+                              color: Color(0xFF0A4B80),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            selectedDecoration: const BoxDecoration(
+                              color: Color(0xFF5CACEE),
+                              shape: BoxShape.circle,
+                            ),
+                            selectedTextStyle: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            markerDecoration: const BoxDecoration(
+                              color: Color(0xFFFFD700),
+                              shape: BoxShape.circle,
+                            ),
+                            markersMaxCount: 1,
+                            weekendTextStyle: const TextStyle(
+                              color: Color(0xFFEF5350),
+                            ),
+                            cellMargin: const EdgeInsets.all(6),
+                            defaultTextStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          headerStyle: HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            titleTextStyle: const TextStyle(
+                              color: Color(0xFF0A4B80),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            leftChevronIcon: const Icon(
+                              Icons.chevron_left,
+                              color: Color(0xFF5CACEE),
+                              size: 28,
+                            ),
+                            rightChevronIcon: const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF5CACEE),
+                              size: 28,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                            ),
+                            headerPadding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          daysOfWeekStyle: DaysOfWeekStyle(
+                            weekdayStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0A4B80),
+                            ),
+                            weekendStyle: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[700],
+                            ),
+                          ),
+                          eventLoader: (day) {
+                            return _hasTasks(day) ? [true] : [];
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // Goals Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, bottom: 12),
+                            child: Text(
+                              'My Goals',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0A4B80),
+                              ),
+                            ),
+                          ),
+                          _buildGoalCard(
+                            context,
+                            '🔄 Weekly Goals',
+                            'Plan your week ahead',
+                            const Color(0xFF4CAF50),
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const WeeklyGoalsScreen(),
+                              ),
+                            ).then((_) => _loadTodos()),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildGoalCard(
+                            context,
+                            '📊 Monthly Goals',
+                            'Set monthly milestones',
+                            const Color(0xFF2196F3),
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MonthlyGoalsScreen(),
+                              ),
+                            ).then((_) => _loadTodos()),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildGoalCard(
+                            context,
+                            '🎯 Yearly Goals',
+                            'Achieve long-term dreams',
+                            const Color(0xFFFF9800),
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const YearlyGoalsScreen(),
+                              ),
+                            ).then((_) => _loadTodos()),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 100),
+                  ],
+                ),
+              ),
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => TodoListScreen(
+                    selectedDate: _selectedDay ?? DateTime.now())),
+          ).then((_) => _loadTodos());
+        },
+        backgroundColor: const Color(0xFF5CACEE),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add Daily Task',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+        child: Row(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(24.0),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.flag,
+                color: color,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Enhanced contrast header text with shadow for better visibility
-                  const Text(
-                    'My Tasks',
+                  Text(
+                    title,
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A4B80), // Dark blue for contrast
+                      color: color,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Complete tasks to earn XP',
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
                     style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF0A4B80), // Dark blue for contrast
-                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      color: Colors.grey[600],
                     ),
-                  ),
-
-                  // Stats Card
-                  if (_stats != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(220),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(20),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatItem(
-                            'Total',
-                            _stats!['total_tasks'].toString(),
-                            Icons.list_alt,
-                          ),
-                          _buildStatItem(
-                            'Completed',
-                            _stats!['completed_tasks'].toString(),
-                            Icons.check_circle_outline,
-                          ),
-                          _buildStatItem(
-                            'Pending',
-                            _stats!['pending_tasks'].toString(),
-                            Icons.schedule,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // Add Task Input
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(220),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(20),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _taskController,
-                        decoration: const InputDecoration(
-                          hintText: 'Add a new task...',
-                          border: InputBorder.none,
-                          hintStyle: TextStyle(
-                            color: Colors.black54,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          color: Color(
-                              0xFF0A4B80), // Darker blue for better contrast
-                          fontSize: 16,
-                        ),
-                        onSubmitted: (_) => _addTodo(),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _isLoading ? null : _addTodo,
-                      icon: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color(0xFF5CACEE)),
-                              ),
-                            )
-                          : const Icon(
-                              Icons.add_circle,
-                              color: Color(0xFF5CACEE),
-                              size: 32,
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Tab Bar - with improved spacing and contrast
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(180),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: const Color(0xFF5CACEE),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                labelColor: Colors.white,
-                unselectedLabelColor:
-                    const Color(0xFF0A4B80), // Darker color for better contrast
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8), // More padding
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Text(
-                    'All',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  Text(
-                    'Active',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  Text(
-                    'Done',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // Task List
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildTaskList(null),
-                  _buildTaskList(false),
-                  _buildTaskList(true),
-                ],
-              ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: color,
+              size: 20,
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: const Color(0xFF5CACEE), size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0A4B80), // Darker blue for better contrast
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black54, // Darker for better contrast
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTaskList(bool? completed) {
-    if (_isLoadingTodos) {
-      return const Center(
-          child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-      ));
-    }
-
-    final filteredTodos = completed == null
-        ? _todos
-        : _todos.where((todo) => todo['is_completed'] == completed).toList();
-
-    if (filteredTodos.isEmpty) {
-      return Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                completed == true
-                    ? Icons.check_circle_outline
-                    : Icons.assignment_outlined,
-                size: 64,
-                color: Colors.white.withAlpha(150), // Better contrast
-              ),
-              const SizedBox(height: 16),
-              Text(
-                completed == true ? 'No completed tasks yet' : 'No tasks yet',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 2.0,
-                      color: Color(0x55000000),
-                      offset: Offset(1, 1),
-                    )
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Add a task to get started!',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 2.0,
-                      color: Color(0x55000000),
-                      offset: Offset(1, 1),
-                    )
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      color: const Color(0xFF5CACEE),
-      backgroundColor: Colors.white,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        itemCount: filteredTodos.length,
-        itemBuilder: (context, index) {
-          final todo = filteredTodos[index];
-          final isCompleted = todo['is_completed'] ?? false;
-          final taskText = todo['task_text'] ?? '';
-          final createdAt = DateTime.parse(todo['created_at']);
-
-          return Dismissible(
-            key: Key(todo['id'].toString()),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: AppColors.error,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              alignment: Alignment.centerRight,
-              child: const Icon(
-                Icons.delete_outline,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-            onDismissed: (direction) {
-              _deleteTodo(todo['id']);
-            },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(220),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(20),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    _toggleTodo(todo['id'], isCompleted);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isCompleted
-                                  ? const Color(
-                                      0xFF28A745) // Success green with better contrast
-                                  : const Color(0xFF5CACEE),
-                              width: 2,
-                            ),
-                            color: isCompleted
-                                ? const Color(0xFF28A745) // Success green
-                                : Colors.transparent,
-                          ),
-                          child: isCompleted
-                              ? const Icon(
-                                  Icons.check,
-                                  size: 16,
-                                  color: Colors.white,
-                                )
-                              : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                taskText,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: isCompleted
-                                      ? Colors.black54 // Better contrast
-                                      : const Color(0xFF0A4B80), // Darker blue
-                                  decoration: isCompleted
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatDate(createdAt),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black54, // Better contrast
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (!isCompleted)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF5CACEE).withAlpha(40),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              '+10 XP',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF5CACEE),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return 'Today';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
   }
 }

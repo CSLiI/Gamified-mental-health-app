@@ -8,19 +8,32 @@ def create_todo(db: Session, user_id: int, todo: schemas.TodoCreate):
     db_todo = models.Todo(
         user_id=user_id,
         task_text=todo.task_text,
-        is_completed=todo.is_completed
+        is_completed=todo.is_completed,
+        period_type=todo.period_type
     )
+    
+    # If created_at is provided, use it (for scheduling tasks on specific dates)
+    if todo.created_at:
+        db_todo.created_at = todo.created_at
+    
     db.add(db_todo)
     db.commit()
     db.refresh(db_todo)
     return db_todo
 
-def get_todos(db: Session, user_id: int, skip: int = 0, limit: int = 100, completed: Optional[bool] = None):
+def get_todos(db: Session, user_id: int, skip: int = 0, limit: int = 100, completed: Optional[bool] = None, period_type: Optional[str] = None):
     """Get all todos for a user"""
     query = db.query(models.Todo).filter(models.Todo.user_id == user_id)
     
     if completed is not None:
         query = query.filter(models.Todo.is_completed == completed)
+    
+    if period_type is not None:
+        # Handle both null values (old data) and the specified period_type
+        query = query.filter(
+            (models.Todo.period_type == period_type) | 
+            (models.Todo.period_type == None)
+        )
     
     return query.order_by(models.Todo.created_at.desc()).offset(skip).limit(limit).all()
 

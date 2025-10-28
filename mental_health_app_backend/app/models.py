@@ -20,6 +20,12 @@ class MoodEnum(str, enum.Enum):
     angry = "angry"
     tired = "tired"
 
+class PeriodTypeEnum(str, enum.Enum):
+    daily = "daily"
+    weekly = "weekly"
+    monthly = "monthly"
+    yearly = "yearly"
+
 # Users table
 class User(Base):
     __tablename__ = "users"
@@ -153,6 +159,7 @@ class Todo(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     task_text = Column(Text, nullable=False)
     is_completed = Column(Boolean, default=False)
+    period_type = Column(SQLEnum(PeriodTypeEnum), default=PeriodTypeEnum.daily, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True))
     

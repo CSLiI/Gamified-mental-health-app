@@ -22,11 +22,12 @@ def get_todos(
     skip: int = 0,
     limit: int = 100,
     completed: Optional[bool] = None,
+    period_type: Optional[str] = None,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get all todos for current user"""
-    return todo_crud.get_todos(db, current_user.id, skip, limit, completed)
+    return todo_crud.get_todos(db, current_user.id, skip, limit, completed, period_type)
 
 @router.get("/statistics", response_model=schemas.TodoStatistics)
 def get_todo_statistics(

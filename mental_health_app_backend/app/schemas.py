@@ -17,6 +17,12 @@ class MoodEnum(str, Enum):
     angry = "angry"
     tired = "tired"
 
+class PeriodTypeEnum(str, Enum):
+    daily = "daily"
+    weekly = "weekly"
+    monthly = "monthly"
+    yearly = "yearly"
+
 # ==================== Users ====================
 class UserBase(BaseModel):
     first_name: str
@@ -171,13 +177,15 @@ class MoodSuggestion(MoodSuggestionBase):
 class TodoBase(BaseModel):
     task_text: str
     is_completed: Optional[bool] = False
+    period_type: Optional[PeriodTypeEnum] = PeriodTypeEnum.daily
 
 class TodoCreate(TodoBase):
-    pass
+    created_at: Optional[datetime] = None  # Allow specifying creation date
 
 class TodoUpdate(BaseModel):
     task_text: Optional[str] = None
     is_completed: Optional[bool] = None
+    period_type: Optional[PeriodTypeEnum] = None
 
 class Todo(TodoBase):
     id: int
