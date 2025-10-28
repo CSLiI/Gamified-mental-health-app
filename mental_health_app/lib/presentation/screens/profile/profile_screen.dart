@@ -76,41 +76,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFB0E0FF), // Lighter baby blue at top
-              Color(0xFF89CFF0), // Baby blue at bottom
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ))
-              : RefreshIndicator(
-                  onRefresh: _loadData,
-                  color: const Color(0xFF5CACEE),
-                  backgroundColor: Colors.white,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      children: [
-                        _buildProfileHeader(),
-                        _buildStatsSection(),
-                        _buildAchievementsSection(),
-                        _buildOptionsSection(),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5CACEE)),
+              ))
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                color: const Color(0xFF5CACEE),
+                backgroundColor: Colors.white,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    children: [
+                      _buildProfileHeader(),
+                      _buildStatsSection(),
+                      _buildAchievementsSection(),
+                      _buildOptionsSection(),
+                      const SizedBox(height: 24),
+                    ],
                   ),
                 ),
-        ),
+              ),
       ),
     );
   }

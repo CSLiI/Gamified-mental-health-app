@@ -180,218 +180,189 @@ class _TodoScreenState extends State<TodoScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFB0E0FF), // Lighter baby blue at top
-              Color(0xFF89CFF0), // Baby blue at bottom
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Enhanced contrast header text with shadow for better visibility
-                    const Text(
-                      'My Tasks',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 3.0,
-                            color: Color(0x55000000),
-                            offset: Offset(1, 1),
-                          )
-                        ],
-                      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Enhanced contrast header text with shadow for better visibility
+                  const Text(
+                    'My Tasks',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0A4B80), // Dark blue for contrast
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Complete tasks to earn XP',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 2.0,
-                            color: Color(0x55000000),
-                            offset: Offset(1, 1),
-                          )
-                        ],
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Complete tasks to earn XP',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF0A4B80), // Dark blue for contrast
+                      fontWeight: FontWeight.w500,
                     ),
+                  ),
 
-                    // Stats Card
-                    if (_stats != null) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(220),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(20),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildStatItem(
-                              'Total',
-                              _stats!['total_tasks'].toString(),
-                              Icons.list_alt,
-                            ),
-                            _buildStatItem(
-                              'Completed',
-                              _stats!['completed_tasks'].toString(),
-                              Icons.check_circle_outline,
-                            ),
-                            _buildStatItem(
-                              'Pending',
-                              _stats!['pending_tasks'].toString(),
-                              Icons.schedule,
-                            ),
-                          ],
-                        ),
+                  // Stats Card
+                  if (_stats != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(220),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(20),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatItem(
+                            'Total',
+                            _stats!['total_tasks'].toString(),
+                            Icons.list_alt,
+                          ),
+                          _buildStatItem(
+                            'Completed',
+                            _stats!['completed_tasks'].toString(),
+                            Icons.check_circle_outline,
+                          ),
+                          _buildStatItem(
+                            'Pending',
+                            _stats!['pending_tasks'].toString(),
+                            Icons.schedule,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
+            ),
 
-              // Add Task Input
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(220),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(20),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _taskController,
-                          decoration: const InputDecoration(
-                            hintText: 'Add a new task...',
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(
-                              color: Colors.black54,
-                            ),
-                          ),
-                          style: const TextStyle(
-                            color: Color(
-                                0xFF0A4B80), // Darker blue for better contrast
-                            fontSize: 16,
-                          ),
-                          onSubmitted: (_) => _addTodo(),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _isLoading ? null : _addTodo,
-                        icon: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Color(0xFF5CACEE)),
-                                ),
-                              )
-                            : const Icon(
-                                Icons.add_circle,
-                                color: Color(0xFF5CACEE),
-                                size: 32,
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Tab Bar - with improved spacing and contrast
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding: const EdgeInsets.all(4),
+            // Add Task Input
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(180),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: const Color(0xFF5CACEE),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(
-                      0xFF0A4B80), // Darker color for better contrast
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8), // More padding
-                  dividerColor: Colors.transparent,
-                  tabs: const [
-                    Text(
-                      'All',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    Text(
-                      'Active',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    Text(
-                      'Done',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  color: Colors.white.withAlpha(220),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(20),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Task List
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
+                child: Row(
                   children: [
-                    _buildTaskList(null),
-                    _buildTaskList(false),
-                    _buildTaskList(true),
+                    Expanded(
+                      child: TextField(
+                        controller: _taskController,
+                        decoration: const InputDecoration(
+                          hintText: 'Add a new task...',
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(
+                            color: Colors.black54,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: Color(
+                              0xFF0A4B80), // Darker blue for better contrast
+                          fontSize: 16,
+                        ),
+                        onSubmitted: (_) => _addTodo(),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _isLoading ? null : _addTodo,
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF5CACEE)),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.add_circle,
+                              color: Color(0xFF5CACEE),
+                              size: 32,
+                            ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Tab Bar - with improved spacing and contrast
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(180),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: const Color(0xFF5CACEE),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor:
+                    const Color(0xFF0A4B80), // Darker color for better contrast
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8), // More padding
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Text(
+                    'All',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  Text(
+                    'Active',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  Text(
+                    'Done',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Task List
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildTaskList(null),
+                  _buildTaskList(false),
+                  _buildTaskList(true),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

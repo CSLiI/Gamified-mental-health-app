@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/constants/app_colors.dart';
 import 'home_screen.dart';
 import '../mood/mood_screen.dart';
 import '../journal/journal_screen.dart';
@@ -18,6 +17,39 @@ class HomeNavigation extends StatefulWidget {
 class _HomeNavigationState extends State<HomeNavigation> {
   int _currentIndex = 0;
   String? _lastSelectedMood; // Store mood at navigation level
+
+  // Mood colors matching mood_screen.dart
+  final Map<String, Color> _moodColors = {
+    'happy': const Color(0xFFFFD54F), // Yellow
+    'calm': const Color(0xFF42A5F5), // Blue
+    'tired': const Color(0xFF78909C), // Blue Grey
+    'anxious': const Color(0xFFFFA726), // Orange
+    'sad': const Color(0xFF9575CD), // Purple
+    'angry': const Color(0xFFEF5350), // Red
+  };
+
+  // Get current mood color or default
+  Color get _currentMoodColor {
+    if (_lastSelectedMood != null &&
+        _moodColors.containsKey(_lastSelectedMood)) {
+      return _moodColors[_lastSelectedMood]!;
+    }
+    return const Color(0xFF5CACEE); // Default blue
+  }
+
+  // Get lighter version for background gradient (similar to character card)
+  Color get _currentMoodColorLight {
+    final lightestColor =
+        Color.lerp(_currentMoodColor, Colors.white, 0.7) ?? _currentMoodColor;
+    return lightestColor.withValues(alpha: 0.9);
+  }
+
+  // Get slightly darker version for gradient (similar to character card)
+  Color get _currentMoodColorDark {
+    final brighterColor =
+        Color.lerp(_currentMoodColor, Colors.white, 0.5) ?? _currentMoodColor;
+    return brighterColor.withValues(alpha: 0.9);
+  }
 
   void _onTabSelected(int index) {
     setState(() {
@@ -55,6 +87,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
   @override
   void initState() {
     super.initState();
+    _loadLastMood(); // Load mood on startup
     _screens = [
       HomeScreen(onNavigate: _onTabSelected),
       MoodScreen(
@@ -69,20 +102,35 @@ class _HomeNavigationState extends State<HomeNavigation> {
     ];
   }
 
+  Future<void> _loadLastMood() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final mood = prefs.getString('last_selected_mood');
+      if (mood != null) {
+        setState(() {
+          _lastSelectedMood = mood;
+        });
+        print('📱 NAVIGATION: Loaded mood: "$mood"');
+      }
+    } catch (e) {
+      print('Error loading mood: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // Baby blue gradient background
+        // Light gradient background - fixed, not mood-based
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFFB0E0FF), // Lighter baby blue at top
-              Color(0xFF89CFF0), // Baby blue at bottom
+              Color(0xFFF8F9FE), // Very light blue-grey
+              Color(0xFFE8EAFC), // Slightly darker blue-grey
             ],
           ),
         ),
@@ -90,18 +138,25 @@ class _HomeNavigationState extends State<HomeNavigation> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF5CACEE), // Darker baby blue
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _currentMoodColorLight, // Character card style gradient
+              _currentMoodColorDark,
+            ],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(40),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+              color: _currentMoodColor.withValues(alpha: 0.2),
+              blurRadius: 15,
+              offset: const Offset(0, -3),
             ),
           ],
           border: Border(
             top: BorderSide(
-              color: Colors.white.withAlpha(50),
-              width: 1,
+              color: _currentMoodColor.withValues(alpha: 0.3),
+              width: 2,
             ),
           ),
         ),
@@ -157,7 +212,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
   }) {
     final isActive = _currentIndex == index;
 
-    // Gamified nav item with glow effect
+    // Gamified nav item with glow effect - colors based on mood
     return Expanded(
       child: GestureDetector(
         onTap: () => _onTabSelected(index),
@@ -168,18 +223,18 @@ class _HomeNavigationState extends State<HomeNavigation> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isActive ? Colors.white : Colors.transparent,
+                color: isActive ? _currentMoodColor : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 border: isActive
                     ? Border.all(
-                        color: const Color(0xFF5CACEE),
+                        color: _currentMoodColor,
                         width: 2,
                       )
                     : null,
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                          color: Colors.white.withAlpha(100),
+                          color: _currentMoodColor.withAlpha(100),
                           blurRadius: 8,
                           spreadRadius: 1,
                         )
@@ -188,7 +243,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
               ),
               child: Icon(
                 isActive ? activeIcon : icon,
-                color: isActive ? const Color(0xFF5CACEE) : Colors.white,
+                color: isActive ? Colors.white : const Color(0xFF6B8BA8),
                 size: 24,
               ),
             ),
@@ -199,7 +254,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
                 fontFamily: 'Roboto',
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? Colors.white : Colors.white.withAlpha(200),
+                color: isActive ? _currentMoodColor : const Color(0xFF6B8BA8),
               ),
             ),
           ],

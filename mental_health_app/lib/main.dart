@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
           seedColor: AppColors.primary,
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: AppColors.background,
+        scaffoldBackgroundColor: Colors.transparent,
         useMaterial3: true,
         fontFamily: 'Inter',
       ),

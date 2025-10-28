@@ -194,45 +194,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFF8F9FE),
-            Color(0xFFE8EAFC),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: _loadData,
-                color: const Color(0xFF5CACEE),
-                backgroundColor: Colors.white,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 24),
-                      _buildCharacterCard(),
-                      const SizedBox(height: 24),
-                      _buildQuickActions(),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+    return SafeArea(
+      child: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5CACEE)),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              color: const Color(0xFF5CACEE),
+              backgroundColor: Colors.white,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildCharacterCard(),
+                    const SizedBox(height: 24),
+                    _buildQuickActions(),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-      ),
+            ),
     );
   }
 
@@ -256,8 +244,8 @@ class _HomeScreenState extends State<HomeScreen> {
           '$greeting,',
           style: const TextStyle(
             fontSize: 20,
-            color: AppColors
-                .textPrimary, // Dark text for contrast with white background
+            color: Color(
+                0xFF0A4B80), // Dark blue for consistency with other screens
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -267,8 +255,8 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: AppColors
-                .textPrimary, // Dark text for contrast with white background
+            color: Color(
+                0xFF0A4B80), // Dark blue for consistency with other screens
           ),
         ),
         const SizedBox(height: 8),
@@ -276,7 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
           'How are you feeling today?',
           style: TextStyle(
             fontSize: 16,
-            color: AppColors.textSecondary, // Slightly lighter dark text
+            color: Color(
+                0xFF0A4B80), // Dark blue for consistency with other screens
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -662,8 +651,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(
               Icons.bolt,
               size: 24,
-              color: AppColors
-                  .textPrimary, // Dark icon for contrast with white background
+              color: Color(
+                  0xFF0A4B80), // Dark blue for consistency with other screens
             ),
             SizedBox(width: 8),
             Text(
@@ -671,8 +660,8 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: AppColors
-                    .textPrimary, // Dark text for contrast with white background
+                color: Color(
+                    0xFF0A4B80), // Dark blue for consistency with other screens
               ),
             ),
           ],

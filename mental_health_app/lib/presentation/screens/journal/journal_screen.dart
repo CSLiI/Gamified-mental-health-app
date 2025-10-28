@@ -129,99 +129,72 @@ class _JournalScreenState extends State<JournalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFB0E0FF), // Lighter baby blue at top
-              Color(0xFF89CFF0), // Baby blue at bottom
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'My Journal',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0A4B80), // Dark blue for contrast
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Express your thoughts freely',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF0A4B80), // Dark blue for contrast
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!_showNewEntry)
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() => _showNewEntry = true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF5CACEE),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Row(
                         children: [
-                          Text(
-                            'My Journal',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 3.0,
-                                  color: Color(0x55000000),
-                                  offset: Offset(1, 1),
-                                )
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Express your thoughts freely',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 2.0,
-                                  color: Color(0x55000000),
-                                  offset: Offset(1, 1),
-                                )
-                              ],
-                            ),
-                          ),
+                          Icon(Icons.add, size: 20),
+                          SizedBox(width: 4),
+                          Text('New'),
                         ],
                       ),
                     ),
-                    if (!_showNewEntry)
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() => _showNewEntry = true);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF5CACEE),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.add, size: 20),
-                            SizedBox(width: 4),
-                            Text('New'),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               ),
+            ),
 
-              // Content
-              Expanded(
-                child:
-                    _showNewEntry ? _buildNewEntryView() : _buildJournalList(),
-              ),
-            ],
-          ),
+            // Content
+            Expanded(
+              child: _showNewEntry ? _buildNewEntryView() : _buildJournalList(),
+            ),
+          ],
         ),
       ),
     );
@@ -526,8 +499,14 @@ class _JournalScreenState extends State<JournalScreen> {
       onRefresh: _loadJournals,
       color: const Color(0xFF5CACEE),
       backgroundColor: Colors.white,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: GridView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.85,
+        ),
         itemCount: _journals.length,
         itemBuilder: (context, index) {
           final journal = _journals[index];
@@ -536,7 +515,6 @@ class _JournalScreenState extends State<JournalScreen> {
           final createdAt = DateTime.parse(journal['created_at']);
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: Colors.white.withAlpha(220),
               borderRadius: BorderRadius.circular(16),
@@ -556,44 +534,40 @@ class _JournalScreenState extends State<JournalScreen> {
                   _showJournalDetail(journal);
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0A4B80),
-                              ),
-                            ),
-                          ),
-                          Text(
-                            _formatDate(createdAt),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(
-                                  0xFF0A4B80), // Darker for better contrast
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
                       Text(
-                        content,
+                        title,
                         style: const TextStyle(
-                          fontSize: 14,
-                          color:
-                              Color(0xFF0A4B80), // Darker for better contrast
-                          height: 1.5,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0A4B80),
                         ),
-                        maxLines: 3,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _formatDate(createdAt),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF0A4B80),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Text(
+                          content,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF0A4B80),
+                            height: 1.4,
+                          ),
+                          maxLines: 6,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),

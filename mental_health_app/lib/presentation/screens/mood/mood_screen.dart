@@ -354,14 +354,7 @@ class _MoodScreenState extends State<MoodScreen>
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 3.0,
-                        color: Color(0x55000000),
-                        offset: Offset(1, 1),
-                      )
-                    ],
+                    color: Color(0xFF0A4B80), // Dark blue for contrast
                   ),
                 ),
                 SizedBox(height: 8),
@@ -369,15 +362,8 @@ class _MoodScreenState extends State<MoodScreen>
                   'Track your emotions and see patterns',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white,
+                    color: Color(0xFF0A4B80), // Dark blue for contrast
                     fontWeight: FontWeight.w500,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 2.0,
-                        color: Color(0x55000000),
-                        offset: Offset(1, 1),
-                      )
-                    ],
                   ),
                 ),
               ],
