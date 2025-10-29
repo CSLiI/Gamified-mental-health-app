@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/api_constants.dart';
 
 class DioClient {
@@ -35,11 +36,13 @@ class DioClient {
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('📥 RESPONSE: ${response.statusCode} ${response.requestOptions.path}');
+          print(
+              '📥 RESPONSE: ${response.statusCode} ${response.requestOptions.path}');
           return handler.next(response);
         },
         onError: (error, handler) async {
-          print('❌ ERROR: ${error.response?.statusCode} ${error.requestOptions.path}');
+          print(
+              '❌ ERROR: ${error.response?.statusCode} ${error.requestOptions.path}');
           print('   Message: ${error.message}');
 
           // Handle 401 Unauthorized
@@ -100,8 +103,16 @@ class DioClient {
   }
 
   Future<void> logout() async {
+    // Clear auth token
     await _storage.delete(key: 'auth_token');
-    print('🚪 Token deleted - logged out');
+
+    // Clear character data from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('selected_character_id');
+    await prefs.remove('selected_character_gender');
+    await prefs.remove('selected_character_number');
+
+    print('🚪 Token and character data deleted - logged out');
   }
 
   Future<String?> getToken() async {

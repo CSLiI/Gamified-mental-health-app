@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 
@@ -103,16 +104,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadCharacterDetails() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _characterId = prefs.getInt('selected_character_id') ?? 1;
-        _characterGender =
-            prefs.getString('selected_character_gender') ?? 'Boy';
-        _characterNumber = prefs.getInt('selected_character_number') ?? 1;
-        _characterDetailsLoaded = true;
-      });
+      // Fetch character from backend API instead of local storage
+      final currentCharacter = await _apiService.getCurrentCharacter();
+
+      if (currentCharacter['character'] != null) {
+        final character = currentCharacter['character'];
+        setState(() {
+          _characterId = character['id'] ?? 1;
+          _characterGender = character['gender'] ?? 'Boy';
+          _characterNumber = character['number'] ?? 1;
+          _characterDetailsLoaded = true;
+        });
+
+        // Update SharedPreferences to match (for offline access)
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('selected_character_id', _characterId);
+        await prefs.setString('selected_character_gender', _characterGender);
+        await prefs.setInt('selected_character_number', _characterNumber);
+      }
     } catch (e) {
       print('Error loading character details: $e');
+      // Fallback to SharedPreferences if API fails
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        setState(() {
+          _characterId = prefs.getInt('selected_character_id') ?? 1;
+          _characterGender =
+              prefs.getString('selected_character_gender') ?? 'Boy';
+          _characterNumber = prefs.getInt('selected_character_number') ?? 1;
+          _characterDetailsLoaded = true;
+        });
+      } catch (e) {
+        print('Error loading from SharedPreferences: $e');
+      }
     }
   }
 
@@ -647,8 +671,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSocialButton() {
     return GestureDetector(
       onTap: () {
-        // Navigate to social screen (to be created)
-        Navigator.pushNamed(context, '/social');
+        // Navigate to social screen
+        context.go('/social');
       },
       child: Container(
         width: double.infinity,

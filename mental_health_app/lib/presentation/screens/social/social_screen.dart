@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 
 class SocialScreen extends StatefulWidget {
@@ -35,16 +35,15 @@ class _SocialScreenState extends State<SocialScreen>
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Replace with actual API calls once backend is ready
-      // final friends = await _apiService.getFriends();
-      // final requests = await _apiService.getFriendRequests();
-      // final sent = await _apiService.getSentFriendRequests();
+      final friends = await _apiService.getFriends();
+      final requests = await _apiService.getReceivedFriendRequests();
+      final sent = await _apiService.getSentFriendRequests();
 
       if (mounted) {
         setState(() {
-          // _friends = friends;
-          // _friendRequests = requests;
-          // _sentRequests = sent;
+          _friends = friends;
+          _friendRequests = requests;
+          _sentRequests = sent;
           _isLoading = false;
         });
       }
@@ -65,7 +64,7 @@ class _SocialScreenState extends State<SocialScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.go('/home'),
         ),
         title: const Text(
           '🤝 Social',
@@ -432,14 +431,13 @@ class _SocialScreenState extends State<SocialScreen>
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: Implement search and send request
               Navigator.pop(context);
               _sendFriendRequest(searchController.text);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF667EEA),
             ),
-            child: const Text('Search'),
+            child: const Text('Send Request'),
           ),
         ],
       ),
@@ -490,113 +488,70 @@ class _SocialScreenState extends State<SocialScreen>
 
   Future<void> _sendFriendRequest(String query) async {
     try {
-      // TODO: Implement API call
-      // await _apiService.sendFriendRequest(query);
+      await _apiService.sendFriendRequest(query);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Friend request sent!')),
-        );
         _loadData();
       }
     } catch (e) {
+      print('Error sending friend request: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _loadData();
       }
     }
   }
 
   Future<void> _acceptFriendRequest(int requestId) async {
     try {
-      // TODO: Implement API call
-      // await _apiService.acceptFriendRequest(requestId);
+      await _apiService.acceptFriendRequest(requestId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Friend request accepted!'),
-            backgroundColor: Color(0xFF28A745),
-          ),
-        );
         _loadData();
       }
     } catch (e) {
+      print('Error accepting friend request: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _loadData();
       }
     }
   }
 
   Future<void> _rejectFriendRequest(int requestId) async {
     try {
-      // TODO: Implement API call
-      // await _apiService.rejectFriendRequest(requestId);
+      await _apiService.rejectFriendRequest(requestId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Friend request rejected')),
-        );
         _loadData();
       }
     } catch (e) {
+      print('Error rejecting friend request: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _loadData();
       }
     }
   }
 
   Future<void> _cancelFriendRequest(int requestId) async {
     try {
-      // TODO: Implement API call
-      // await _apiService.cancelFriendRequest(requestId);
+      await _apiService.cancelFriendRequest(requestId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request cancelled')),
-        );
         _loadData();
       }
     } catch (e) {
+      print('Error cancelling friend request: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _loadData();
       }
     }
   }
 
   Future<void> _removeFriend(int friendId) async {
     try {
-      // TODO: Implement API call
-      // await _apiService.removeFriend(friendId);
+      await _apiService.removeFriend(friendId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Friend removed')),
-        );
         _loadData();
       }
     } catch (e) {
+      print('Error removing friend: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _loadData();
       }
     }
   }

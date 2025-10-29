@@ -257,6 +257,39 @@ class JournalPrompt(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+class FriendRequestStatus(enum.Enum):
+    pending = "pending"
+    accepted = "accepted"
+    rejected = "rejected"
+
+# Friendship table (many-to-many relationship)
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    friend_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id], backref="friendships")
+    friend = relationship("User", foreign_keys=[friend_id])
+
+# Friend Request table
+class FriendRequest(Base):
+    __tablename__ = "friend_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    status = Column(SQLEnum(FriendRequestStatus), default=FriendRequestStatus.pending, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    sender = relationship("User", foreign_keys=[sender_id], backref="sent_requests")
+    receiver = relationship("User", foreign_keys=[receiver_id], backref="received_requests")
+    
 # Update User model to include relationships (add these lines to User class):
 # user_achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
 # user_rewards = relationship("UserReward", back_populates="user", cascade="all, delete-orphan")

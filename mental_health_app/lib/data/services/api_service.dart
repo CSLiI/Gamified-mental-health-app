@@ -416,4 +416,86 @@ class ApiService {
       return 'Network error: ${error.message}';
     }
   }
+
+  Future<List<dynamic>> searchUsers(String query) async {
+    try {
+      final response = await _dioClient.get(
+        '/friends/search',
+        queryParameters: {'query': query},
+      );
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> sendFriendRequest(String email) async {
+    try {
+      await _dioClient.post(
+        '/friends/request',
+        data: {'receiver_email': email},
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getFriends() async {
+    try {
+      final response = await _dioClient.get('/friends/');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getReceivedFriendRequests() async {
+    try {
+      final response = await _dioClient.get('/friends/requests/received');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getSentFriendRequests() async {
+    try {
+      final response = await _dioClient.get('/friends/requests/sent');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> acceptFriendRequest(int requestId) async {
+    try {
+      await _dioClient.put('/friends/request/$requestId/accept');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> rejectFriendRequest(int requestId) async {
+    try {
+      await _dioClient.put('/friends/request/$requestId/reject');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> cancelFriendRequest(int requestId) async {
+    try {
+      await _dioClient.delete('/friends/request/$requestId');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> removeFriend(int friendId) async {
+    try {
+      await _dioClient.delete('/friends/$friendId');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 }

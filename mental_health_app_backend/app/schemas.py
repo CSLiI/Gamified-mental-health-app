@@ -360,3 +360,46 @@ class CollectionStats(BaseModel):
     total_available: int
     completion_percentage: float
     by_category: dict
+
+# ==================== Friend Request Schemas ======================
+class FriendRequestCreate(BaseModel):
+    receiver_email: str  # Email of the user to send request to
+
+class FriendRequestResponse(BaseModel):
+    id: int
+    sender_id: int
+    sender_email: str
+    sender_first_name: str
+    sender_last_name: str
+    receiver_id: int
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Friend Schemas
+class FriendResponse(BaseModel):
+    id: int
+    user_id: int
+    friend_id: int
+    friend_email: str
+    friend_first_name: str
+    friend_last_name: str
+    friend_level: int
+    friend_total_xp: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# User Search Response
+class UserSearchResponse(BaseModel):
+    id: int
+    email: str
+    first_name: str
+    last_name: str
+    level: int
+
+    class Config:
+        from_attributes = True

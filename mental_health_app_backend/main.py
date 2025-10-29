@@ -10,11 +10,13 @@ from app.routers import (
     interest_routes,
     achievement_routes,
     reward_routes,
-    journal_prompt_routes
+    journal_prompt_routes,
+    friend_routes
 )
 from app.database import engine
 from app import models
 import uvicorn
+
 
 # Create database tables (will only create if they don't exist)
 models.Base.metadata.create_all(bind=engine)
@@ -45,6 +47,7 @@ app.include_router(interest_routes.router)
 app.include_router(achievement_routes.router)
 app.include_router(reward_routes.router)
 app.include_router(journal_prompt_routes.router)
+app.include_router(friend_routes.router)
 
 @app.get("/")
 def read_root():
