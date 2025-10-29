@@ -215,6 +215,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 24),
                     _buildCharacterCard(),
                     const SizedBox(height: 24),
+                    _buildSocialButton(),
+                    const SizedBox(height: 24),
                     _buildQuickActions(),
                     const SizedBox(height: 24),
                   ],
@@ -640,6 +642,84 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         return "I'm here with you on this journey. 🌟";
     }
+  }
+
+  Widget _buildSocialButton() {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to social screen (to be created)
+        Navigator.pushNamed(context, '/social');
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF667EEA), // Purple
+              Color(0xFF764BA2), // Darker purple
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF667EEA).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(
+                Icons.people,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '🤝 Connect with Friends',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Share your journey & stay accountable',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildQuickActions() {
