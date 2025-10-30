@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -95,16 +94,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         orElse: () => _characterOptions[0],
       );
 
-      // Store character details in SharedPreferences
+      // Send to backend API FIRST
+      print(
+          '🎯 Onboarding: Sending character ${_selectedCharacterId} to backend...');
+      await _apiService.chooseCharacter(_selectedCharacterId!);
+      print('✅ Onboarding: Character saved to backend successfully');
+
+      // Only store in SharedPreferences AFTER backend confirms success
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('selected_character_id', selectedCharacter['id']);
       await prefs.setString(
           'selected_character_gender', selectedCharacter['gender']);
       await prefs.setInt(
           'selected_character_number', selectedCharacter['number']);
-
-      // Send to backend API
-      await _apiService.chooseCharacter(_selectedCharacterId!);
+      print('✅ Onboarding: Character cached to SharedPreferences');
 
       if (!mounted) return;
       context.go('/home');

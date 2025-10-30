@@ -105,10 +105,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadCharacterDetails() async {
     try {
       // Fetch character from backend API instead of local storage
+      print('🔍 Home: Loading character from API...');
       final currentCharacter = await _apiService.getCurrentCharacter();
+      print('📦 Home: Received data: $currentCharacter');
 
       if (currentCharacter['character'] != null) {
         final character = currentCharacter['character'];
+        print(
+            '✅ Home: Character found - ID: ${character['id']}, Gender: ${character['gender']}, Number: ${character['number']}');
+
         setState(() {
           _characterId = character['id'] ?? 1;
           _characterGender = character['gender'] ?? 'Boy';
@@ -121,21 +126,38 @@ class _HomeScreenState extends State<HomeScreen> {
         await prefs.setInt('selected_character_id', _characterId);
         await prefs.setString('selected_character_gender', _characterGender);
         await prefs.setInt('selected_character_number', _characterNumber);
+        print('💾 Home: Character cached to SharedPreferences');
+      } else {
+        print('⚠️ Home: No character found in response');
       }
     } catch (e) {
-      print('Error loading character details: $e');
+      print('❌ Home: Error loading character details: $e');
       // Fallback to SharedPreferences if API fails
       try {
+        print('🔄 Home: Falling back to SharedPreferences...');
         final prefs = await SharedPreferences.getInstance();
+        final cachedId = prefs.getInt('selected_character_id');
+        final cachedGender = prefs.getString('selected_character_gender');
+        final cachedNumber = prefs.getInt('selected_character_number');
+
+        print(
+            '📦 Home: Cached values - ID: $cachedId, Gender: $cachedGender, Number: $cachedNumber');
+
         setState(() {
-          _characterId = prefs.getInt('selected_character_id') ?? 1;
-          _characterGender =
-              prefs.getString('selected_character_gender') ?? 'Boy';
-          _characterNumber = prefs.getInt('selected_character_number') ?? 1;
+          _characterId = cachedId ?? 1;
+          _characterGender = cachedGender ?? 'Boy';
+          _characterNumber = cachedNumber ?? 1;
           _characterDetailsLoaded = true;
         });
+
+        if (cachedId == null) {
+          print(
+              '⚠️ Home: No cached character found, using defaults (ID: 1, Boy, Number: 1)');
+        } else {
+          print('✅ Home: Loaded character from cache');
+        }
       } catch (e) {
-        print('Error loading from SharedPreferences: $e');
+        print('❌ Home: Error loading from SharedPreferences: $e');
       }
     }
   }

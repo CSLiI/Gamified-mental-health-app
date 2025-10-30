@@ -84,6 +84,8 @@ class CharacterBase(BaseModel):
     name: str
     description: Optional[str] = None
     image_url: Optional[str] = None
+    gender: Optional[str] = None
+    number: Optional[int] = None
 
 class CharacterCreate(CharacterBase):
     pass

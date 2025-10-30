@@ -92,9 +92,9 @@ def get_sent_requests(
         schemas.FriendRequestResponse(
             id=req.id,
             sender_id=req.sender_id,
-            sender_email=req.sender.email,
-            sender_first_name=req.sender.first_name,
-            sender_last_name=req.sender.last_name,
+            sender_email=req.receiver.email,
+            sender_first_name=req.receiver.first_name,
+            sender_last_name=req.receiver.last_name,
             receiver_id=req.receiver_id,
             status=req.status.value,
             created_at=req.created_at

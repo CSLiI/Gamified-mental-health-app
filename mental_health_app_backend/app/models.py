@@ -82,6 +82,8 @@ class Character(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     image_url = Column(Text)
+    gender = Column(String(20))  # 'Boy' or 'Girl'
+    number = Column(Integer)  # 1, 2, 3, etc.
     
     # Relationships
     user_characters = relationship("UserCharacter", back_populates="character", cascade="all, delete-orphan")

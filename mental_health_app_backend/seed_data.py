@@ -20,22 +20,30 @@ def seed_characters(db):
         {
             "name": "Buddy",
             "description": "A loyal companion who grows with your emotional journey",
-            "image_url": "/assets/characters/buddy.png"
+            "image_url": "/assets/characters/buddy.png",
+            "gender": "Boy",
+            "number": 1
         },
         {
             "name": "Luna",
             "description": "A calm and peaceful guide through mindfulness",
-            "image_url": "/assets/characters/luna.png"
+            "image_url": "/assets/characters/luna.png",
+            "gender": "Girl",
+            "number": 1
         },
         {
             "name": "Spark",
             "description": "An energetic friend who celebrates your victories",
-            "image_url": "/assets/characters/spark.png"
+            "image_url": "/assets/characters/spark.png",
+            "gender": "Girl",
+            "number": 2
         },
         {
             "name": "Zen",
             "description": "A wise companion focused on inner peace",
-            "image_url": "/assets/characters/zen.png"
+            "image_url": "/assets/characters/zen.png",
+            "gender": "Boy",
+            "number": 2
         }
     ]
     

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../core/constants/app_colors.dart';
 
 class SocialScreen extends StatefulWidget {
   const SocialScreen({super.key});
@@ -58,51 +59,110 @@ class _SocialScreenState extends State<SocialScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF667EEA),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.go('/home'),
-        ),
-        title: const Text(
-          '🤝 Social',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFF8F9FE),
+              const Color(0xFFE8EAFC),
+            ],
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add, color: Colors.white),
-            onPressed: _showAddFriendDialog,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header with back button and add friend button
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon:
+                          Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                      onPressed: () => context.go('/home'),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Friends',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.person_add_rounded,
+                          color: AppColors.primary),
+                      onPressed: _showAddFriendDialog,
+                      iconSize: 28,
+                    ),
+                  ],
+                ),
+              ),
+              // Tab Bar
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.secondary],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                  tabs: const [
+                    Tab(text: 'Friends'),
+                    Tab(text: 'Requests'),
+                    Tab(text: 'Sent'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Tab Views
+              Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildFriendsTab(),
+                          _buildRequestsTab(),
+                          _buildSentTab(),
+                        ],
+                      ),
+              ),
+            ],
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(text: 'Friends'),
-            Tab(text: 'Requests'),
-            Tab(text: 'Sent'),
-          ],
         ),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF667EEA)))
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildFriendsTab(),
-                _buildRequestsTab(),
-                _buildSentTab(),
-              ],
-            ),
     );
   }
 
@@ -181,14 +241,31 @@ class _SocialScreenState extends State<SocialScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 100, color: Colors.grey[300]),
-          const SizedBox(height: 16),
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.secondary.withValues(alpha: 0.2),
+                  AppColors.primary.withValues(alpha: 0.2),
+                ],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 50,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 24),
           Text(
             title,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -199,7 +276,8 @@ class _SocialScreenState extends State<SocialScreen>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
               ),
             ),
           ),
@@ -209,31 +287,45 @@ class _SocialScreenState extends State<SocialScreen>
   }
 
   Widget _buildFriendCard(Map<String, dynamic> friend) {
+    final String friendName =
+        '${friend['friend_first_name'] ?? ''} ${friend['friend_last_name'] ?? ''}'
+            .trim();
+    final String firstLetter =
+        friendName.isNotEmpty ? friendName[0].toUpperCase() : '?';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: const Color(0xFF667EEA),
-            child: Text(
-              friend['name']?[0]?.toUpperCase() ?? '?',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.secondary],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                firstLetter,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -243,26 +335,34 @@ class _SocialScreenState extends State<SocialScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  friend['name'] ?? 'Unknown',
-                  style: const TextStyle(
+                  friendName.isEmpty ? 'Unknown' : friendName,
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0A4B80),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Level ${friend['level'] ?? 1}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                Row(
+                  children: [
+                    Icon(Icons.star_rounded,
+                        size: 16, color: AppColors.gameYellow),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Level ${friend['friend_level'] ?? 1}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Color(0xFF667EEA)),
+            icon: Icon(Icons.more_vert_rounded, color: AppColors.primary),
             onPressed: () => _showFriendOptions(friend),
           ),
         ],
@@ -271,31 +371,45 @@ class _SocialScreenState extends State<SocialScreen>
   }
 
   Widget _buildRequestCard(Map<String, dynamic> request) {
+    final String senderName =
+        '${request['sender_first_name'] ?? ''} ${request['sender_last_name'] ?? ''}'
+            .trim();
+    final String firstLetter =
+        senderName.isNotEmpty ? senderName[0].toUpperCase() : '?';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: const Color(0xFF667EEA),
-            child: Text(
-              request['name']?[0]?.toUpperCase() ?? '?',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.secondary],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                firstLetter,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -305,19 +419,20 @@ class _SocialScreenState extends State<SocialScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  request['name'] ?? 'Unknown',
-                  style: const TextStyle(
+                  senderName.isEmpty ? 'Unknown' : senderName,
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0A4B80),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Wants to be friends',
+                  'Wants to connect',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -325,13 +440,29 @@ class _SocialScreenState extends State<SocialScreen>
           ),
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.check_circle, color: Color(0xFF28A745)),
-                onPressed: () => _acceptFriendRequest(request['id']),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.stateThriving.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon:
+                      Icon(Icons.check_rounded, color: AppColors.stateThriving),
+                  onPressed: () => _acceptFriendRequest(request['id']),
+                  iconSize: 24,
+                ),
               ),
-              IconButton(
-                icon: const Icon(Icons.cancel, color: Color(0xFFEF5350)),
-                onPressed: () => _rejectFriendRequest(request['id']),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.close_rounded, color: AppColors.error),
+                  onPressed: () => _rejectFriendRequest(request['id']),
+                  iconSize: 24,
+                ),
               ),
             ],
           ),
@@ -341,31 +472,45 @@ class _SocialScreenState extends State<SocialScreen>
   }
 
   Widget _buildSentRequestCard(Map<String, dynamic> request) {
+    final String receiverName =
+        '${request['sender_first_name'] ?? ''} ${request['sender_last_name'] ?? ''}'
+            .trim();
+    final String firstLetter =
+        receiverName.isNotEmpty ? receiverName[0].toUpperCase() : '?';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: const Color(0xFF667EEA),
-            child: Text(
-              request['name']?[0]?.toUpperCase() ?? '?',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.gameBlue, AppColors.gamePurple],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                firstLetter,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -375,29 +520,41 @@ class _SocialScreenState extends State<SocialScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  request['name'] ?? 'Unknown',
-                  style: const TextStyle(
+                  receiverName.isEmpty ? 'Unknown' : receiverName,
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0A4B80),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Request pending',
+                  'Pending...',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
             ),
           ),
-          TextButton(
+          TextButton.icon(
             onPressed: () => _cancelFriendRequest(request['id']),
-            child: const Text(
+            icon: Icon(Icons.close_rounded, size: 18, color: AppColors.error),
+            label: Text(
               'Cancel',
-              style: TextStyle(color: Color(0xFFEF5350)),
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.error.withValues(alpha: 0.1),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ],
@@ -410,16 +567,33 @@ class _SocialScreenState extends State<SocialScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Friend'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Add Friend',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: searchController,
-              decoration: const InputDecoration(
-                labelText: 'Username or Email',
-                hintText: 'Search for friends...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                labelText: 'Email Address',
+                hintText: 'Enter friend\'s email',
+                prefixIcon: Icon(Icons.email_rounded, color: AppColors.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.primary),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                ),
               ),
             ),
           ],
@@ -427,17 +601,41 @@ class _SocialScreenState extends State<SocialScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _sendFriendRequest(searchController.text);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF667EEA),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            child: const Text('Send Request'),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.secondary],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _sendFriendRequest(searchController.text);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Send Request',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -447,34 +645,97 @@ class _SocialScreenState extends State<SocialScreen>
   void _showFriendOptions(Map<String, dynamic> friend) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             ListTile(
-              leading: const Icon(Icons.person, color: Color(0xFF667EEA)),
-              title: const Text('View Profile'),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.2),
+                      AppColors.secondary.withValues(alpha: 0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.person_rounded, color: AppColors.primary),
+              ),
+              title: Text(
+                'View Profile',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 // TODO: Navigate to friend profile
               },
             ),
+            const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.message, color: Color(0xFF667EEA)),
-              title: const Text('Send Message'),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.2),
+                      AppColors.secondary.withValues(alpha: 0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child:
+                    Icon(Icons.chat_bubble_rounded, color: AppColors.primary),
+              ),
+              title: Text(
+                'Send Message',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 // TODO: Implement messaging
               },
             ),
+            const SizedBox(height: 8),
             ListTile(
-              leading:
-                  const Icon(Icons.person_remove, color: Color(0xFFEF5350)),
-              title: const Text('Remove Friend'),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child:
+                    Icon(Icons.person_remove_rounded, color: AppColors.error),
+              ),
+              title: Text(
+                'Remove Friend',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.error,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _removeFriend(friend['id']);
