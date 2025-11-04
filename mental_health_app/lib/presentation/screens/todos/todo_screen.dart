@@ -317,7 +317,7 @@ class _TodoScreenState extends State<TodoScreen> {
                           ),
                           _buildGoalCard(
                             context,
-                            '🔄 Weekly Goals',
+                            'Weekly Goals',
                             'Plan your week ahead',
                             const Color(0xFF4CAF50),
                             () => Navigator.push(
@@ -330,7 +330,7 @@ class _TodoScreenState extends State<TodoScreen> {
                           const SizedBox(height: 12),
                           _buildGoalCard(
                             context,
-                            '📊 Monthly Goals',
+                            'Monthly Goals',
                             'Set monthly milestones',
                             const Color(0xFF2196F3),
                             () => Navigator.push(
@@ -343,7 +343,7 @@ class _TodoScreenState extends State<TodoScreen> {
                           const SizedBox(height: 12),
                           _buildGoalCard(
                             context,
-                            '🎯 Yearly Goals',
+                            'Yearly Goals',
                             'Achieve long-term dreams',
                             const Color(0xFFFF9800),
                             () => Navigator.push(

@@ -11,7 +11,8 @@ from app.routers import (
     achievement_routes,
     reward_routes,
     journal_prompt_routes,
-    friend_routes
+    friend_routes,
+    social
 )
 from app.database import engine
 from app import models
@@ -48,6 +49,7 @@ app.include_router(achievement_routes.router)
 app.include_router(reward_routes.router)
 app.include_router(journal_prompt_routes.router)
 app.include_router(friend_routes.router)
+app.include_router(social.router)
 
 @app.get("/")
 def read_root():

@@ -405,3 +405,51 @@ class UserSearchResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ==================== Encouragements ====================
+class EncouragementCreate(BaseModel):
+    message: str
+
+class EncouragementResponse(BaseModel):
+    id: int
+    sender_id: int
+    receiver_id: int
+    sender_first_name: str
+    sender_last_name: str
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ==================== Messages ====================
+class MessageCreate(BaseModel):
+    message: str
+
+class MessageResponse(BaseModel):
+    id: int
+    sender_id: int
+    receiver_id: int
+    sender_first_name: Optional[str] = None
+    sender_last_name: Optional[str] = None
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ==================== User Profile ====================
+class UserProfileResponse(BaseModel):
+    id: int
+    email: str
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    character: Optional[dict] = None
+    interests: Optional[List[dict]] = None
+
+    class Config:
+        from_attributes = True

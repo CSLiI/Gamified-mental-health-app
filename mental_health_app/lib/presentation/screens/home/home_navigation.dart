@@ -6,6 +6,7 @@ import '../mood/mood_screen.dart';
 import '../journal/journal_screen.dart';
 import '../todos/todo_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../../data/services/api_service.dart';
 
 class HomeNavigation extends StatefulWidget {
   const HomeNavigation({super.key});
@@ -15,8 +16,11 @@ class HomeNavigation extends StatefulWidget {
 }
 
 class _HomeNavigationState extends State<HomeNavigation> {
+  final _apiService = ApiService();
   int _currentIndex = 0;
   String? _lastSelectedMood; // Store mood at navigation level
+  bool _isInitialLoad = true; // Track first load to prevent flash
+  bool _moodLoaded = false; // Track if mood has been loaded
 
   // Mood colors matching mood_screen.dart
   final Map<String, Color> _moodColors = {
@@ -63,12 +67,16 @@ class _HomeNavigationState extends State<HomeNavigation> {
     print('🎭 NAVIGATION: Mood selected: "$mood" (length: ${mood.length})');
     print('🔍 NAVIGATION: Mood bytes: ${mood.codeUnits}');
 
-    // Save to SharedPreferences
+    // Save to SharedPreferences with user-specific key
     try {
+      // Get current user ID
+      final user = await _apiService.getCurrentUser();
+      final userId = user['id'];
+
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_selected_mood', mood);
-      final saved = prefs.getString('last_selected_mood');
-      print('💾 NAVIGATION: Saved mood: "$mood"');
+      await prefs.setString('last_selected_mood_$userId', mood);
+      final saved = prefs.getString('last_selected_mood_$userId');
+      print('💾 NAVIGATION: Saved mood for user $userId: "$mood"');
       print('✅ NAVIGATION: Read back mood: "$saved"');
 
       // Update local state
@@ -87,7 +95,8 @@ class _HomeNavigationState extends State<HomeNavigation> {
   @override
   void initState() {
     super.initState();
-    _loadLastMood(); // Load mood on startup
+    // Start loading immediately but don't block
+    _loadInitialMood();
     _screens = [
       HomeScreen(onNavigate: _onTabSelected),
       MoodScreen(
@@ -102,23 +111,128 @@ class _HomeNavigationState extends State<HomeNavigation> {
     ];
   }
 
-  Future<void> _loadLastMood() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only reload on subsequent dependency changes (not initial load)
+    if (!_isInitialLoad) {
+      print('🔄 NAVIGATION: Dependencies changed, reloading mood...');
+      _loadInitialMood();
+    }
+    _isInitialLoad = false;
+  }
+
+  // Load mood fast to prevent any flash
+  Future<void> _loadInitialMood() async {
+    if (_moodLoaded) return; // Don't reload if already loaded
+
     try {
+      // Get current user ID
+      final user = await _apiService.getCurrentUser();
+      final userId = user['id'];
+
+      // Load from cache (fast - no API call needed)
       final prefs = await SharedPreferences.getInstance();
-      final mood = prefs.getString('last_selected_mood');
-      if (mood != null) {
-        setState(() {
-          _lastSelectedMood = mood;
-        });
-        print('📱 NAVIGATION: Loaded mood: "$mood"');
+      final cachedMood = prefs.getString('last_selected_mood_$userId');
+
+      if (cachedMood != null) {
+        if (mounted) {
+          setState(() {
+            _lastSelectedMood = cachedMood;
+            _moodLoaded = true;
+          });
+        }
+        print(
+            '⚡ NAVIGATION: Loaded cached mood for user $userId: "$cachedMood"');
+
+        // Then update from backend in background (don't await)
+        _updateFromBackend(userId);
+      } else {
+        // No cache, fetch from backend FIRST before showing UI
+        print('ℹ️ NAVIGATION: No cached mood, fetching from backend...');
+
+        try {
+          final recentMoods = await _apiService.getMoodLogs(limit: 1);
+          if (recentMoods.isNotEmpty && mounted) {
+            final latestMood = recentMoods[0]['mood'] as String;
+            setState(() {
+              _lastSelectedMood = latestMood;
+              _moodLoaded = true;
+            });
+            print(
+                '✅ NAVIGATION: Loaded mood from backend for user $userId: "$latestMood"');
+
+            // Update cache
+            await prefs.setString('last_selected_mood_$userId', latestMood);
+          } else {
+            // No mood logs, use default
+            if (mounted) {
+              setState(() {
+                _moodLoaded = true;
+              });
+            }
+            print('ℹ️ NAVIGATION: No mood logs found, using default');
+          }
+        } catch (backendError) {
+          print('⚠️ NAVIGATION: Failed to fetch from backend: $backendError');
+          // Show UI with default color if backend fails
+          if (mounted) {
+            setState(() {
+              _moodLoaded = true;
+            });
+          }
+        }
       }
     } catch (e) {
-      print('Error loading mood: $e');
+      print('❌ NAVIGATION: Error loading initial mood: $e');
+      // Still mark as loaded to show UI even if error
+      if (mounted) {
+        setState(() {
+          _moodLoaded = true;
+        });
+      }
+    }
+  }
+
+  // Update mood from backend (can run in background)
+  Future<void> _updateFromBackend(int userId) async {
+    try {
+      final recentMoods = await _apiService.getMoodLogs(limit: 1);
+      if (recentMoods.isNotEmpty && mounted) {
+        final latestMood = recentMoods[0]['mood'] as String;
+
+        // Only update if different from cached
+        if (_lastSelectedMood != latestMood) {
+          setState(() {
+            _lastSelectedMood = latestMood;
+          });
+          print(
+              '🔄 NAVIGATION: Updated mood from backend for user $userId: "$latestMood"');
+        }
+
+        // Update cache
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('last_selected_mood_$userId', latestMood);
+      }
+    } catch (e) {
+      print('⚠️ NAVIGATION: Failed to update from backend: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Block rendering until mood is loaded to prevent flash
+    if (!_moodLoaded) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    return _buildMainScaffold();
+  }
+
+  Widget _buildMainScaffold() {
     return Scaffold(
       body: Container(
         width: double.infinity,

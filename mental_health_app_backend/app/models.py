@@ -291,6 +291,36 @@ class FriendRequest(Base):
     # Relationships
     sender = relationship("User", foreign_keys=[sender_id], backref="sent_requests")
     receiver = relationship("User", foreign_keys=[receiver_id], backref="received_requests")
+
+# Encouragement table (social accountability)
+class Encouragement(Base):
+    __tablename__ = "encouragements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    message = Column(String(500), nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    sender = relationship("User", foreign_keys=[sender_id], backref="sent_encouragements")
+    receiver = relationship("User", foreign_keys=[receiver_id], backref="received_encouragements")
+
+# Message table (friend messaging)
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    message = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
+    receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
     
 # Update User model to include relationships (add these lines to User class):
 # user_achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")

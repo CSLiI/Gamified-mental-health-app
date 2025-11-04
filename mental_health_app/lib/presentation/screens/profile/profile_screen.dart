@@ -18,6 +18,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userData;
   List<dynamic> _achievements = [];
   Map<String, dynamic>? _streakData;
+  Map<String, dynamic>? _moodState;
   bool _isLoading = true;
 
   @override
@@ -32,10 +33,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final achievements = await _apiService.getMyAchievements();
       final streak = await _apiService.getMyStreak();
 
+      // Get character mood state if user has a character
+      Map<String, dynamic>? moodState;
+      if (user['character'] != null) {
+        try {
+          moodState = await _apiService.getCharacterMoodState();
+        } catch (e) {
+          print('Error loading mood state: $e');
+        }
+      }
+
       setState(() {
         _userData = user;
         _achievements = achievements;
         _streakData = streak;
+        _moodState = moodState;
         _isLoading = false;
       });
     } catch (e) {
@@ -109,6 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final email = _userData?['email'] ?? '';
     final level = _userData?['level'] ?? 1;
     final xp = _userData?['xp'] ?? 0;
+    final character = _userData?['character'];
 
     return Container(
       width: double.infinity,
@@ -136,21 +149,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
-          // Avatar
+          // Character Avatar (square)
           Container(
-            width: 100,
-            height: 100,
+            width: 120,
+            height: 120,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(color: Colors.white, width: 4),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withAlpha(76), // ~30% opacity
-                  Colors.white.withAlpha(25), // ~10% opacity
-                ],
-              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withAlpha(50),
@@ -159,10 +165,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.person,
-              size: 50,
-              color: Colors.white,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: character != null
+                  ? _buildCharacterImage(character)
+                  : Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withAlpha(76),
+                            Colors.white.withAlpha(25),
+                          ],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        size: 60,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 16),
@@ -427,6 +450,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCharacterImage(Map<String, dynamic> character) {
+    final gender = character['gender'] ?? 'boy';
+    final characterNumber = character['number'] ?? 1;
+
+    // Get mood state from character mood state
+    String moodState = 'Calm'; // Default to Calm (was neutral)
+    if (_moodState != null && _moodState!['character_state'] != null) {
+      // Map character_state to mood state for GIF filename (proper case)
+      switch (_moodState!['character_state']) {
+        case 'thriving':
+          moodState = 'Happy';
+          break;
+        case 'content':
+          moodState = 'Calm';
+          break;
+        case 'struggling':
+          moodState = 'Sad';
+          break;
+        case 'needs_support':
+          moodState = 'Angry';
+          break;
+        default:
+          moodState = 'Calm';
+      }
+    }
+
+    final genderPrefix = gender == 'female' ? 'Girl' : 'Boy';
+
+    // Format: HappyBoy1.gif
+    return Image.asset(
+      'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        // Fallback to Calm if mood-specific GIF doesn't exist
+        return Image.asset(
+          'assets/images/${genderPrefix}_Gif_33FPS/Calm$genderPrefix$characterNumber.gif',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.person,
+              size: 60,
+              color: Colors.white,
+            );
+          },
+        );
+      },
     );
   }
 

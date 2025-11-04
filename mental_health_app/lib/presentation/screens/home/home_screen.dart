@@ -37,18 +37,58 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only reload if data hasn't been loaded yet
+    if (_userData == null && !_isLoading) {
+      print('🔄 HOME: Dependencies changed, loading initial data...');
+      _loadCharacterDetails();
+      _loadLastSelectedMood();
+      _loadData();
+    }
+  }
+
   Future<void> _loadLastSelectedMood() async {
     try {
+      // Get current user ID first
+      final user = await _apiService.getCurrentUser();
+      final userId = user['id'];
+
+      // ALWAYS fetch latest mood from backend (source of truth)
+      try {
+        final recentMoods = await _apiService.getMoodLogs(limit: 1);
+        if (recentMoods.isNotEmpty) {
+          final latestMood = recentMoods[0]['mood'] as String;
+          setState(() {
+            _lastSelectedMood = latestMood;
+          });
+          print(
+              '✅ HOME: Loaded latest mood from backend for user $userId: $latestMood');
+
+          // Update SharedPreferences to match backend
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('last_selected_mood_$userId', latestMood);
+          return;
+        }
+      } catch (apiError) {
+        print('⚠️ HOME: Failed to fetch mood from backend: $apiError');
+        // Fallback to SharedPreferences if API fails
+      }
+
+      // Fallback: Try SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      final savedMood = prefs.getString('last_selected_mood');
+      final savedMood = prefs.getString('last_selected_mood_$userId');
       if (savedMood != null) {
         setState(() {
           _lastSelectedMood = savedMood;
         });
-        print('📱 Loaded persisted mood: $savedMood');
+        print('� HOME: Loaded mood from cache for user $userId: $savedMood');
+      } else {
+        print('ℹ️ HOME: No mood data found for user $userId');
       }
     } catch (e) {
-      print('Error loading last mood: $e');
+      print('❌ HOME: Error loading last mood: $e');
     }
   }
 
@@ -78,11 +118,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     print('📊 Mapped $mood → $characterState');
 
-    // Save to SharedPreferences for persistence
+    // Save to SharedPreferences for persistence with user-specific key
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_selected_mood', mood);
-      print('💾 Saved mood to SharedPreferences: $mood');
+      if (_userData != null) {
+        final userId = _userData!['id'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('last_selected_mood_$userId', mood);
+        print('💾 Saved mood to SharedPreferences for user $userId: $mood');
+      }
     } catch (e) {
       print('Error saving mood: $e');
     }
@@ -121,12 +164,21 @@ class _HomeScreenState extends State<HomeScreen> {
           _characterDetailsLoaded = true;
         });
 
-        // Update SharedPreferences to match (for offline access)
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('selected_character_id', _characterId);
-        await prefs.setString('selected_character_gender', _characterGender);
-        await prefs.setInt('selected_character_number', _characterNumber);
-        print('💾 Home: Character cached to SharedPreferences');
+        // Update SharedPreferences to match (for offline access) with user-specific keys
+        try {
+          final user = await _apiService.getCurrentUser();
+          final userId = user['id'];
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('selected_character_id_$userId', _characterId);
+          await prefs.setString(
+              'selected_character_gender_$userId', _characterGender);
+          await prefs.setInt(
+              'selected_character_number_$userId', _characterNumber);
+          print(
+              '💾 Home: Character cached to SharedPreferences for user $userId');
+        } catch (e) {
+          print('Error saving character to SharedPreferences: $e');
+        }
       } else {
         print('⚠️ Home: No character found in response');
       }
@@ -135,13 +187,16 @@ class _HomeScreenState extends State<HomeScreen> {
       // Fallback to SharedPreferences if API fails
       try {
         print('🔄 Home: Falling back to SharedPreferences...');
+        final user = await _apiService.getCurrentUser();
+        final userId = user['id'];
         final prefs = await SharedPreferences.getInstance();
-        final cachedId = prefs.getInt('selected_character_id');
-        final cachedGender = prefs.getString('selected_character_gender');
-        final cachedNumber = prefs.getInt('selected_character_number');
+        final cachedId = prefs.getInt('selected_character_id_$userId');
+        final cachedGender =
+            prefs.getString('selected_character_gender_$userId');
+        final cachedNumber = prefs.getInt('selected_character_number_$userId');
 
         print(
-            '📦 Home: Cached values - ID: $cachedId, Gender: $cachedGender, Number: $cachedNumber');
+            '📦 Home: Cached values for user $userId - ID: $cachedId, Gender: $cachedGender, Number: $cachedNumber');
 
         setState(() {
           _characterId = cachedId ?? 1;
@@ -152,9 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (cachedId == null) {
           print(
-              '⚠️ Home: No cached character found, using defaults (ID: 1, Boy, Number: 1)');
+              '⚠️ Home: No cached character found for user $userId, using defaults (ID: 1, Boy, Number: 1)');
         } else {
-          print('✅ Home: Loaded character from cache');
+          print('✅ Home: Loaded character from cache for user $userId');
         }
       } catch (e) {
         print('❌ Home: Error loading from SharedPreferences: $e');
@@ -195,47 +250,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Get the appropriate character GIF path based on mood state
   String _getCharacterGifPath(String mood) {
-    // Capitalize the mood for the GIF filename
-    String capitalizedMood;
+    // Map mood to proper case for GIF filename (matching asset structure: HappyBoy1.gif)
+    String moodState;
 
     switch (mood.toLowerCase()) {
       case 'happy':
-        capitalizedMood = 'Happy';
+        moodState = 'Happy';
         break;
       case 'calm':
-        capitalizedMood = 'Calm';
+        moodState = 'Calm';
         break;
       case 'tired':
-        capitalizedMood = 'Tired';
+        moodState = 'Tired';
         break;
       case 'anxious':
-        capitalizedMood = 'Anxious';
+        moodState = 'Anxious';
         break;
       case 'sad':
-        capitalizedMood = 'Sad';
+        moodState = 'Sad';
         break;
       case 'angry':
-        capitalizedMood = 'Angry';
+        moodState = 'Angry';
         break;
       // Handle backend states (fallback)
       case 'thriving':
-        capitalizedMood = 'Happy';
+        moodState = 'Happy';
         break;
       case 'content':
-        capitalizedMood = 'Calm';
+        moodState = 'Calm';
         break;
       case 'struggling':
-        capitalizedMood = 'Tired';
+        moodState = 'Sad';
         break;
       case 'needs_support':
-        capitalizedMood = 'Sad';
+        moodState = 'Angry';
         break;
       default:
-        capitalizedMood = 'Calm';
+        moodState = 'Calm';
     }
 
-    // Construct path based on character gender, number and mood
-    return 'assets/images/${_characterGender}_Gif_33FPS/$capitalizedMood$_characterGender$_characterNumber.gif';
+    // Construct path: Boy_Gif_33FPS/HappyBoy1.gif format
+    return 'assets/images/${_characterGender}_Gif_33FPS/$moodState${_characterGender}$_characterNumber.gif';
   }
 
   @override

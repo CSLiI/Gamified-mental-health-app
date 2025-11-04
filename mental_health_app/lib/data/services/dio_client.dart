@@ -106,13 +106,27 @@ class DioClient {
     // Clear auth token
     await _storage.delete(key: 'auth_token');
 
-    // Clear character data from SharedPreferences
+    // Clear ALL user-specific SharedPreferences data
     final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+
+    // Remove all keys that might contain user-specific data
+    for (final key in keys) {
+      if (key.contains('selected_character_') ||
+          key.contains('last_selected_mood_') ||
+          key.contains('_user_')) {
+        await prefs.remove(key);
+        print('🧹 Removed SharedPreferences key: $key');
+      }
+    }
+
+    // Also remove old non-user-specific keys for backward compatibility
     await prefs.remove('selected_character_id');
     await prefs.remove('selected_character_gender');
     await prefs.remove('selected_character_number');
+    await prefs.remove('last_selected_mood');
 
-    print('🚪 Token and character data deleted - logged out');
+    print('🚪 Token and ALL user data deleted - logged out');
   }
 
   Future<String?> getToken() async {

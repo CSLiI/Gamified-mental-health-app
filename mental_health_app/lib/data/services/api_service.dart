@@ -498,4 +498,116 @@ class ApiService {
       throw _handleError(e);
     }
   }
+
+  // Get friend's profile including character
+  Future<Map<String, dynamic>> getFriendProfile(int userId) async {
+    try {
+      final response = await _dioClient.get('/users/$userId/profile');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get friend's todos
+  Future<List<dynamic>> getFriendTodos(int userId, {String? periodType}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (periodType != null) queryParams['period_type'] = periodType;
+
+      final response = await _dioClient.get(
+        '/users/$userId/todos',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get friend's streak
+  Future<Map<String, dynamic>> getFriendStreak(int userId) async {
+    try {
+      final response = await _dioClient.get('/users/$userId/streak');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get friend's character mood state
+  Future<Map<String, dynamic>> getFriendCharacterMoodState(int userId,
+      {int days = 7}) async {
+    try {
+      print('[DEBUG API] Fetching mood state for friend userId: $userId');
+      final response = await _dioClient.get(
+        '/users/$userId/character/mood-state',
+        queryParameters: {'days': days},
+      );
+      print(
+          '[DEBUG API] Received mood state for user $userId: ${response.data}');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Send encouragement to friend
+  Future<void> sendEncouragement(int friendId, String message) async {
+    try {
+      await _dioClient.post(
+        '/friends/$friendId/encouragement',
+        data: {'message': message},
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get encouragements received
+  Future<List<dynamic>> getEncouragements({bool? unreadOnly}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (unreadOnly != null) queryParams['unread_only'] = unreadOnly;
+
+      final response = await _dioClient.get(
+        '/encouragements/',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Mark encouragement as read
+  Future<void> markEncouragementRead(int encouragementId) async {
+    try {
+      await _dioClient.put('/encouragements/$encouragementId/read');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Send message to friend
+  Future<void> sendMessage(int friendId, String message) async {
+    try {
+      await _dioClient.post(
+        '/friends/$friendId/messages',
+        data: {'message': message},
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get messages with friend
+  Future<List<dynamic>> getMessages(int friendId) async {
+    try {
+      final response = await _dioClient.get('/friends/$friendId/messages');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 }

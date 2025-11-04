@@ -46,18 +46,63 @@ class _MoodScreenState extends State<MoodScreen>
     _loadData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload character when dependencies change (e.g., after account switch)
+    print('🔄 MOOD: Dependencies changed, reloading character...');
+    _loadCharacterDetails();
+    _loadData();
+  }
+
   Future<void> _loadCharacterDetails() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _characterId = prefs.getInt('selected_character_id') ?? 1;
-        _characterGender =
-            prefs.getString('selected_character_gender') ?? 'Boy';
-        _characterNumber = prefs.getInt('selected_character_number') ?? 1;
-        _characterLoaded = true;
-      });
+      // Load from API first (source of truth)
+      print('🔍 MOOD: Loading character from API...');
+      final currentCharacter = await _apiService.getCurrentCharacter();
+
+      if (currentCharacter['character'] != null) {
+        final character = currentCharacter['character'];
+        print(
+            '✅ MOOD: Character found - Gender: ${character['gender']}, Number: ${character['number']}');
+
+        setState(() {
+          _characterId = character['id'] ?? 1;
+          _characterGender = character['gender'] ?? 'Boy';
+          _characterNumber = character['number'] ?? 1;
+          _characterLoaded = true;
+        });
+
+        // Cache to user-specific SharedPreferences for offline access
+        final user = await _apiService.getCurrentUser();
+        final userId = user['id'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('selected_character_id_$userId', _characterId);
+        await prefs.setString(
+            'selected_character_gender_$userId', _characterGender);
+        await prefs.setInt(
+            'selected_character_number_$userId', _characterNumber);
+        print('💾 MOOD: Character cached for user $userId');
+      }
     } catch (e) {
-      print('Error loading character details: $e');
+      print('❌ MOOD: Error loading from API: $e');
+      // Fallback to user-specific SharedPreferences
+      try {
+        final user = await _apiService.getCurrentUser();
+        final userId = user['id'];
+        final prefs = await SharedPreferences.getInstance();
+        setState(() {
+          _characterId = prefs.getInt('selected_character_id_$userId') ?? 1;
+          _characterGender =
+              prefs.getString('selected_character_gender_$userId') ?? 'Boy';
+          _characterNumber =
+              prefs.getInt('selected_character_number_$userId') ?? 1;
+          _characterLoaded = true;
+        });
+        print('📦 MOOD: Loaded character from cache for user $userId');
+      } catch (e2) {
+        print('❌ MOOD: Error loading from cache: $e2');
+      }
     }
   }
 
@@ -70,7 +115,7 @@ class _MoodScreenState extends State<MoodScreen>
 
   // Dynamically generate moods map based on selected character
   Map<String, Map<String, dynamic>> get _moods {
-    // Base path based on gender
+    // Base path based on gender - format: Boy_Gif_33FPS/HappyBoy1.gif
     final String basePath = 'assets/images/${_characterGender}_Gif_33FPS';
 
     return {
@@ -78,37 +123,38 @@ class _MoodScreenState extends State<MoodScreen>
         'icon': Icons.sentiment_very_satisfied,
         'color': const Color(0xFFFFD54F), // Yellow
         'label': 'Happy',
-        'gifPath': '$basePath/Happy$_characterGender$_characterNumber.gif',
+        'gifPath': '$basePath/Happy${_characterGender}${_characterNumber}.gif',
       },
       'calm': {
         'icon': Icons.self_improvement,
         'color': const Color(0xFF42A5F5), // Blue
         'label': 'Calm',
-        'gifPath': '$basePath/Calm$_characterGender$_characterNumber.gif',
+        'gifPath': '$basePath/Calm${_characterGender}${_characterNumber}.gif',
       },
       'tired': {
         'icon': Icons.bedtime,
         'color': const Color(0xFF78909C), // Blue Grey
         'label': 'Tired',
-        'gifPath': '$basePath/Tired$_characterGender$_characterNumber.gif',
+        'gifPath': '$basePath/Tired${_characterGender}${_characterNumber}.gif',
       },
       'anxious': {
         'icon': Icons.warning_amber_rounded,
         'color': const Color(0xFFFFA726), // Orange
         'label': 'Anxious',
-        'gifPath': '$basePath/Anxious$_characterGender$_characterNumber.gif',
+        'gifPath':
+            '$basePath/Anxious${_characterGender}${_characterNumber}.gif',
       },
       'sad': {
         'icon': Icons.sentiment_dissatisfied,
         'color': const Color(0xFF9575CD), // Purple
         'label': 'Sad',
-        'gifPath': '$basePath/Sad$_characterGender$_characterNumber.gif',
+        'gifPath': '$basePath/Sad${_characterGender}${_characterNumber}.gif',
       },
       'angry': {
         'icon': Icons.sentiment_very_dissatisfied,
         'color': const Color(0xFFEF5350), // Red
         'label': 'Angry',
-        'gifPath': '$basePath/Angry$_characterGender$_characterNumber.gif',
+        'gifPath': '$basePath/Angry${_characterGender}${_characterNumber}.gif',
       },
     };
   }
