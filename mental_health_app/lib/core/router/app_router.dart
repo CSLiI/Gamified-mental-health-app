@@ -5,6 +5,8 @@ import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/auth/onboarding_screen.dart';
 import '../../presentation/screens/home/home_navigation.dart';
 import '../../presentation/screens/social/social_screen.dart';
+import '../../presentation/screens/journal/journal_screen.dart';
+import '../../presentation/screens/todos/todo_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -32,6 +34,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/social',
       builder: (context, state) => const SocialScreen(),
+    ),
+    GoRoute(
+      path: '/journal',
+      builder: (context, state) => const JournalScreen(),
+    ),
+    GoRoute(
+      path: '/todos',
+      builder: (context, state) => const TodoScreen(),
     ),
   ],
 );

@@ -198,6 +198,22 @@ class ApiService {
     }
   }
 
+  Future<List<dynamic>> getJournalEntries({int? skip, int? limit}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (skip != null) queryParams['skip'] = skip;
+      if (limit != null) queryParams['limit'] = limit;
+
+      final response = await _dioClient.get(
+        '${ApiConstants.journals}/',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   Future<Map<String, dynamic>> getDailyPrompt() async {
     try {
       final response = await _dioClient.get(ApiConstants.dailyPrompt);
@@ -309,6 +325,24 @@ class ApiService {
 
   // ==================== Achievements ====================
 
+  Future<List<dynamic>> getAllAchievements() async {
+    try {
+      final response = await _dioClient.get('${ApiConstants.achievements}/');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getUserAchievements() async {
+    try {
+      final response = await _dioClient.get(ApiConstants.myAchievements);
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   Future<List<dynamic>> getMyAchievements() async {
     try {
       final response = await _dioClient.get(ApiConstants.myAchievements);
@@ -358,6 +392,42 @@ class ApiService {
   }
 
   // ==================== Rewards ====================
+
+  Future<List<dynamic>> getAllRewards() async {
+    try {
+      final response = await _dioClient.get('${ApiConstants.rewards}/');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getUserRewards() async {
+    try {
+      final response = await _dioClient.get('${ApiConstants.rewards}/me');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getEquippedRewards() async {
+    try {
+      final response =
+          await _dioClient.get('${ApiConstants.rewards}/me/equipped');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> equipReward(int rewardId) async {
+    try {
+      await _dioClient.post('${ApiConstants.rewards}/$rewardId/equip');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 
   Future<List<dynamic>> getAvailableRewards() async {
     try {

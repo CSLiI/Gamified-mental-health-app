@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  provider: ^6.1.1 # Add this
 
   # UI
   cupertino_icons: ^1.0.6

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'core/providers/mood_provider.dart';
+import 'core/providers/character_provider.dart';
 import 'core/router/app_router.dart';
 
 void main() {
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MoodProvider()),
+        ChangeNotifierProvider(create: (_) => CharacterProvider()),
+      ],
+      child: const MyApp(),
     ),
   );
 }
@@ -21,12 +26,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
+          seedColor: const Color(0xFF5CACEE),
         ),
-        scaffoldBackgroundColor: Colors.transparent,
         useMaterial3: true,
-        fontFamily: 'Inter',
       ),
       routerConfig: appRouter,
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../data/services/api_service.dart';
 import 'todo_list_screen.dart';
@@ -115,32 +116,94 @@ class _TodoScreenState extends State<TodoScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFF5CACEE),
-                            const Color(0xFF0A4B80),
+                            const Color(0xFF667EEA),
+                            const Color(0xFF764BA2),
                           ],
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF667EEA).withOpacity(0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
                       child: SafeArea(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 24, 32),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'My Calendar',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Track your daily tasks and goals',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
+                              // Back Button Row
+                              Row(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.arrow_back_ios_new,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => context.go('/home'),
+                                      tooltip: 'Back to Home',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white
+                                                    .withOpacity(0.2),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: const Icon(
+                                                Icons.emoji_events,
+                                                color: Colors.amber,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Text(
+                                              'Quest Hub',
+                                              style: TextStyle(
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Complete quests to level up your journey',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color:
+                                                Colors.white.withOpacity(0.95),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 24),
                               // Stats Cards
@@ -160,7 +223,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                       'Done',
                                       completedCount.toString(),
                                       Icons.check_circle,
-                                      const Color(0xFF28A745),
+                                      const Color(0xFF4CAF50),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -169,7 +232,7 @@ class _TodoScreenState extends State<TodoScreen> {
                                       'Todo',
                                       pendingCount.toString(),
                                       Icons.pending_actions,
-                                      const Color(0xFFFF9800),
+                                      const Color(0xFFFFD700),
                                     ),
                                   ),
                                 ],
@@ -382,32 +445,49 @@ class _TodoScreenState extends State<TodoScreen> {
   Widget _buildStatCard(
       String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
+          color: Colors.white.withOpacity(0.4),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 28),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
           const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               color: Colors.white,
+              letterSpacing: 1,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withOpacity(0.95),
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
