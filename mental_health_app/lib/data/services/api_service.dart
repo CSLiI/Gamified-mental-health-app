@@ -622,6 +622,19 @@ class ApiService {
     }
   }
 
+  // Get friend's mood logs for chart
+  Future<List<dynamic>> getFriendMoodLogs(int userId, {int days = 7}) async {
+    try {
+      final response = await _dioClient.get(
+        '/users/$userId/mood-logs',
+        queryParameters: {'days': days},
+      );
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // Send encouragement to friend
   Future<void> sendEncouragement(int friendId, String message) async {
     try {
@@ -659,6 +672,22 @@ class ApiService {
     }
   }
 
+  // Get all messages (challenges) received from all friends
+  Future<List<dynamic>> getAllReceivedMessages({bool? unreadOnly}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (unreadOnly != null) queryParams['unread_only'] = unreadOnly;
+
+      final response = await _dioClient.get(
+        '/messages/',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // Send message to friend
   Future<void> sendMessage(int friendId, String message) async {
     try {
@@ -676,6 +705,18 @@ class ApiService {
     try {
       final response = await _dioClient.get('/friends/$friendId/messages');
       return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Update message completion status (for challenges)
+  Future<void> updateMessageCompletion(int messageId, bool isCompleted) async {
+    try {
+      await _dioClient.put(
+        '/messages/$messageId/completion',
+        data: {'is_completed': isCompleted},
+      );
     } on DioException catch (e) {
       throw _handleError(e);
     }

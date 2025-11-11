@@ -435,6 +435,7 @@ class MessageResponse(BaseModel):
     sender_last_name: Optional[str] = None
     message: str
     is_read: bool
+    is_completed: bool = False  # For marking challenges as completed
     created_at: datetime
 
     class Config:
@@ -448,6 +449,10 @@ class UserProfileResponse(BaseModel):
     last_name: str
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
+    level: int = 1
+    xp: int = 0
+    current_streak: int = 0
+    longest_streak: int = 0
     character: Optional[dict] = None
     interests: Optional[List[dict]] = None
 

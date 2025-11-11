@@ -5,6 +5,8 @@ import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/auth/onboarding_screen.dart';
 import '../../presentation/screens/home/home_navigation.dart';
 import '../../presentation/screens/social/social_screen.dart';
+import '../../presentation/screens/social/friend_profile_screen.dart';
+import '../../presentation/screens/social/notifications_screen.dart';
 import '../../presentation/screens/journal/journal_screen.dart';
 import '../../presentation/screens/todos/todo_screen.dart';
 
@@ -42,6 +44,21 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/todos',
       builder: (context, state) => const TodoScreen(),
+    ),
+    GoRoute(
+      path: '/friend/:id',
+      builder: (context, state) {
+        final friendId = int.parse(state.pathParameters['id']!);
+        final friendName = state.uri.queryParameters['name'] ?? 'Friend';
+        return FriendProfileScreen(
+          friendId: friendId,
+          friendName: friendName,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
   ],
 );

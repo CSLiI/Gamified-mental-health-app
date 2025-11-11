@@ -331,7 +331,12 @@ class _SocialScreenState extends State<SocialScreen>
     final int friendId = friend['friend_id'];
 
     return GestureDetector(
-      onTap: () => _showAccountabilityView(friend),
+      onTap: () async {
+        await context
+            .push('/friend/$friendId?name=${Uri.encodeComponent(friendName)}');
+        // Reload data when returning from friend profile
+        _loadData();
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
@@ -348,9 +353,10 @@ class _SocialScreenState extends State<SocialScreen>
         ),
         child: Row(
           children: [
-            // Character mood GIF (square) - using unique key per friend
+            // Character mood GIF (square) - using unique key per friend with timestamp
             FutureBuilder<List<Map<String, dynamic>>>(
-              key: ValueKey('friend_mood_${friendId}_${_friends.length}'),
+              key: ValueKey(
+                  'friend_mood_${friendId}_${DateTime.now().millisecondsSinceEpoch}'),
               future: _fetchFriendMoodData(friendId),
               builder: (context, snapshot) {
                 if (snapshot.hasData &&
@@ -813,222 +819,6 @@ class _SocialScreenState extends State<SocialScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showAccountabilityView(Map<String, dynamic> friend) {
-    final String friendName =
-        '${friend['friend_first_name'] ?? ''} ${friend['friend_last_name'] ?? ''}'
-            .trim();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-
-              // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                child: Row(
-                  children: [
-                    // Friend's character GIF with mood state (square)
-                    FutureBuilder<List<Map<String, dynamic>>>(
-                      key: ValueKey(
-                          'accountability_mood_${friend['friend_id']}_${DateTime.now().millisecondsSinceEpoch}'),
-                      future: _fetchFriendMoodData(friend['friend_id']),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData &&
-                            snapshot.data![0]['character'] != null) {
-                          final character = snapshot.data![0]['character'];
-                          final moodStateData = snapshot.data![1];
-                          final gender = character['gender'] ?? 'boy';
-                          final characterNumber = character['number'] ?? 1;
-
-                          // Map character_state to mood state for GIF filename
-                          String moodState = 'neutral';
-                          if (moodStateData.isNotEmpty &&
-                              moodStateData['character_state'] != null) {
-                            switch (moodStateData['character_state']) {
-                              case 'thriving':
-                                moodState = 'Happy';
-                                break;
-                              case 'content':
-                                moodState = 'Calm';
-                                break;
-                              case 'struggling':
-                                moodState = 'Sad';
-                                break;
-                              case 'needs_support':
-                                moodState = 'Angry';
-                                break;
-                              default:
-                                moodState = 'Calm';
-                            }
-                          }
-
-                          final genderPrefix =
-                              gender == 'female' ? 'Girl' : 'Boy';
-
-                          return Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                                width: 3,
-                              ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(17),
-                              child: Image.asset(
-                                'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  // Fallback to Calm if mood-specific GIF doesn't exist
-                                  return Image.asset(
-                                    'assets/images/${genderPrefix}_Gif_33FPS/Calm$genderPrefix$characterNumber.gif',
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(Icons.person,
-                                          size: 40,
-                                          color: AppColors.textSecondary);
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                        // Fallback to gradient square with initial
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.primary, AppColors.secondary],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Center(
-                            child: Text(
-                              friendName.isNotEmpty
-                                  ? friendName[0].toUpperCase()
-                                  : '?',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            friendName.isEmpty ? 'Unknown' : friendName,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            'Accountability Partner',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Tabs for different accountability features
-              Expanded(
-                child: DefaultTabController(
-                  length: 3,
-                  child: Column(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 24),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: TabBar(
-                          indicator: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColors.primary, AppColors.secondary],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          labelColor: Colors.white,
-                          unselectedLabelColor: AppColors.textSecondary,
-                          labelStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                          dividerColor: Colors.transparent,
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          tabs: const [
-                            Tab(text: 'Tasks'),
-                            Tab(text: 'Streaks'),
-                            Tab(text: 'Challenges'),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _buildTaskAccountabilityTab(
-                                friend, scrollController),
-                            _buildStreakComparisonTab(friend, scrollController),
-                            _buildChallengesTab(friend, scrollController),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

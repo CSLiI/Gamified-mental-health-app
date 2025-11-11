@@ -316,6 +316,7 @@ class Message(Base):
     receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
+    is_completed = Column(Boolean, default=False)  # For marking challenges as completed
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships

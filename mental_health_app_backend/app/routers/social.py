@@ -87,6 +87,49 @@ async def get_user_profile(
         for interest in user.user_interests:
             interests.append({"id": interest.id, "name": interest.name})
     
+    # Calculate streak (User model doesn't have current_streak/longest_streak fields)
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    mood_logs = db.query(MoodLog).filter(
+        MoodLog.user_id == user.id,
+        MoodLog.logged_at >= thirty_days_ago
+    ).order_by(MoodLog.logged_at.desc()).all()
+    
+    current_streak = 0
+    longest_streak = 0
+    
+    if mood_logs:
+        dates = []
+        for log in mood_logs:
+            log_date = log.logged_at.date()
+            if log_date not in dates:
+                dates.append(log_date)
+        dates.sort(reverse=True)
+        
+        today = datetime.now(timezone.utc).date()
+        yesterday = today - timedelta(days=1)
+        
+        if dates[0] == today or dates[0] == yesterday:
+            current_date = dates[0]
+            current_streak = 1
+            for i in range(1, len(dates)):
+                expected_date = current_date - timedelta(days=1)
+                if dates[i] == expected_date:
+                    current_streak += 1
+                    current_date = dates[i]
+                else:
+                    break
+        
+        # Calculate longest streak
+        temp_streak = 1
+        longest_streak = 1
+        for i in range(1, len(dates)):
+            expected_date = dates[i-1] - timedelta(days=1)
+            if dates[i] == expected_date:
+                temp_streak += 1
+                longest_streak = max(longest_streak, temp_streak)
+            else:
+                temp_streak = 1
+    
     return UserProfileResponse(
         id=user.id,
         email=user.email,
@@ -94,6 +137,10 @@ async def get_user_profile(
         last_name=user.last_name,
         date_of_birth=str(user.date_of_birth) if user.date_of_birth else None,
         gender=user.gender.value if user.gender else None,
+        level=user.level if user.level else 1,
+        xp=user.xp if user.xp else 0,
+        current_streak=current_streak,
+        longest_streak=longest_streak,
         character=character,
         interests=interests
     )
@@ -120,6 +167,13 @@ async def get_friend_todos(
     
     if period_type:
         query = query.filter(Todo.period_type == period_type)
+        
+        # Filter by today's date for daily todos
+        if period_type == 'daily':
+            from sqlalchemy import func
+            from datetime import date
+            today = date.today()
+            query = query.filter(func.date(Todo.created_at) == today)
     
     todos = query.order_by(Todo.created_at.desc()).all()
     
@@ -230,20 +284,47 @@ async def get_friend_character_mood_state(
     print(f"[DEBUG] Mood state for user {user_id}: {result.get('character_state')}, mood_score: {result.get('mood_score')}")
     return result
 
+@router.get("/users/{user_id}/mood-logs")
+async def get_friend_mood_logs(
+    user_id: int,
+    days: int = 7,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a friend's mood logs for the last N days (must be friends to view)"""
+    # Check if users are friends
+    if not check_friendship(db, current_user.id, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be friends to view mood logs"
+        )
+    
+    from datetime import datetime, timedelta
+    date_from = datetime.utcnow() - timedelta(days=days)
+    
+    mood_logs = db.query(MoodLog).filter(
+        MoodLog.user_id == user_id,
+        MoodLog.logged_at >= date_from
+    ).order_by(MoodLog.logged_at.asc()).all()
+    
+    return [{
+        "id": log.id,
+        "mood": log.mood.value,
+        "logged_at": log.logged_at.isoformat()
+    } for log in mood_logs]
+
 # ==================== Encouragement ====================
 
-@router.post("/friends/{friendship_id}/encouragement", status_code=status.HTTP_201_CREATED)
+@router.post("/friends/{friend_id}/encouragement", status_code=status.HTTP_201_CREATED)
 async def send_encouragement(
-    friendship_id: int,
+    friend_id: int,
     encouragement: EncouragementCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Send encouragement to a friend"""
-    # Get the actual friend user_id
-    try:
-        receiver_id = get_friend_user_id(db, current_user.id, friendship_id)
-    except HTTPException:
+    # Check if users are friends
+    if not check_friendship(db, current_user.id, friend_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You must be friends to send encouragement"
@@ -252,7 +333,7 @@ async def send_encouragement(
     # Create encouragement
     new_encouragement = Encouragement(
         sender_id=current_user.id,
-        receiver_id=receiver_id,
+        receiver_id=friend_id,
         message=encouragement.message,
         is_read=False
     )
@@ -316,18 +397,16 @@ async def mark_encouragement_read(
 
 # ==================== Messaging ====================
 
-@router.post("/friends/{friendship_id}/messages", status_code=status.HTTP_201_CREATED)
+@router.post("/friends/{friend_id}/messages", status_code=status.HTTP_201_CREATED)
 async def send_message(
-    friendship_id: int,
+    friend_id: int,
     message: MessageCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Send a message to a friend"""
-    # Get the actual friend user_id
-    try:
-        receiver_id = get_friend_user_id(db, current_user.id, friendship_id)
-    except HTTPException:
+    # Check if users are friends
+    if not check_friendship(db, current_user.id, friend_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You must be friends to send messages"
@@ -336,7 +415,7 @@ async def send_message(
     # Create message
     new_message = Message(
         sender_id=current_user.id,
-        receiver_id=receiver_id,
+        receiver_id=friend_id,
         message=message.message,
         is_read=False
     )
@@ -346,17 +425,15 @@ async def send_message(
     
     return {"message": "Message sent successfully"}
 
-@router.get("/friends/{friendship_id}/messages", response_model=List[MessageResponse])
+@router.get("/friends/{friend_id}/messages", response_model=List[MessageResponse])
 async def get_messages(
-    friendship_id: int,
+    friend_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get message conversation with a friend"""
-    # Get the actual friend user_id
-    try:
-        other_user_id = get_friend_user_id(db, current_user.id, friendship_id)
-    except HTTPException:
+    # Check if users are friends
+    if not check_friendship(db, current_user.id, friend_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You must be friends to view messages"
@@ -367,10 +444,10 @@ async def get_messages(
         or_(
             and_(
                 Message.sender_id == current_user.id,
-                Message.receiver_id == other_user_id
+                Message.receiver_id == friend_id
             ),
             and_(
-                Message.sender_id == other_user_id,
+                Message.sender_id == friend_id,
                 Message.receiver_id == current_user.id
             )
         )
@@ -393,7 +470,72 @@ async def get_messages(
             sender_last_name=sender.last_name if sender else "",
             message=msg.message,
             is_read=msg.is_read,
+            is_completed=msg.is_completed if hasattr(msg, 'is_completed') else False,
             created_at=msg.created_at
         ))
     
     return result
+
+@router.get("/messages/", response_model=List[MessageResponse])
+async def get_all_messages(
+    unread_only: Optional[bool] = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all messages (challenges) received"""
+    query = db.query(Message).filter(
+        Message.receiver_id == current_user.id
+    )
+    
+    if unread_only:
+        query = query.filter(Message.is_read == False)
+    
+    messages = query.order_by(Message.created_at.desc()).all()
+    
+    result = []
+    for msg in messages:
+        sender = db.query(User).filter(User.id == msg.sender_id).first()
+        result.append(MessageResponse(
+            id=msg.id,
+            sender_id=msg.sender_id,
+            receiver_id=msg.receiver_id,
+            sender_first_name=sender.first_name if sender else "",
+            sender_last_name=sender.last_name if sender else "",
+            message=msg.message,
+            is_read=msg.is_read,
+            is_completed=msg.is_completed if hasattr(msg, 'is_completed') else False,
+            created_at=msg.created_at
+        ))
+    
+    return result
+
+@router.put("/messages/{message_id}/completion")
+async def update_message_completion(
+    message_id: int,
+    completion_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark a challenge (message) as completed or incomplete"""
+    is_completed = completion_data.get('is_completed', False)
+    # Get the message
+    message = db.query(Message).filter(Message.id == message_id).first()
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    # Only the receiver can mark the challenge as completed
+    if message.receiver_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only mark your own received challenges as completed"
+        )
+    
+    # Update completion status
+    message.is_completed = is_completed
+    db.commit()
+    
+    return {
+        "success": True,
+        "message_id": message_id,
+        "is_completed": is_completed
+    }
