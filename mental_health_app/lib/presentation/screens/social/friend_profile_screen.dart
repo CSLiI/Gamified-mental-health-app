@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import 'friend_profile/tabs/overview_tab.dart';
+import 'friend_profile/tabs/activity_tab.dart';
+import 'friend_profile/tabs/challenges_tab.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int friendId;
@@ -17,7 +20,8 @@ class FriendProfileScreen extends StatefulWidget {
   State<FriendProfileScreen> createState() => _FriendProfileScreenState();
 }
 
-class _FriendProfileScreenState extends State<FriendProfileScreen> {
+class _FriendProfileScreenState extends State<FriendProfileScreen>
+    with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   Map<String, dynamic>? _friendProfile;
@@ -28,14 +32,19 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
   List<dynamic> _friendMessages = [];
   int? _currentUserId;
 
+  // Tab Controller
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _loadFriendData();
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -102,6 +111,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
         moodState = 'Calm';
         break;
       case 'tired':
+        moodState = 'Tired'; // ✅ Fixed: Tired gets its own GIF
+        break;
       case 'anxious':
       case 'struggling':
         moodState = 'Anxious';
@@ -127,11 +138,13 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
       case 'calm':
       case 'content':
         return const Color(0xFF4ECDC4);
+      case 'tired':
+        return const Color(0xFF95A5A6); // Gray for tired
       case 'anxious':
       case 'struggling':
         return const Color(0xFFFFA500);
       case 'sad':
-        return const Color(0xFF95A5A6);
+        return const Color(0xFF9575CD); // Purple for sad
       case 'angry':
       case 'needs_support':
         return const Color(0xFFE74C3C);
@@ -148,6 +161,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
       case 'calm':
       case 'content':
         return '😌';
+      case 'tired':
+        return '😴'; // Sleepy emoji for tired
       case 'anxious':
       case 'struggling':
         return '😰';
@@ -442,31 +457,123 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
             : SafeArea(
                 child: Column(
                   children: [
+                    // Header
                     _buildHeader(),
+
+                    // Scrollable Content with Character, Stats, Tabs
                     Expanded(
                       child: RefreshIndicator(
                         onRefresh: _loadFriendData,
                         color: AppColors.primary,
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildCharacterCard(),
-                              const SizedBox(height: 20),
-                              _buildStatsCards(),
-                              const SizedBox(height: 20),
-                              _buildMoodSection(),
-                              const SizedBox(height: 20),
-                              _buildTodosSection(),
-                              const SizedBox(height: 20),
-                              _buildChallengesSection(),
-                              const SizedBox(height: 20),
-                              _buildActionButtons(),
-                              const SizedBox(height: 20),
-                            ],
-                          ),
+                        child: CustomScrollView(
+                          slivers: [
+                            // Character Card & Stats
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                                child: Column(
+                                  children: [
+                                    _buildCharacterCard(),
+                                    const SizedBox(height: 20),
+                                    _buildStatsCards(),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Tab Bar (Sticky)
+                            SliverPersistentHeader(
+                              pinned: true,
+                              delegate: _StickyTabBarDelegate(
+                                child: Container(
+                                  color: const Color(0xFFF8F9FE),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: TabBar(
+                                      controller: _tabController,
+                                      indicator: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF667EEA),
+                                            Color(0xFF764BA2)
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      labelColor: Colors.white,
+                                      unselectedLabelColor: Colors.grey[600],
+                                      labelStyle: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      unselectedLabelStyle: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      indicatorSize: TabBarIndicatorSize.tab,
+                                      dividerColor: Colors.transparent,
+                                      tabs: const [
+                                        Tab(text: 'Overview'),
+                                        Tab(text: 'Activity'),
+                                        Tab(text: 'Challenges'),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Tab Content
+                            SliverFillRemaining(
+                              child: TabBarView(
+                                controller: _tabController,
+                                children: [
+                                  // Overview Tab
+                                  OverviewTab(
+                                    friendTodos: _friendTodos,
+                                    friendName: widget.friendName,
+                                    onSendEncouragement: _sendEncouragement,
+                                    onSendChallenge: _sendChallenge,
+                                    onNavigateToTab: (index) {
+                                      _tabController.animateTo(index);
+                                    },
+                                  ),
+
+                                  // Activity Tab
+                                  ActivityTab(
+                                    friendTodos: _friendTodos,
+                                    friendMoodLogs: _friendMoodLogs,
+                                    friendCharacterState: _friendCharacterState,
+                                    friendName: widget.friendName,
+                                  ),
+
+                                  // Challenges Tab
+                                  ChallengesTab(
+                                    friendMessages: _friendMessages,
+                                    currentUserId: _currentUserId ?? 0,
+                                    friendId: widget.friendId,
+                                    onToggleCompletion:
+                                        _toggleChallengeCompletion,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1738,5 +1845,29 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
         ),
       ],
     );
+  }
+}
+
+// Sticky Tab Bar Delegate for pinned tabs
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _StickyTabBarDelegate({required this.child});
+
+  @override
+  double get minExtent => 70;
+
+  @override
+  double get maxExtent => 70;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
+    return false;
   }
 }

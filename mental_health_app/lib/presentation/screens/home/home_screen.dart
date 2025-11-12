@@ -68,6 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
         moodState = 'Calm';
         break;
       case 'tired':
+        moodState = 'Tired'; // Fixed: Use Tired GIF for tired mood
+        break;
       case 'anxious':
       case 'struggling':
         moodState = 'Anxious';
