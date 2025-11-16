@@ -27,7 +27,9 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/onboarding',
-      builder: (context, state) => const OnboardingScreen(),
+      builder: (context, state) => OnboardingScreen(
+        registrationData: state.extra as Map<String, dynamic>?,
+      ),
     ),
     GoRoute(
       path: '/home',

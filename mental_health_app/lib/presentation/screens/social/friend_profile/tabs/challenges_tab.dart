@@ -17,9 +17,8 @@ class ChallengesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -29,7 +28,6 @@ class ChallengesTab extends StatelessWidget {
 
           // Challenges Received Section
           _buildChallengesReceivedSection(),
-          const SizedBox(height: 20),
         ],
       ),
     );
@@ -101,21 +99,24 @@ class ChallengesTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          if (myChallenges.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(
-                child: Text(
-                  'You haven\'t sent any challenges yet',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-            )
-          else
-            // All challenges sent (scrollable)
-            ...myChallenges
-                .map((challenge) => _buildChallengeItem(challenge))
-                .toList(),
+          // Fixed height container for exactly 3 items (always show space)
+          SizedBox(
+            height: 240, // Fixed height for 3 challenges
+            child: myChallenges.isEmpty
+                ? const Center(
+                    child: Text(
+                      'You haven\'t sent any challenges yet',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const BouncingScrollPhysics(), // Internal scroll
+                    itemCount: myChallenges.length,
+                    itemBuilder: (context, index) {
+                      return _buildChallengeItem(myChallenges[index]);
+                    },
+                  ),
+          ),
         ],
       ),
     );
@@ -187,21 +188,25 @@ class ChallengesTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          if (receivedChallenges.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(
-                child: Text(
-                  'No challenges received yet',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-            )
-          else
-            // All challenges received with checkboxes (scrollable)
-            ...receivedChallenges
-                .map((challenge) => _buildReceivedChallengeItem(challenge))
-                .toList(),
+          // Fixed height container for exactly 3 items (always show space)
+          SizedBox(
+            height: 240, // Fixed height for 3 challenges
+            child: receivedChallenges.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No challenges received yet',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const BouncingScrollPhysics(), // Internal scroll
+                    itemCount: receivedChallenges.length,
+                    itemBuilder: (context, index) {
+                      return _buildReceivedChallengeItem(
+                          receivedChallenges[index]);
+                    },
+                  ),
+          ),
         ],
       ),
     );

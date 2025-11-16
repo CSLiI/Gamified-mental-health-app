@@ -20,6 +20,9 @@ class _SocialScreenState extends State<SocialScreen>
   List<dynamic> _friendRequests = [];
   List<dynamic> _sentRequests = [];
 
+  // Cache for friend mood data to avoid repeated API calls
+  final Map<int, Map<String, dynamic>> _friendMoodCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +49,31 @@ class _SocialScreenState extends State<SocialScreen>
       final friends = await _apiService.getFriends();
       final requests = await _apiService.getReceivedFriendRequests();
       final sent = await _apiService.getSentFriendRequests();
+
+      // Pre-fetch all friends' mood data in parallel for fast loading
+      _friendMoodCache.clear();
+      await Future.wait(friends.map((friend) async {
+        final friendId = friend['friend_id'] as int;
+        try {
+          final results = await Future.wait([
+            _apiService.getFriendProfile(friendId),
+            _apiService
+                .getFriendCharacterMoodState(friendId)
+                .catchError((_) => <String, dynamic>{}),
+            _apiService
+                .getFriendMoodLogs(friendId)
+                .catchError((_) => <dynamic>[]),
+          ]);
+
+          _friendMoodCache[friendId] = {
+            'profile': results[0],
+            'characterState': results[1],
+            'moodLogs': results[2],
+          };
+        } catch (e) {
+          print('Error loading mood data for friend $friendId: $e');
+        }
+      }));
 
       if (mounted) {
         setState(() {
@@ -126,13 +154,11 @@ class _SocialScreenState extends State<SocialScreen>
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.secondary],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF6C5CE7),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textSecondary,
+                  unselectedLabelColor: const Color(0xFF6B8BA8),
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -314,17 +340,6 @@ class _SocialScreenState extends State<SocialScreen>
     );
   }
 
-  // Helper method to fetch friend mood data - creates a new Future each time
-  Future<List<dynamic>> _fetchFriendMoodData(int friendId) async {
-    return Future.wait([
-      _apiService.getFriendProfile(friendId),
-      _apiService
-          .getFriendCharacterMoodState(friendId)
-          .catchError((_) => <String, dynamic>{}),
-      _apiService.getFriendMoodLogs(friendId).catchError((_) => <dynamic>[]),
-    ]);
-  }
-
   Color _getMoodColor(String mood) {
     switch (mood.toLowerCase()) {
       case 'happy':
@@ -369,219 +384,191 @@ class _SocialScreenState extends State<SocialScreen>
             .trim();
     final int friendId = friend['friend_id'];
 
-    return FutureBuilder<List<dynamic>>(
-      future: _fetchFriendMoodData(friendId),
-      builder: (context, snapshot) {
-        // Extract mood data first to color the entire card
-        String currentMood = 'calm';
-        Color moodColor = _getMoodColor('calm');
+    // Get cached mood data - already loaded in _loadData
+    final cachedData = _friendMoodCache[friendId];
+    final profile = cachedData?['profile'] ?? {};
+    final moodLogs = (cachedData?['moodLogs'] ?? []) as List<dynamic>;
 
-        if (snapshot.hasData && snapshot.data!.length > 2) {
-          final moodLogs = snapshot.data![2] as List<dynamic>;
-          if (moodLogs.isNotEmpty) {
-            currentMood = moodLogs.first['mood'] ?? 'calm';
-            moodColor = _getMoodColor(currentMood);
-          }
-        }
+    // Extract current mood from logs
+    String currentMood = 'unknown';
+    if (moodLogs.isNotEmpty) {
+      currentMood = moodLogs.first['mood'] ?? 'unknown';
+    }
+    final Color moodColor = _getMoodColor(currentMood);
 
-        return GestureDetector(
-          onTap: () async {
-            await context.push(
-                '/friend/$friendId?name=${Uri.encodeComponent(friendName)}');
-            _loadData();
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: moodColor.withValues(alpha: 0.5),
-                width: 3,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: moodColor.withValues(alpha: 0.2),
-                  blurRadius: 15,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+    // Get character info
+    final character = profile['character'];
+    final gender = character?['gender'] ?? 'boy';
+    final characterNumber = character?['number'] ?? 1;
+
+    // Map mood to GIF mood state
+    String moodState;
+    switch (currentMood.toLowerCase()) {
+      case 'happy':
+        moodState = 'Happy';
+        break;
+      case 'calm':
+        moodState = 'Calm';
+        break;
+      case 'tired':
+        moodState = 'Tired';
+        break;
+      case 'anxious':
+        moodState = 'Anxious';
+        break;
+      case 'sad':
+        moodState = 'Sad';
+        break;
+      case 'angry':
+        moodState = 'Angry';
+        break;
+      case 'unknown':
+      default:
+        moodState = 'Calm'; // Fallback
+    }
+
+    final genderPrefix = gender == 'female' ? 'Girl' : 'Boy';
+    final String firstLetter =
+        friendName.isNotEmpty ? friendName[0].toUpperCase() : '?';
+
+    return GestureDetector(
+      onTap: () async {
+        await context
+            .push('/friend/$friendId?name=${Uri.encodeComponent(friendName)}');
+        _loadData();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: moodColor.withValues(alpha: 0.5),
+            width: 3,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: moodColor.withValues(alpha: 0.2),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              children: [
-                // Character mood GIF (square) - using unique key per friend with timestamp
-                FutureBuilder<List<dynamic>>(
-                  key: ValueKey(
-                      'friend_mood_${friendId}_${DateTime.now().millisecondsSinceEpoch}'),
-                  future: _fetchFriendMoodData(friendId),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData &&
-                        snapshot.data![0]['character'] != null) {
-                      final character = snapshot.data![0]['character'];
-                      final moodLogs =
-                          snapshot.data![2] as List<dynamic>; // Get mood logs
-                      final gender = character['gender'] ?? 'boy';
-                      final characterNumber = character['number'] ?? 1;
-
-                      print('[DEBUG UI] Friend card for friendId: $friendId');
-                      print(
-                          '[DEBUG UI] Character: gender=$gender, number=$characterNumber');
-                      print('[DEBUG UI] Mood logs count: ${moodLogs.length}');
-
-                      // Get ACTUAL current mood from most recent mood log
-                      String currentMood = 'calm'; // Default
-                      if (moodLogs.isNotEmpty) {
-                        currentMood = moodLogs.first['mood'] ?? 'calm';
-                        print(
-                            '[DEBUG UI] Current mood from logs: $currentMood');
-                      }
-
-                      // Map mood to GIF mood state (proper case)
-                      String moodState;
-                      switch (currentMood.toLowerCase()) {
-                        case 'happy':
-                          moodState = 'Happy';
-                          break;
-                        case 'calm':
-                          moodState = 'Calm';
-                          break;
-                        case 'tired':
-                          moodState = 'Tired';
-                          break;
-                        case 'anxious':
-                          moodState = 'Anxious';
-                          break;
-                        case 'sad':
-                          moodState = 'Sad';
-                          break;
-                        case 'angry':
-                          moodState = 'Angry';
-                          break;
-                        default:
-                          moodState = 'Calm';
-                      }
-                      print('[DEBUG UI] Final mood state for GIF: $moodState');
-
-                      final genderPrefix = gender == 'female' ? 'Girl' : 'Boy';
-
-                      return Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.asset(
-                            'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              // Fallback to Calm if mood-specific GIF doesn't exist
-                              return Image.asset(
-                                'assets/images/${genderPrefix}_Gif_33FPS/Calm$genderPrefix$characterNumber.gif',
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(Icons.person,
-                                      size: 32, color: AppColors.textSecondary);
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    }
-                    // Fallback to gradient with initial
-                    final String firstLetter = friendName.isNotEmpty
-                        ? friendName[0].toUpperCase()
-                        : '?';
-                    return Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.primary, AppColors.secondary],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Text(
-                          firstLetter,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+          ],
+        ),
+        child: Row(
+          children: [
+            // Character mood GIF (square) - using cached data
+            if (character != null)
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.asset(
+                    'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback to Calm if mood-specific GIF doesn't exist
+                      return Image.asset(
+                        'assets/images/${genderPrefix}_Gif_33FPS/Calm$genderPrefix$characterNumber.gif',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(Icons.person,
+                              size: 32, color: AppColors.textSecondary);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              )
+            else
+              // Fallback to gradient with initial
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary, AppColors.secondary],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Text(
+                    firstLetter,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    friendName.isEmpty ? 'Unknown' : friendName,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
                     children: [
+                      Icon(Icons.star_rounded,
+                          size: 16, color: AppColors.gameYellow),
+                      const SizedBox(width: 4),
                       Text(
-                        friendName.isEmpty ? 'Unknown' : friendName,
+                        'Level ${friend['friend_level'] ?? 1}',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.star_rounded,
-                              size: 16, color: AppColors.gameYellow),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Level ${friend['friend_level'] ?? 1}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text(
-                            _getMoodEmoji(currentMood),
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            currentMood.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: moodColor,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.more_vert_rounded, color: AppColors.primary),
-                  onPressed: () => _showFriendOptions(friend),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        _getMoodEmoji(currentMood),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        currentMood.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: moodColor,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+            IconButton(
+              icon: Icon(Icons.more_vert_rounded, color: AppColors.primary),
+              onPressed: () => _showFriendOptions(friend),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
 import 'achievements_tab.dart';
 import 'rewards_tab.dart';
 import 'statistics_tab.dart';
@@ -73,17 +72,14 @@ class _ProgressScreenState extends State<ProgressScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.2),
-                  AppColors.secondary.withValues(alpha: 0.2),
-                ],
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
-              Icons.emoji_events,
-              color: AppColors.primary,
+              Icons.emoji_events_rounded,
+              color: Colors.white,
               size: 28,
             ),
           ),
@@ -96,7 +92,7 @@ class _ProgressScreenState extends State<ProgressScreen>
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0A4B80),
+                  color: Color(0xFF6C5CE7),
                 ),
               ),
               Text(
@@ -104,6 +100,7 @@ class _ProgressScreenState extends State<ProgressScreen>
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6B8BA8),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -130,20 +127,18 @@ class _ProgressScreenState extends State<ProgressScreen>
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.secondary],
-          ),
-          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF6C5CE7), // Consistent purple across app
+          borderRadius: BorderRadius.circular(14),
         ),
         labelColor: Colors.white,
         unselectedLabelColor: const Color(0xFF6B8BA8),
         labelStyle: const TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 14,
+          fontSize: 13, // Slightly smaller to fit text
         ),
         unselectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.w500,
-          fontSize: 14,
+          fontSize: 13,
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         indicatorPadding: const EdgeInsets.all(4),
@@ -151,20 +146,20 @@ class _ProgressScreenState extends State<ProgressScreen>
         tabs: const [
           Tab(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text('Achievements'),
+              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 12),
+              child: Text('Achieve', maxLines: 1),
             ),
           ),
           Tab(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text('Rewards'),
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+              child: Text('Rewards', maxLines: 1),
             ),
           ),
           Tab(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Text('Statistics'),
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+              child: Text('Stats', maxLines: 1),
             ),
           ),
         ],

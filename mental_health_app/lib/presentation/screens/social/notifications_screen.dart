@@ -110,20 +110,18 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.secondary],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF6C5CE7),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textSecondary,
+                  unselectedLabelColor: const Color(0xFF6B8BA8),
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
                   unselectedLabelStyle: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicatorPadding: const EdgeInsets.all(4),
@@ -133,9 +131,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.favorite, size: 18),
-                          const SizedBox(width: 8),
-                          Text('Encouragement'),
+                          const Icon(Icons.favorite, size: 16),
+                          const SizedBox(width: 6),
+                          const Flexible(
+                              child: Text('Encourage',
+                                  overflow: TextOverflow.ellipsis)),
                         ],
                       ),
                     ),
@@ -143,9 +143,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.emoji_events, size: 18),
-                          const SizedBox(width: 8),
-                          Text('Challenges'),
+                          const Icon(Icons.emoji_events, size: 16),
+                          const SizedBox(width: 6),
+                          const Flexible(
+                              child: Text('Challenges',
+                                  overflow: TextOverflow.ellipsis)),
                         ],
                       ),
                     ),

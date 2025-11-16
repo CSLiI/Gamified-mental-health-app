@@ -427,24 +427,31 @@ class _MoodScreenState extends State<MoodScreen>
             child: TabBar(
               controller: _tabController,
               indicator: BoxDecoration(
-                color: const Color(0xFF5CACEE),
-                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFF6C5CE7),
+                borderRadius: BorderRadius.circular(14),
               ),
               labelColor: Colors.white,
-              unselectedLabelColor: const Color(0xFF0A4B80),
+              unselectedLabelColor: const Color(0xFF6B8BA8),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
               indicatorSize: TabBarIndicatorSize.tab,
+              indicatorPadding: const EdgeInsets.all(4),
               dividerColor: Colors.transparent,
               tabs: const [
                 Tab(
                   child: Text(
                     'Log Mood',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
                 Tab(
                   child: Text(
                     'History',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ],

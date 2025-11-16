@@ -17,7 +17,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Map<String, dynamic>? _userData;
   List<dynamic> _achievements = [];
-  Map<String, dynamic>? _streakData;
   Map<String, dynamic>? _moodState;
   bool _isLoading = true;
 
@@ -31,7 +30,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = await _apiService.getCurrentUser();
       final achievements = await _apiService.getMyAchievements();
-      final streak = await _apiService.getMyStreak();
 
       // Get character mood state if user has a character
       Map<String, dynamic>? moodState;
@@ -46,7 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _userData = user;
         _achievements = achievements;
-        _streakData = streak;
         _moodState = moodState;
         _isLoading = false;
       });
@@ -104,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildProfileHeader(),
                       _buildStatsSection(),
-                      _buildAchievementsSection(),
+                      // Removed _buildAchievementsSection() - already in progress page
                       _buildOptionsSection(),
                       const SizedBox(height: 24),
                     ],
@@ -127,21 +124,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF5CACEE),
-            Color(0xFF4A9CDE),
-          ],
-        ),
+        color: const Color(
+            0xFF6C5CE7), // Soft purple - calming and professional for mental health
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5CACEE).withAlpha(90),
+            color: const Color(0xFF6C5CE7).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -234,31 +225,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsSection() {
-    final currentStreak = _streakData?['current_streak'] ?? 0;
+    final currentStreak = _userData?['current_streak'] ?? 0;
+    final level = _userData?['level'] ?? 1;
+    final xp = _userData?['xp'] ?? 0;
+    final xpForNextLevel = level * 100;
 
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _buildStatCard(
-              icon: Icons.local_fire_department,
-              value: currentStreak.toString(),
-              label: 'Day Streak',
-              color: AppColors.moodAngry,
+          // XP Progress Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF667EEA).withOpacity(0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.stars,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Level Progress',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Level $level',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$xp / $xpForNextLevel XP',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      '${((xp / xpForNextLevel) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: LinearProgressIndicator(
+                    value: (xp / xpForNextLevel).clamp(0.0, 1.0),
+                    minHeight: 12,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatCard(
-              icon: Icons.emoji_events,
-              value: _achievements
-                  .where((a) => a['is_claimed'] == true)
-                  .length
-                  .toString(),
-              label: 'Achievements',
-              color: AppColors.moodHappy,
-            ),
+          const SizedBox(height: 20),
+          // Stats Grid
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.local_fire_department,
+                  value: currentStreak.toString(),
+                  label: 'Day Streak',
+                  color: const Color(0xFFFF6B6B),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.emoji_events,
+                  value: _achievements
+                      .where((a) => a['is_claimed'] == true)
+                      .length
+                      .toString(),
+                  label: 'Achievements',
+                  color: const Color(0xFFFFD93D),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -312,101 +410,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: Color(0xFF0A4B80), // Darker blue for better contrast
             ),
             textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAchievementsSection() {
-    if (_achievements.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final unlockedAchievements =
-        _achievements.where((a) => a['is_claimed'] == true).toList();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Recent Achievements',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Navigate to full achievements screen
-                },
-                child: const Text('See All',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 120,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: unlockedAchievements.take(5).length,
-              itemBuilder: (context, index) {
-                final achievement = unlockedAchievements[index]['achievement'];
-                return Container(
-                  width: 100,
-                  margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(220),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(20),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.moodHappy.withAlpha(60),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events,
-                          color: AppColors.moodHappy,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        achievement['name'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(
-                              0xFF0A4B80), // Darker blue for better contrast
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),

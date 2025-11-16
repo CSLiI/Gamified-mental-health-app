@@ -207,7 +207,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
               ),
               child: Icon(
                 isActive ? activeIcon : icon,
-                color: Colors.white,
+                color: isActive ? Colors.white : const Color(0xFF2D3748),
                 size: 24,
               ),
             ),
@@ -218,7 +218,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
                 fontFamily: 'Roboto',
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? moodColor : Colors.white,
+                color: isActive ? moodColor : const Color(0xFF2D3748),
               ),
             ),
           ],

@@ -69,16 +69,20 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Apply the background to the entire scaffold
       backgroundColor: Colors.transparent,
-      // Use a container as the first child to ensure full screen coverage
       body: Container(
-        // This ensures the gradient covers the entire screen
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          // Using the softer gradient from app_colors.dart
-          gradient: AppColors.dreamyGradient,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF8F9FE),
+              Color(0xFFE8EAFC),
+              Color(0xFFD6D9FA),
+            ],
+          ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -98,28 +102,30 @@ class _LoginScreenState extends State<LoginScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 30),
-                    // Hero logo with improved styling
+                    const SizedBox(height: 40),
+                    // Logo
                     Hero(
                       tag: 'gameLogo',
                       child: Container(
-                        height: 120,
-                        width: 120,
+                        height: 100,
+                        width: 100,
                         margin: const EdgeInsets.symmetric(horizontal: 120),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.2),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.gameBlue.withOpacity(0.3),
-                              blurRadius: 15,
+                              color: Color(0xFF6C5CE7).withValues(alpha: 0.3),
+                              blurRadius: 20,
                               spreadRadius: 5,
                             )
                           ],
                         ),
                         child: const Icon(
-                          Icons.games,
-                          size: 70,
+                          Icons.favorite_rounded,
+                          size: 50,
                           color: Colors.white,
                         ),
                       ),
@@ -127,70 +133,74 @@ class _LoginScreenState extends State<LoginScreen>
                     const SizedBox(height: 30),
                     SlideTransition(
                       position: Tween<Offset>(
-                        begin: const Offset(0, 0.5),
+                        begin: const Offset(0, 0.3),
                         end: Offset.zero,
                       ).animate(CurvedAnimation(
                         parent: _animationController,
                         curve: Curves.easeOutQuint,
                       )),
-                      child: const Text(
-                        'Resume Your Quest',
+                      child: Text(
+                        'Welcome Back',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 8.0,
-                              color: Colors.black26,
-                              offset: Offset(1.0, 1.0),
-                            ),
-                          ],
+                          color: Color(0xFF6C5CE7),
                         ),
                         textAlign: TextAlign.center,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Your adventure awaits, brave hero!',
+                    Text(
+                      'Continue your wellness journey',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w400,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 50),
-                    // Form container with improved styling
+                    // Form container
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 15,
-                            spreadRadius: 1,
+                            color: Color(0xFF6C5CE7).withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(28),
                       child: Column(
                         children: [
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
-                              labelText: 'Hero\'s Email',
-                              hintText: 'Enter your magical email',
-                              prefixIcon: Icon(Icons.mail_outline,
-                                  color: AppColors.gamePurple),
+                              labelText: 'Email',
+                              hintText: 'Enter your email',
+                              prefixIcon: Icon(Icons.email_outlined,
+                                  color: Color(0xFF6C5CE7)),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(
+                                    color: Color(0xFF6C5CE7), width: 2),
                               ),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: Colors.grey[50],
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -202,21 +212,21 @@ class _LoginScreenState extends State<LoginScreen>
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
-                              labelText: 'Secret Password',
-                              hintText: 'Enter your secret code',
-                              prefixIcon: Icon(Icons.vpn_key_outlined,
-                                  color: AppColors.gamePurple),
+                              labelText: 'Password',
+                              hintText: 'Enter your password',
+                              prefixIcon: Icon(Icons.lock_outlined,
+                                  color: Color(0xFF6C5CE7)),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
-                                  color: AppColors.gameBlue,
+                                  color: Colors.grey,
                                 ),
                                 onPressed: () {
                                   setState(() =>
@@ -224,11 +234,22 @@ class _LoginScreenState extends State<LoginScreen>
                                 },
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(
+                                    color: Color(0xFF6C5CE7), width: 2),
                               ),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: Colors.grey[50],
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -241,57 +262,70 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // Login button with improved styling
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.gamePurple,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                    // Login button
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
                         ),
-                        elevation: 4,
-                        shadowColor: AppColors.gamePurple.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFF6C5CE7).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                color: Colors.white,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'SIGN IN',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
                               ),
-                            )
-                          : const Text(
-                              'BEGIN ADVENTURE',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                      ),
                     ),
                     const SizedBox(height: 20),
-                    // Sign up row with improved styling
+                    // Sign up link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          "New to this realm? ",
+                        Text(
+                          "Don't have an account? ",
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         TextButton(
                           onPressed: () => context.go('/register'),
                           child: const Text(
-                            'Create Hero',
+                            'Sign Up',
                             style: TextStyle(
-                              color: AppColors.primaryDark,
+                              color: Color(0xFF6C5CE7),
                               fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
                             ),
                           ),
                         ),

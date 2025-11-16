@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
-import 'friend_profile/tabs/overview_tab.dart';
-import 'friend_profile/tabs/activity_tab.dart';
 import 'friend_profile/tabs/challenges_tab.dart';
 
 class FriendProfileScreen extends StatefulWidget {
@@ -25,7 +23,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   Map<String, dynamic>? _friendProfile;
-  Map<String, dynamic>? _friendStreak;
   Map<String, dynamic>? _friendCharacterState;
   List<dynamic> _friendTodos = [];
   List<dynamic> _friendMoodLogs = [];
@@ -38,7 +35,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadFriendData();
   }
 
@@ -56,7 +53,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       final currentUserId = currentUser['id'];
 
       final profile = await _apiService.getFriendProfile(widget.friendId);
-      final streak = await _apiService.getFriendStreak(widget.friendId);
       final characterState =
           await _apiService.getFriendCharacterMoodState(widget.friendId);
       final todos = await _apiService.getFriendTodos(widget.friendId,
@@ -68,7 +64,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       print('Current user ID: $currentUserId');
       print('Friend ID: ${widget.friendId}');
       print('Profile data: $profile');
-      print('Streak data: $streak');
       print('Character state: $characterState');
       print('Character state value: ${characterState['character_state']}');
       print('Dominant mood: ${characterState['dominant_mood']}');
@@ -83,7 +78,6 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         setState(() {
           _currentUserId = currentUserId;
           _friendProfile = profile;
-          _friendStreak = streak;
           _friendCharacterState = characterState;
           _friendTodos = todos;
           _friendMoodLogs = moodLogs;
@@ -465,11 +459,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                       child: RefreshIndicator(
                         onRefresh: _loadFriendData,
                         color: AppColors.primary,
-                        child: CustomScrollView(
-                          slivers: [
-                            // Character Card & Stats
-                            SliverToBoxAdapter(
-                              child: Padding(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              // Character Card & Stats
+                              Padding(
                                 padding:
                                     const EdgeInsets.fromLTRB(20, 20, 20, 0),
                                 child: Column(
@@ -480,100 +474,86 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                                   ],
                                 ),
                               ),
-                            ),
 
-                            // Tab Bar (Sticky)
-                            SliverPersistentHeader(
-                              pinned: true,
-                              delegate: _StickyTabBarDelegate(
+                              // Tab Bar
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
                                 child: Container(
-                                  color: const Color(0xFFF8F9FE),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 16,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
+                                  child: TabBar(
+                                    controller: _tabController,
+                                    indicator: BoxDecoration(
+                                      color: const Color(0xFF6C5CE7),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
-                                    child: TabBar(
-                                      controller: _tabController,
-                                      indicator: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [
-                                            Color(0xFF667EEA),
-                                            Color(0xFF764BA2)
-                                          ],
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      labelColor: Colors.white,
-                                      unselectedLabelColor: Colors.grey[600],
-                                      labelStyle: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      unselectedLabelStyle: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      indicatorSize: TabBarIndicatorSize.tab,
-                                      dividerColor: Colors.transparent,
-                                      tabs: const [
-                                        Tab(text: 'Overview'),
-                                        Tab(text: 'Activity'),
-                                        Tab(text: 'Challenges'),
-                                      ],
+                                    labelColor: Colors.white,
+                                    unselectedLabelColor:
+                                        const Color(0xFF6B8BA8),
+                                    labelStyle: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
                                     ),
+                                    unselectedLabelStyle: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    indicatorSize: TabBarIndicatorSize.tab,
+                                    indicatorPadding: const EdgeInsets.all(4),
+                                    dividerColor: Colors.transparent,
+                                    tabs: const [
+                                      Tab(text: 'Goals'),
+                                      Tab(text: 'Challenges'),
+                                    ],
                                   ),
                                 ),
                               ),
-                            ),
 
-                            // Tab Content
-                            SliverFillRemaining(
-                              child: TabBarView(
-                                controller: _tabController,
-                                children: [
-                                  // Overview Tab
-                                  OverviewTab(
-                                    friendTodos: _friendTodos,
-                                    friendName: widget.friendName,
-                                    onSendEncouragement: _sendEncouragement,
-                                    onSendChallenge: _sendChallenge,
-                                    onNavigateToTab: (index) {
-                                      _tabController.animateTo(index);
-                                    },
-                                  ),
-
-                                  // Activity Tab
-                                  ActivityTab(
-                                    friendTodos: _friendTodos,
-                                    friendMoodLogs: _friendMoodLogs,
-                                    friendCharacterState: _friendCharacterState,
-                                    friendName: widget.friendName,
-                                  ),
-
-                                  // Challenges Tab
-                                  ChallengesTab(
-                                    friendMessages: _friendMessages,
-                                    currentUserId: _currentUserId ?? 0,
-                                    friendId: widget.friendId,
-                                    onToggleCompletion:
-                                        _toggleChallengeCompletion,
-                                  ),
-                                ],
+                              // Action Buttons (outside tabs)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                                child: _buildActionButtons(),
                               ),
-                            ),
-                          ],
+
+                              // Tab Content (increased height to fit content)
+                              SizedBox(
+                                height:
+                                    750, // Increased height to prevent overflow
+                                child: TabBarView(
+                                  controller: _tabController,
+                                  physics: const BouncingScrollPhysics(),
+                                  children: [
+                                    // Goals Tab
+                                    _buildGoalsTab(),
+
+                                    // Challenges Tab
+                                    ChallengesTab(
+                                      friendMessages: _friendMessages,
+                                      currentUserId: _currentUserId ?? 0,
+                                      friendId: widget.friendId,
+                                      onToggleCompletion:
+                                          _toggleChallengeCompletion,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 20), // Bottom padding
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -862,7 +842,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   }
 
   Widget _buildStatsCards() {
-    final streak = _friendStreak?['current_streak'] ?? 0;
+    final streak = _friendProfile?['current_streak'] ?? 0;
     final xp = _friendProfile?['xp'] ?? 0;
     final level = _friendProfile?['level'] ?? 1;
 
@@ -912,7 +892,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color.withOpacity(0.85), color.withOpacity(0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -922,6 +902,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             color: color.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
+            spreadRadius: 1,
           ),
         ],
       ),
@@ -962,763 +943,178 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     );
   }
 
-  Widget _buildMoodSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.mood,
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                '7-Day Mood Journey',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0A4B80),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Track how your friend has been feeling',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 20),
-          _buildMoodChart(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMoodChart() {
-    print('📈 [MOOD CHART DEBUG] Mood logs count: ${_friendMoodLogs.length}');
-    if (_friendMoodLogs.isNotEmpty) {
-      print('📈 [MOOD CHART DEBUG] First mood log: ${_friendMoodLogs.first}');
-    }
-
-    if (_friendMoodLogs.isEmpty) {
-      return Container(
-        height: 120,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(
-          child: Text(
-            'No mood data available',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
-          ),
-        ),
-      );
-    }
-
-    // Group mood logs by day (last 7 days)
-    final now = DateTime.now();
-    final last7Days =
-        List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
-
-    final moodHeights = <double>[];
-    final moodColors = <Color>[];
-    final dayLabels = <String>[];
-
-    for (var day in last7Days) {
-      dayLabels.add(
-          ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day.weekday - 1]);
-
-      // Find mood log for this day
-      final dayLog = _friendMoodLogs.firstWhere(
-        (log) {
-          final logDate = DateTime.parse(log['logged_at']);
-          return logDate.year == day.year &&
-              logDate.month == day.month &&
-              logDate.day == day.day;
-        },
-        orElse: () => null,
-      );
-
-      if (dayLog != null) {
-        final mood = dayLog['mood'] as String;
-        final moodScores = {
-          'happy': 100.0,
-          'calm': 80.0,
-          'tired': 50.0,
-          'anxious': 30.0,
-          'sad': 20.0,
-          'angry': 10.0,
-        };
-        final moodColorMap = {
-          'happy': const Color(0xFFFFD700),
-          'calm': const Color(0xFF4ECDC4),
-          'tired': const Color(0xFF95A5A6),
-          'anxious': const Color(0xFFFFA500),
-          'sad': const Color(0xFF9575CD),
-          'angry': const Color(0xFFE74C3C),
-        };
-        moodHeights.add(moodScores[mood] ?? 50.0);
-        moodColors.add(moodColorMap[mood] ?? Colors.grey);
-      } else {
-        moodHeights.add(0.0);
-        moodColors.add(Colors.grey[300]!);
-      }
-    }
-
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(7, (index) {
-          final height = moodHeights[index];
-          final hasData = height > 0;
-
-          return Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (hasData)
-                  Icon(
-                    Icons.circle,
-                    size: 10,
-                    color: moodColors[index],
-                  ),
-                const SizedBox(height: 4),
-                Container(
-                  width: 4,
-                  height: hasData ? (height * 0.5) : 10,
-                  decoration: BoxDecoration(
-                    color: moodColors[index],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  dayLabels[index],
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: hasData ? Colors.black87 : Colors.grey,
-                    fontWeight: hasData ? FontWeight.w600 : FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildTodosSection() {
+  Widget _buildGoalsTab() {
     final completedCount =
         _friendTodos.where((t) => t['is_completed'] == true).length;
     final totalCount = _friendTodos.length;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.checklist,
-                      color: AppColors.success,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${widget.friendName}\'s Goals Today',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A4B80),
-                    ),
+          // User's Goal for the Day (Takes remaining space, scrollable internally)
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF667EEA).withOpacity(0.15),
+                    const Color(0xFF764BA2).withOpacity(0.08),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: const Color(0xFF667EEA).withOpacity(0.4),
+                  width: 2.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF667EEA).withOpacity(0.2),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$completedCount/$totalCount',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.success,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF667EEA).withOpacity(0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.star,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${widget.friendName}\'s Goal Today',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0A4B80),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Progress: $completedCount/$totalCount completed',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  if (_friendTodos.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'No goals set for today',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    // Scrollable area for goals (takes remaining space)
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        itemCount: _friendTodos.length,
+                        itemBuilder: (context, index) {
+                          return _buildTodoItemLarge(_friendTodos[index]);
+                        },
+                      ),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 16),
-          if (_friendTodos.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(
-                child: Text(
-                  'No goals set for today',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-            )
-          else
-            // Fixed height container showing ~3 items with scrolling
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 220, // ~3 items (each ~70px)
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const BouncingScrollPhysics(),
-                itemCount: _friendTodos.length,
-                itemBuilder: (context, index) {
-                  return _buildTodoItem(_friendTodos[index]);
-                },
-              ),
-            ),
-          if (_friendTodos.length > 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Center(
-                child: Text(
-                  'Scroll for ${_friendTodos.length - 3} more goals',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[500],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildTodoItem(Map<String, dynamic> todo) {
+  Widget _buildTodoItemLarge(Map<String, dynamic> todo) {
     final isCompleted = todo['is_completed'] ?? false;
-    // Backend returns 'task_text' not 'title'
     final title = todo['task_text'] ?? todo['title'] ?? 'Untitled';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color:
-            isCompleted ? AppColors.success.withOpacity(0.05) : Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
+        color: isCompleted ? AppColors.success.withOpacity(0.08) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isCompleted
-              ? AppColors.success.withOpacity(0.3)
-              : Colors.grey[200]!,
-          width: 1,
+              ? AppColors.success.withOpacity(0.4)
+              : Colors.grey[300]!,
+          width: 2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: isCompleted
+                ? AppColors.success.withOpacity(0.1)
+                : Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Icon(
             isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
             color: isCompleted ? AppColors.success : Colors.grey[400],
-            size: 24,
+            size: 28,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: isCompleted ? Colors.grey : const Color(0xFF0A4B80),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isCompleted ? Colors.grey[600] : const Color(0xFF0A4B80),
                 decoration: isCompleted ? TextDecoration.lineThrough : null,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChallengesSection() {
-    return Column(
-      children: [
-        _buildChallengesSentSection(),
-        const SizedBox(height: 16),
-        _buildChallengesReceivedSection(),
-      ],
-    );
-  }
-
-  Widget _buildChallengesSentSection() {
-    // Filter messages I sent to this friend (challenges I set)
-    print('🔍 [CHALLENGES SENT DEBUG] Current user ID: $_currentUserId');
-    print('🔍 [CHALLENGES SENT DEBUG] Friend ID: ${widget.friendId}');
-    print(
-        '🔍 [CHALLENGES SENT DEBUG] Total messages: ${_friendMessages.length}');
-
-    // Filter messages where I am the sender AND friend is the receiver
-    final myChallenges = _friendMessages
-        .where((msg) =>
-            msg['sender_id'] == _currentUserId &&
-            msg['receiver_id'] == widget.friendId)
-        .toList();
-
-    print(
-        '🎯 [CHALLENGES SENT DEBUG] My challenges to friend ${widget.friendId}: ${myChallenges.length}');
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.emoji_events,
-                  color: AppColors.warning,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Challenges Sent',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0A4B80),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${myChallenges.length}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.warning,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (myChallenges.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(
-                child: Text(
-                  'You haven\'t sent any challenges yet',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-            )
-          else
-            // Fixed height container showing ~3 items with scrolling
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 270, // ~3 items (each ~85-90px with spacing)
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const BouncingScrollPhysics(),
-                itemCount: myChallenges.length,
-                itemBuilder: (context, index) {
-                  return _buildChallengeItem(myChallenges[index]);
-                },
-              ),
-            ),
-          if (myChallenges.length > 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Center(
-                child: Text(
-                  'Scroll for ${myChallenges.length - 3} more challenges',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[500],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChallengesReceivedSection() {
-    // Filter messages friend sent to me (challenges I received)
-    print('🔍 [CHALLENGES RECEIVED DEBUG] Current user ID: $_currentUserId');
-    print('🔍 [CHALLENGES RECEIVED DEBUG] Friend ID: ${widget.friendId}');
-
-    // Filter messages where friend is the sender AND I am the receiver
-    final receivedChallenges = _friendMessages
-        .where((msg) =>
-            msg['sender_id'] == widget.friendId &&
-            msg['receiver_id'] == _currentUserId)
-        .toList();
-
-    print(
-        '🎯 [CHALLENGES RECEIVED DEBUG] Challenges from friend ${widget.friendId}: ${receivedChallenges.length}');
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.task_alt,
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Challenges Received',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0A4B80),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${receivedChallenges.length}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (receivedChallenges.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(
-                child: Text(
-                  'No challenges received yet',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-            )
-          else
-            // Fixed height container showing ~3 items with scrolling
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 270, // ~3 items (each ~85-90px with spacing)
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const BouncingScrollPhysics(),
-                itemCount: receivedChallenges.length,
-                itemBuilder: (context, index) {
-                  return _buildReceivedChallengeItem(receivedChallenges[index]);
-                },
-              ),
-            ),
-          if (receivedChallenges.length > 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Center(
-                child: Text(
-                  'Scroll for ${receivedChallenges.length - 3} more challenges',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[500],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChallengeItem(Map<String, dynamic> challenge) {
-    final isRead = challenge['is_read'] ?? false;
-    final message = challenge['message'] ?? '';
-    final createdAt = challenge['created_at'] ?? '';
-
-    // Parse date
-    String timeAgo = 'Recently';
-    try {
-      final date = DateTime.parse(createdAt);
-      final now = DateTime.now();
-      final difference = now.difference(date);
-
-      if (difference.inDays > 0) {
-        timeAgo = '${difference.inDays}d ago';
-      } else if (difference.inHours > 0) {
-        timeAgo = '${difference.inHours}h ago';
-      } else if (difference.inMinutes > 0) {
-        timeAgo = '${difference.inMinutes}m ago';
-      } else {
-        timeAgo = 'Just now';
-      }
-    } catch (e) {
-      // Keep default timeAgo
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isRead ? Colors.grey[50] : AppColors.warning.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color:
-              isRead ? Colors.grey[200]! : AppColors.warning.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isRead ? Icons.check_circle_outline : Icons.pending_outlined,
-            color: isRead ? AppColors.success : AppColors.warning,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF0A4B80),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  timeAgo,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReceivedChallengeItem(Map<String, dynamic> challenge) {
-    final isCompleted = challenge['is_completed'] ?? false;
-    final message = challenge['message'] ?? '';
-    final createdAt = challenge['created_at'] ?? '';
-    final messageId = challenge['id'];
-
-    // Parse date
-    String timeAgo = 'Recently';
-    try {
-      final date = DateTime.parse(createdAt);
-      final now = DateTime.now();
-      final difference = now.difference(date);
-
-      if (difference.inDays > 0) {
-        timeAgo = '${difference.inDays}d ago';
-      } else if (difference.inHours > 0) {
-        timeAgo = '${difference.inHours}h ago';
-      } else if (difference.inMinutes > 0) {
-        timeAgo = '${difference.inMinutes}m ago';
-      } else {
-        timeAgo = 'Just now';
-      }
-    } catch (e) {
-      // Keep default timeAgo
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color:
-            isCompleted ? AppColors.success.withOpacity(0.05) : Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCompleted
-              ? AppColors.success.withOpacity(0.3)
-              : Colors.grey[200]!,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => _toggleChallengeCompletion(messageId, !isCompleted),
-            child: Icon(
-              isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: isCompleted ? AppColors.success : Colors.grey[400],
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isCompleted ? Colors.grey : const Color(0xFF0A4B80),
-                    decoration: isCompleted ? TextDecoration.lineThrough : null,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      timeAgo,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    if (isCompleted) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'Completed',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.success,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
             ),
           ),
         ],
@@ -1761,113 +1157,91 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   }
 
   Widget _buildActionButtons() {
-    return Column(
+    return Row(
       children: [
         // Send Encouragement Button
-        InkWell(
-          onTap: _sendEncouragement,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.success, Color(0xFF28A745)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.success.withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+        Expanded(
+          child: InkWell(
+            onTap: _sendEncouragement,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.success, Color(0xFF28A745)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.favorite, color: Colors.white, size: 24),
-                const SizedBox(width: 12),
-                const Text(
-                  'Send Encouragement',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.success.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.favorite, color: Colors.white, size: 24),
+                  SizedBox(height: 6),
+                  Text(
+                    'Encouragement',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(width: 12),
 
         // Send Challenge Button
-        InkWell(
-          onTap: _sendChallenge,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFF6B6B), Color(0xFFFFE66D)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF6B6B).withOpacity(0.4),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+        Expanded(
+          child: InkWell(
+            onTap: _sendChallenge,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF6B6B), Color(0xFFFFE66D)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.emoji_events, color: Colors.white, size: 24),
-                const SizedBox(width: 12),
-                const Text(
-                  'Send Challenge',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.emoji_events, color: Colors.white, size: 24),
+                  SizedBox(height: 6),
+                  Text(
+                    'Challenge',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ],
     );
-  }
-}
-
-// Sticky Tab Bar Delegate for pinned tabs
-class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-
-  _StickyTabBarDelegate({required this.child});
-
-  @override
-  double get minExtent => 70;
-
-  @override
-  double get maxExtent => 70;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-
-  @override
-  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
-    return false;
   }
 }

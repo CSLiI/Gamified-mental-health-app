@@ -83,11 +83,12 @@ class _SplashScreenState extends State<SplashScreen>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFFB0E0FF), // Lighter baby blue at top
-              Color(0xFF89CFF0), // Baby blue at bottom
+              Color(0xFFF8F9FE),
+              Color(0xFFE8EAFC),
+              Color(0xFFD6D9FA),
             ],
           ),
         ),
@@ -103,48 +104,49 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 120 + (10 * _pulseController.value),
                     height: 120 + (10 * _pulseController.value),
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(50),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 4,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
                       ),
+                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.white.withAlpha(
-                              (100 * _pulseController.value).round()),
+                          color: Color(0xFF6C5CE7)
+                              .withValues(alpha: 0.3 * _pulseController.value),
                           blurRadius: 30,
-                          spreadRadius: 5,
+                          spreadRadius: 10,
                         ),
                       ],
                     ),
                     child: const Icon(
-                      Icons.favorite,
+                      Icons.favorite_rounded,
                       size: 60,
                       color: Colors.white,
                     ),
                   );
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               const Text(
-                'Mental Health',
+                'Mental Wellness',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Color(0xFF6C5CE7),
                 ),
               ),
-              const Text(
-                'Your Journey to Wellness',
+              const SizedBox(height: 8),
+              Text(
+                'Your journey to better mental health',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 40),
-              const CircularProgressIndicator(
-                color: Colors.white,
+              CircularProgressIndicator(
+                color: Color(0xFF6C5CE7),
+                strokeWidth: 3,
               ),
             ],
           ),
