@@ -176,8 +176,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       return 'NO MOOD YET';
     }
 
-    // Mood logs are sorted by logged_at descending, so first one is most recent
-    final mostRecentLog = _friendMoodLogs.first;
+    // ✅ FIX: Sort mood logs to get the most recent one
+    final sortedLogs = List<dynamic>.from(_friendMoodLogs)
+      ..sort((a, b) {
+        final dateA = DateTime.parse(a['logged_at'] ?? '');
+        final dateB = DateTime.parse(b['logged_at'] ?? '');
+        return dateB.compareTo(dateA); // Newest first
+      });
+
+    final mostRecentLog = sortedLogs.first;
     final mood = mostRecentLog['mood'] ?? 'calm';
 
     return mood.toUpperCase();
@@ -189,7 +196,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       return Colors.grey;
     }
 
-    final mostRecentLog = _friendMoodLogs.first;
+    // ✅ FIX: Sort mood logs to get the most recent one
+    final sortedLogs = List<dynamic>.from(_friendMoodLogs)
+      ..sort((a, b) {
+        final dateA = DateTime.parse(a['logged_at'] ?? '');
+        final dateB = DateTime.parse(b['logged_at'] ?? '');
+        return dateB.compareTo(dateA); // Newest first
+      });
+
+    final mostRecentLog = sortedLogs.first;
     final mood = mostRecentLog['mood'] ?? 'calm';
 
     return _getMoodColor(mood);
@@ -201,7 +216,15 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       return 'No mood logged yet';
     }
 
-    final mostRecentLog = _friendMoodLogs.first;
+    // ✅ FIX: Sort mood logs to get the most recent one
+    final sortedLogs = List<dynamic>.from(_friendMoodLogs)
+      ..sort((a, b) {
+        final dateA = DateTime.parse(a['logged_at'] ?? '');
+        final dateB = DateTime.parse(b['logged_at'] ?? '');
+        return dateB.compareTo(dateA); // Newest first
+      });
+
+    final mostRecentLog = sortedLogs.first;
     final loggedAt = mostRecentLog['logged_at'];
 
     if (loggedAt == null) return 'Recently';
@@ -656,12 +679,20 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     final character = _friendProfile?['character'];
     final moodScore = _friendCharacterState?['mood_score']?.toDouble() ?? 50.0;
 
-    // Get current mood from most recent mood log instead of 7-day character state
-    final currentMood = _friendMoodLogs.isNotEmpty
-        ? (_friendMoodLogs.first['mood'] ?? 'calm')
+    // ✅ FIX: Sort mood logs by timestamp (most recent first)
+    final sortedMoodLogs = List<dynamic>.from(_friendMoodLogs)
+      ..sort((a, b) {
+        final dateA = DateTime.parse(a['logged_at'] ?? '');
+        final dateB = DateTime.parse(b['logged_at'] ?? '');
+        return dateB.compareTo(dateA); // Descending order (newest first)
+      });
+
+    // ✅ CHANGE: Use most recent mood log (updates immediately when friend logs new mood)
+    final currentMood = sortedMoodLogs.isNotEmpty
+        ? (sortedMoodLogs.first['mood'] ?? 'calm')
         : 'calm';
 
-    print('🎭 [CHARACTER DISPLAY] Current mood (most recent): $currentMood');
+    print('🎭 [CHARACTER DISPLAY] Most recent mood: $currentMood');
     print('🎭 [CHARACTER DISPLAY] Mood score (7-day): $moodScore');
 
     if (character == null) {

@@ -11,7 +11,7 @@ class SocialScreen extends StatefulWidget {
 }
 
 class _SocialScreenState extends State<SocialScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _apiService = ApiService();
   late TabController _tabController;
 
@@ -27,7 +27,17 @@ class _SocialScreenState extends State<SocialScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addObserver(this); // ✅ Listen to app lifecycle
     _loadData();
+  }
+
+  // ✅ FIX: Refresh when app comes to foreground
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && _friends.isNotEmpty) {
+      _refreshMoodCache(); // Refresh when app comes back to foreground
+    }
   }
 
   @override
@@ -37,9 +47,47 @@ class _SocialScreenState extends State<SocialScreen>
     _loadData();
   }
 
+  // ✅ IMPROVED: Refresh only the mood cache silently (no loading spinner)
+  Future<void> _refreshMoodCache() async {
+    if (_friends.isEmpty) return;
+
+    // Don't show loading spinner - refresh silently in background
+    try {
+      await Future.wait(_friends.map((friend) async {
+        final friendId = friend['friend_id'] as int;
+        try {
+          final results = await Future.wait([
+            _apiService.getFriendProfile(friendId),
+            _apiService
+                .getFriendCharacterMoodState(friendId)
+                .catchError((_) => <String, dynamic>{}),
+            _apiService
+                .getFriendMoodLogs(friendId)
+                .catchError((_) => <dynamic>[]),
+          ]);
+
+          _friendMoodCache[friendId] = {
+            'profile': results[0],
+            'characterState': results[1],
+            'moodLogs': results[2],
+          };
+        } catch (e) {
+          print('Error refreshing mood data for friend $friendId: $e');
+        }
+      }));
+
+      if (mounted) {
+        setState(() {}); // Silently update UI with fresh cache
+      }
+    } catch (e) {
+      print('Error refreshing mood cache: $e');
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
+    WidgetsBinding.instance.removeObserver(this); // ✅ Clean up observer
     super.dispose();
   }
 
@@ -389,11 +437,26 @@ class _SocialScreenState extends State<SocialScreen>
     final profile = cachedData?['profile'] ?? {};
     final moodLogs = (cachedData?['moodLogs'] ?? []) as List<dynamic>;
 
-    // Extract current mood from logs
-    String currentMood = 'unknown';
-    if (moodLogs.isNotEmpty) {
-      currentMood = moodLogs.first['mood'] ?? 'unknown';
+    // ✅ FIX: Sort mood logs by timestamp (most recent first)
+    final sortedMoodLogs = List<dynamic>.from(moodLogs)
+      ..sort((a, b) {
+        final dateA = DateTime.parse(a['logged_at'] ?? '');
+        final dateB = DateTime.parse(b['logged_at'] ?? '');
+        return dateB.compareTo(dateA); // Descending order (newest first)
+      });
+
+    // ✅ CHANGE: Use most recent mood log (updates immediately when friend logs new mood)
+    String currentMood = 'calm';
+    if (sortedMoodLogs.isNotEmpty) {
+      currentMood = sortedMoodLogs.first['mood'] ?? 'calm';
     }
+
+    // 🐛 DEBUG: Log what we're displaying
+    print('🎭 [FRIEND CARD] Friend: $friendName (ID: $friendId)');
+    print('   Sorted mood logs: ${sortedMoodLogs.take(3).toList()}');
+    print('   Most Recent Mood: "$currentMood"');
+    print('   Total mood logs: ${moodLogs.length}');
+
     final Color moodColor = _getMoodColor(currentMood);
 
     // Get character info
@@ -435,7 +498,8 @@ class _SocialScreenState extends State<SocialScreen>
       onTap: () async {
         await context
             .push('/friend/$friendId?name=${Uri.encodeComponent(friendName)}');
-        _loadData();
+        // ✅ FIX: Refresh mood cache when returning from friend profile
+        _refreshMoodCache();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
