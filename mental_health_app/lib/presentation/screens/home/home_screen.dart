@@ -5,6 +5,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/mood_provider.dart';
 import '../../../core/providers/character_provider.dart';
 import '../../../data/services/api_service.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -32,6 +34,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadData() async {
     try {
+      // Check cache first
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        'home_data',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _userData = cachedData['user'];
+          _characterState = cachedData['characterState'];
+          _isLoading = false;
+        });
+      }
+
+      // Fetch fresh data in background
       final user = await _apiService.getCurrentUser();
       Map<String, dynamic>? characterState;
 
@@ -40,6 +57,12 @@ class _HomeScreenState extends State<HomeScreen> {
       } catch (e) {
         print('Character state error: $e');
       }
+
+      // Update cache
+      await CacheService().set('home_data', {
+        'user': user,
+        'characterState': characterState,
+      });
 
       if (mounted) {
         setState(() {
@@ -91,11 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5CACEE)),
-              ),
-            )
+          ? _buildHomeSkeleton()
           : RefreshIndicator(
               onRefresh: () async {
                 await _loadData();
@@ -121,6 +140,52 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildHomeSkeleton() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header skeleton
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonLoader.text(width: 150, height: 20),
+                  const SizedBox(height: 8),
+                  SkeletonLoader.text(width: 180, height: 32),
+                ],
+              ),
+              SkeletonLoader.character(size: 50),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Character card skeleton
+          SkeletonLoader.card(height: 400),
+          const SizedBox(height: 24),
+          // Quick actions skeleton
+          Row(
+            children: [
+              Expanded(child: SkeletonLoader.card(height: 100)),
+              const SizedBox(width: 16),
+              Expanded(child: SkeletonLoader.card(height: 100)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: SkeletonLoader.card(height: 100)),
+              const SizedBox(width: 16),
+              Expanded(child: SkeletonLoader.card(height: 100)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

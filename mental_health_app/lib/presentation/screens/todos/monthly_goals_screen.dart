@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/cache_service.dart';
 
 class MonthlyGoalsScreen extends StatefulWidget {
   const MonthlyGoalsScreen({super.key});
@@ -51,9 +52,37 @@ class _MonthlyGoalsScreenState extends State<MonthlyGoalsScreen> {
 
   Future<void> _loadGoals() async {
     try {
+      // Check cache first
+      final cachedTodos = await CacheService().get<List<dynamic>>(
+        'todos_monthly',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedTodos != null && mounted) {
+        setState(() {
+          // Filter by selected month
+          _goals = cachedTodos.where((todo) {
+            final createdAt = DateTime.parse(todo['created_at']);
+            return createdAt.year == _currentMonth.year &&
+                createdAt.month == _currentMonth.month;
+          }).toList()
+            ..sort((a, b) {
+              final aCompleted = a['is_completed'] ?? false;
+              final bCompleted = b['is_completed'] ?? false;
+              if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
+              return DateTime.parse(b['created_at'])
+                  .compareTo(DateTime.parse(a['created_at']));
+            });
+        });
+      }
+
       // Load only 'monthly' period type tasks
       final todos =
           await _apiService.getTodos(limit: 500, periodType: 'monthly');
+
+      // Update cache
+      await CacheService().set('todos_monthly', todos);
+
       if (mounted) {
         setState(() {
           // Filter by selected month

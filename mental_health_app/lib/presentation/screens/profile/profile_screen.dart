@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/dio_client.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -28,6 +30,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadData() async {
     try {
+      // Check cache first
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        'profile_data',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _userData = cachedData['user'];
+          _achievements = cachedData['achievements'] ?? [];
+          _moodState = cachedData['moodState'];
+          _isLoading = false;
+        });
+      }
+
+      // Fetch fresh data in background
       final user = await _apiService.getCurrentUser();
       final achievements = await _apiService.getMyAchievements();
 
@@ -40,6 +58,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           print('Error loading mood state: $e');
         }
       }
+
+      // Update cache
+      await CacheService().set('profile_data', {
+        'user': user,
+        'achievements': achievements,
+        'moodState': moodState,
+      });
 
       setState(() {
         _userData = user;
@@ -87,10 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       body: SafeArea(
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5CACEE)),
-              ))
+            ? _buildProfileSkeleton()
             : RefreshIndicator(
                 onRefresh: _loadData,
                 color: const Color(0xFF5CACEE),
@@ -108,6 +130,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildProfileSkeleton() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          // Header skeleton
+          SkeletonLoader.character(size: 120),
+          const SizedBox(height: 16),
+          SkeletonLoader.text(width: 150, height: 20),
+          const SizedBox(height: 8),
+          SkeletonLoader.text(width: 200, height: 14),
+          const SizedBox(height: 24),
+          // Stats skeleton
+          Row(
+            children: [
+              Expanded(child: SkeletonLoader.card(height: 80)),
+              const SizedBox(width: 12),
+              Expanded(child: SkeletonLoader.card(height: 80)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: SkeletonLoader.card(height: 80)),
+              const SizedBox(width: 12),
+              Expanded(child: SkeletonLoader.card(height: 80)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Options skeleton
+          SkeletonLoader.card(height: 60),
+          const SizedBox(height: 12),
+          SkeletonLoader.card(height: 60),
+          const SizedBox(height: 12),
+          SkeletonLoader.card(height: 60),
+        ],
       ),
     );
   }

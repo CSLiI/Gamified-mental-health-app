@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class AchievementsTab extends StatefulWidget {
   const AchievementsTab({super.key});
@@ -24,9 +26,32 @@ class _AchievementsTabState extends State<AchievementsTab> {
 
   Future<void> _loadAchievements() async {
     try {
+      // Try cache first
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        'achievements_data',
+        maxAge: CacheService.mediumCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _userData = cachedData['user'];
+          _allAchievements = cachedData['all'] ?? [];
+          _userAchievements = cachedData['user_achievements'] ?? [];
+          _isLoading = false;
+        });
+      }
+
+      // Fetch fresh data
       final user = await _apiService.getCurrentUser();
       final allAchievements = await _apiService.getAllAchievements();
       final userAchievements = await _apiService.getUserAchievements();
+
+      // Cache fresh data
+      await CacheService().set('achievements_data', {
+        'user': user,
+        'all': allAchievements,
+        'user_achievements': userAchievements,
+      });
 
       if (mounted) {
         setState(() {
@@ -51,9 +76,18 @@ class _AchievementsTabState extends State<AchievementsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            SkeletonLoader.card(height: 120),
+            const SizedBox(height: 24),
+            SkeletonLoader.grid(
+              itemCount: 6,
+              crossAxisCount: 2,
+              childAspectRatio: 0.85,
+            ),
+          ],
         ),
       );
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/cache_service.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -44,7 +45,25 @@ class _JournalScreenState extends State<JournalScreen> {
 
   Future<void> _loadJournals() async {
     try {
+      // Check cache first
+      final cachedJournals = await CacheService().get<List<dynamic>>(
+        'journals_data',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedJournals != null && mounted) {
+        setState(() {
+          _journals = cachedJournals;
+          _isLoadingJournals = false;
+        });
+      }
+
+      // Fetch fresh data in background
       final journals = await _apiService.getJournals(limit: 50);
+
+      // Update cache
+      await CacheService().set('journals_data', journals);
+
       setState(() {
         _journals = journals;
         _isLoadingJournals = false;
@@ -56,7 +75,22 @@ class _JournalScreenState extends State<JournalScreen> {
 
   Future<void> _loadDailyPrompt() async {
     try {
+      // Check cache first
+      final cachedPrompt = await CacheService().get<Map<String, dynamic>>(
+        'daily_prompt',
+        maxAge: CacheService.mediumCache,
+      );
+
+      if (cachedPrompt != null && mounted) {
+        setState(() => _dailyPrompt = cachedPrompt);
+      }
+
+      // Fetch fresh data in background
       final prompt = await _apiService.getDailyPrompt();
+
+      // Update cache
+      await CacheService().set('daily_prompt', prompt);
+
       setState(() => _dailyPrompt = prompt);
     } catch (e) {
       print('Error loading prompt: $e');

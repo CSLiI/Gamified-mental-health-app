@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/cache_service.dart';
 
 class WeeklyGoalsScreen extends StatefulWidget {
   const WeeklyGoalsScreen({super.key});
@@ -37,9 +38,39 @@ class _WeeklyGoalsScreenState extends State<WeeklyGoalsScreen> {
 
   Future<void> _loadGoals() async {
     try {
+      // Check cache first
+      final cachedTodos = await CacheService().get<List<dynamic>>(
+        'todos_weekly',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedTodos != null && mounted) {
+        setState(() {
+          // Filter by selected week's date range
+          final endOfWeek = _currentWeekStart.add(const Duration(days: 7));
+          _goals = cachedTodos.where((todo) {
+            final createdAt = DateTime.parse(todo['created_at']);
+            return createdAt.isAfter(
+                    _currentWeekStart.subtract(const Duration(days: 1))) &&
+                createdAt.isBefore(endOfWeek);
+          }).toList()
+            ..sort((a, b) {
+              final aCompleted = a['is_completed'] ?? false;
+              final bCompleted = b['is_completed'] ?? false;
+              if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
+              return DateTime.parse(b['created_at'])
+                  .compareTo(DateTime.parse(a['created_at']));
+            });
+        });
+      }
+
       // Load only 'weekly' period type tasks
       final todos =
           await _apiService.getTodos(limit: 500, periodType: 'weekly');
+
+      // Update cache
+      await CacheService().set('todos_weekly', todos);
+
       if (mounted) {
         setState(() {
           // Filter by selected week's date range

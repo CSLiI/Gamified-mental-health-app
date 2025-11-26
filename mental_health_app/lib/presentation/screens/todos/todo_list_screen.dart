@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/cache_service.dart';
 
 class TodoListScreen extends StatefulWidget {
   final DateTime? selectedDate;
@@ -45,8 +46,30 @@ class _TodoListScreenState extends State<TodoListScreen>
 
   Future<void> _loadTodos() async {
     try {
-      // Load only 'daily' period type tasks
+      // Check cache first
+      final cachedTodos = await CacheService().get<List<dynamic>>(
+        'todos_daily',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedTodos != null && mounted) {
+        setState(() {
+          // Filter for the selected date
+          _todos = cachedTodos.where((todo) {
+            final createdAt = DateTime.parse(todo['created_at']).toLocal();
+            return createdAt.year == _currentDate.year &&
+                createdAt.month == _currentDate.month &&
+                createdAt.day == _currentDate.day;
+          }).toList();
+        });
+      }
+
+      // Fetch fresh data in background
       final todos = await _apiService.getTodos(limit: 500, periodType: 'daily');
+
+      // Update cache
+      await CacheService().set('todos_daily', todos);
+
       if (mounted) {
         setState(() {
           // Filter for the selected date

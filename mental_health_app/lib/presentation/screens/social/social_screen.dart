@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class SocialScreen extends StatefulWidget {
   const SocialScreen({super.key});
@@ -94,9 +96,32 @@ class _SocialScreenState extends State<SocialScreen>
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
+      // Check cache first
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        'social_data',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _friends = cachedData['friends'] ?? [];
+          _friendRequests = cachedData['requests'] ?? [];
+          _sentRequests = cachedData['sentRequests'] ?? [];
+          _isLoading = false;
+        });
+      }
+
+      // Fetch fresh data in background
       final friends = await _apiService.getFriends();
       final requests = await _apiService.getReceivedFriendRequests();
       final sent = await _apiService.getSentFriendRequests();
+
+      // Update cache
+      await CacheService().set('social_data', {
+        'friends': friends,
+        'requests': requests,
+        'sentRequests': sent,
+      });
 
       // Pre-fetch all friends' mood data in parallel for fast loading
       _friendMoodCache.clear();
@@ -156,17 +181,11 @@ class _SocialScreenState extends State<SocialScreen>
         child: SafeArea(
           child: Column(
             children: [
-              // Header with back button and add friend button
+              // Header with add friend button
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon:
-                          Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                      onPressed: () => context.go('/home'),
-                    ),
-                    const SizedBox(width: 12),
                     Text(
                       'Friends',
                       style: TextStyle(
@@ -247,11 +266,7 @@ class _SocialScreenState extends State<SocialScreen>
               // Tab Views
               Expanded(
                 child: _isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      )
+                    ? _buildSkeletonLoader()
                     : TabBarView(
                         controller: _tabController,
                         children: [
@@ -331,6 +346,23 @@ class _SocialScreenState extends State<SocialScreen>
           return _buildSentRequestCard(request);
         },
       ),
+    );
+  }
+
+  // ✨ Professional skeleton loader (like Instagram/Facebook)
+  Widget _buildSkeletonLoader() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: SkeletonLoader.card(
+            height: 140,
+            width: double.infinity,
+          ),
+        );
+      },
     );
   }
 

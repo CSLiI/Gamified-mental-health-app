@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import 'friend_profile/tabs/challenges_tab.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int friendId;
@@ -48,6 +50,25 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   Future<void> _loadFriendData() async {
     setState(() => _isLoading = true);
     try {
+      // Check cache first
+      final cacheKey = 'friend_profile_${widget.friendId}';
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        cacheKey,
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _currentUserId = cachedData['currentUserId'];
+          _friendProfile = cachedData['profile'];
+          _friendCharacterState = cachedData['characterState'];
+          _friendTodos = cachedData['todos'] ?? [];
+          _friendMoodLogs = cachedData['moodLogs'] ?? [];
+          _friendMessages = cachedData['messages'] ?? [];
+          _isLoading = false;
+        });
+      }
+
       // Get current user first to properly filter messages
       final currentUser = await _apiService.getCurrentUser();
       final currentUserId = currentUser['id'];
@@ -73,6 +94,16 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       print('Messages count: ${messages.length}');
       print('Level: ${profile['level']}, XP: ${profile['xp']}');
       print('Current streak: ${profile['current_streak']}');
+
+      // Update cache
+      await CacheService().set(cacheKey, {
+        'currentUserId': currentUserId,
+        'profile': profile,
+        'characterState': characterState,
+        'todos': todos,
+        'moodLogs': moodLogs,
+        'messages': messages,
+      });
 
       if (mounted) {
         setState(() {
@@ -246,6 +277,69 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     } catch (e) {
       return 'Recently';
     }
+  }
+
+  Widget _buildFriendProfileSkeleton() {
+    return SafeArea(
+      child: Column(
+        children: [
+          // Header skeleton
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                SkeletonLoader.character(size: 40),
+                const SizedBox(width: 12),
+                Expanded(child: SkeletonLoader.text(width: 150, height: 24)),
+              ],
+            ),
+          ),
+          // Content skeleton
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Character card skeleton
+                    SkeletonLoader.card(height: 350),
+                    const SizedBox(height: 20),
+                    // Stats cards skeleton
+                    Row(
+                      children: [
+                        Expanded(child: SkeletonLoader.card(height: 90)),
+                        const SizedBox(width: 12),
+                        Expanded(child: SkeletonLoader.card(height: 90)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: SkeletonLoader.card(height: 90)),
+                        const SizedBox(width: 12),
+                        Expanded(child: SkeletonLoader.card(height: 90)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Action buttons skeleton
+                    Row(
+                      children: [
+                        Expanded(child: SkeletonLoader.card(height: 80)),
+                        const SizedBox(width: 12),
+                        Expanded(child: SkeletonLoader.card(height: 80)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Tab content skeleton
+                    SkeletonLoader.card(height: 200),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _sendEncouragement() async {
@@ -466,11 +560,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           ),
         ),
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              )
+            ? _buildFriendProfileSkeleton()
             : SafeArea(
                 child: Column(
                   children: [
@@ -626,7 +716,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   color: Colors.white,
                   size: 20,
                 ),
-                onPressed: () => context.go('/social'),
+                onPressed: () => context.pop(),
                 tooltip: 'Back',
               ),
             ),
@@ -1212,18 +1302,21 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   ),
                 ],
               ),
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.favorite, color: Colors.white, size: 24),
-                  SizedBox(height: 6),
+                  const Icon(Icons.favorite, color: Colors.white, size: 24),
+                  const SizedBox(height: 6),
                   Text(
                     'Encouragement',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -1254,18 +1347,21 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                   ),
                 ],
               ),
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.emoji_events, color: Colors.white, size: 24),
-                  SizedBox(height: 6),
+                  const Icon(Icons.emoji_events, color: Colors.white, size: 24),
+                  const SizedBox(height: 6),
                   Text(
                     'Challenge',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),

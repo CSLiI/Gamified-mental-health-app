@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class StatisticsTab extends StatefulWidget {
   const StatisticsTab({super.key});
@@ -27,10 +29,37 @@ class _StatisticsTabState extends State<StatisticsTab> {
 
   Future<void> _loadStatistics() async {
     try {
+      // Try cache first for instant loading
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        'statistics_data',
+        maxAge: CacheService.mediumCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _currentStreak = cachedData['streak'] ?? 0;
+          _totalXP = cachedData['xp'] ?? 0;
+          _moodLogs = cachedData['moods'] ?? [];
+          _journalEntries = cachedData['journals'] ?? [];
+          _todos = cachedData['todos'] ?? [];
+          _isLoading = false;
+        });
+      }
+
+      // Fetch fresh data in background
       final user = await _apiService.getCurrentUser();
       final moods = await _apiService.getMoodLogs();
       final journals = await _apiService.getJournalEntries();
       final todos = await _apiService.getTodos();
+
+      // Cache the fresh data
+      await CacheService().set('statistics_data', {
+        'streak': user['streak'] ?? 0,
+        'xp': user['xp'] ?? 0,
+        'moods': moods,
+        'journals': journals,
+        'todos': todos,
+      });
 
       if (mounted) {
         setState(() {
@@ -66,9 +95,22 @@ class _StatisticsTabState extends State<StatisticsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: SkeletonLoader.card(height: 100)),
+                const SizedBox(width: 16),
+                Expanded(child: SkeletonLoader.card(height: 100)),
+              ],
+            ),
+            const SizedBox(height: 24),
+            SkeletonLoader.card(height: 250),
+            const SizedBox(height: 24),
+            SkeletonLoader.card(height: 200),
+          ],
         ),
       );
     }

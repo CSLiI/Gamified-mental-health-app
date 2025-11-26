@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class RewardsTab extends StatefulWidget {
   const RewardsTab({super.key});
@@ -25,10 +27,35 @@ class _RewardsTabState extends State<RewardsTab> {
 
   Future<void> _loadRewards() async {
     try {
+      // Try cache first
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        'rewards_data',
+        maxAge: CacheService.mediumCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _userXP = cachedData['xp'] ?? 0;
+          _allRewards = cachedData['all'] ?? [];
+          _userRewards = cachedData['user_rewards'] ?? [];
+          _equippedRewards = cachedData['equipped'] ?? [];
+          _isLoading = false;
+        });
+      }
+
+      // Fetch fresh data
       final user = await _apiService.getCurrentUser();
       final allRewards = await _apiService.getAllRewards();
       final userRewards = await _apiService.getUserRewards();
       final equipped = await _apiService.getEquippedRewards();
+
+      // Cache fresh data
+      await CacheService().set('rewards_data', {
+        'xp': user['xp'] ?? 0,
+        'all': allRewards,
+        'user_rewards': userRewards,
+        'equipped': equipped,
+      });
 
       if (mounted) {
         setState(() {
@@ -116,9 +143,18 @@ class _RewardsTabState extends State<RewardsTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            SkeletonLoader.card(height: 100),
+            const SizedBox(height: 24),
+            SkeletonLoader.grid(
+              itemCount: 6,
+              crossAxisCount: 2,
+              childAspectRatio: 1.1,
+            ),
+          ],
         ),
       );
     }

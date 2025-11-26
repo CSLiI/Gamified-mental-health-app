@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../core/widgets/skeleton_loader.dart';
+import '../../../data/services/cache_service.dart';
 
 class MoodScreen extends StatefulWidget {
   final int characterId;
@@ -168,7 +170,25 @@ class _MoodScreenState extends State<MoodScreen>
 
   Future<void> _loadMoodHistory() async {
     try {
+      // Check cache first
+      final cachedMoods = await CacheService().get<List<dynamic>>(
+        'mood_history',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedMoods != null && mounted) {
+        setState(() {
+          _moodHistory = cachedMoods;
+          _isLoadingHistory = false;
+        });
+      }
+
+      // Fetch fresh data in background
       final moods = await _apiService.getMoodLogs(limit: 20);
+
+      // Update cache
+      await CacheService().set('mood_history', moods);
+
       setState(() {
         _moodHistory = moods;
         _isLoadingHistory = false;
@@ -180,7 +200,22 @@ class _MoodScreenState extends State<MoodScreen>
 
   Future<void> _loadMoodStats() async {
     try {
+      // Check cache first
+      final cachedStats = await CacheService().get<Map<String, dynamic>>(
+        'mood_stats',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedStats != null && mounted) {
+        setState(() => _moodStats = cachedStats);
+      }
+
+      // Fetch fresh data in background
       final stats = await _apiService.getMoodStatistics(days: 7);
+
+      // Update cache
+      await CacheService().set('mood_stats', stats);
+
       setState(() => _moodStats = stats);
     } catch (e) {
       print('Error loading stats: $e');
@@ -591,10 +626,14 @@ class _MoodScreenState extends State<MoodScreen>
 
   Widget _buildHistoryTab() {
     if (_isLoadingHistory) {
-      return const Center(
-          child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-      ));
+      return ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: 5,
+        itemBuilder: (_, __) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SkeletonLoader.card(height: 100),
+        ),
+      );
     }
 
     if (_moodHistory.isEmpty) {

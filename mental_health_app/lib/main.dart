@@ -3,8 +3,16 @@ import 'package:provider/provider.dart';
 import 'core/providers/mood_provider.dart';
 import 'core/providers/character_provider.dart';
 import 'core/router/app_router.dart';
+import 'data/services/cache_service.dart';
+import 'core/utils/image_cache_manager.dart';
 
-void main() {
+void main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize centralized cache service (for all API responses)
+  await CacheService().initialize();
+
   runApp(
     MultiProvider(
       providers: [
@@ -16,8 +24,20 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Preload character GIFs on app start (all screens will be faster)
+    ImageCacheManager().preloadCharacterAssets(context);
+  }
 
   @override
   Widget build(BuildContext context) {

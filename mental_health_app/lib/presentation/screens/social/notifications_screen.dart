@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/cache_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -35,8 +36,29 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
+      // Check cache first
+      final cachedData = await CacheService().get<Map<String, dynamic>>(
+        'notifications_data',
+        maxAge: CacheService.shortCache,
+      );
+
+      if (cachedData != null && mounted) {
+        setState(() {
+          _encouragements = cachedData['encouragements'] ?? [];
+          _messages = cachedData['messages'] ?? [];
+          _isLoading = false;
+        });
+      }
+
+      // Fetch fresh data in background
       final encouragements = await _apiService.getEncouragements();
       final messages = await _apiService.getAllReceivedMessages();
+
+      // Update cache
+      await CacheService().set('notifications_data', {
+        'encouragements': encouragements,
+        'messages': messages,
+      });
 
       if (mounted) {
         setState(() {
@@ -377,6 +399,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 color: AppColors.textPrimary,
                 height: 1.4,
               ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (!isRead) ...[
