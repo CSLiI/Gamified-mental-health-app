@@ -359,32 +359,37 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               ),
               child: const Icon(Icons.favorite, color: AppColors.success),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             const Text('Send Encouragement'),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Send a supportive message to ${widget.friendName}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              maxLines: 3,
-              maxLength: 200,
-              decoration: InputDecoration(
-                hintText: 'You got this! Keep going! 💪',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Send a supportive message to ${widget.friendName}',
+                  style: const TextStyle(color: Colors.grey),
                 ),
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  maxLines: 3,
+                  maxLength: 200,
+                  decoration: InputDecoration(
+                    hintText: 'You got this! Keep going! 💪',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -452,9 +457,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF6B6B), Color(0xFFFFE66D)],
-                ),
+                color: const Color(0xFFFF9500),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.emoji_events, color: Colors.white),
@@ -463,28 +466,33 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             const Text('Challenge Friend'),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Challenge ${widget.friendName} to complete a goal!',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              maxLines: 2,
-              maxLength: 100,
-              decoration: InputDecoration(
-                hintText: 'e.g., Meditate for 10 minutes today',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Challenge ${widget.friendName} to complete a goal!',
+                  style: const TextStyle(color: Colors.grey),
                 ),
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  maxLines: 2,
+                  maxLength: 100,
+                  decoration: InputDecoration(
+                    hintText: 'e.g., Meditate for 10 minutes today',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -1288,11 +1296,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.success, Color(0xFF28A745)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: AppColors.success,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -1333,15 +1337,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF6B6B), Color(0xFFFFE66D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: const Color(0xFFFF9500),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                    color: const Color(0xFFFF9500).withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),

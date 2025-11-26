@@ -20,6 +20,7 @@ class _StatisticsTabState extends State<StatisticsTab> {
   bool _isLoading = true;
   int _currentStreak = 0;
   int _totalXP = 0;
+  String _timeRange = 'week'; // 'week', 'month', 'all'
 
   @override
   void initState() {
@@ -52,11 +53,24 @@ class _StatisticsTabState extends State<StatisticsTab> {
       final journals = await _apiService.getJournalEntries();
       final todos = await _apiService.getTodos();
 
+      // Filter moods by time range
+      final now = DateTime.now();
+      List<dynamic> filteredMoods = moods;
+      if (_timeRange != 'all') {
+        final daysAgo = _timeRange == 'week' ? 7 : 30;
+        final cutoffDate = now.subtract(Duration(days: daysAgo));
+
+        filteredMoods = moods.where((mood) {
+          final loggedAt = DateTime.parse(mood['logged_at']);
+          return loggedAt.isAfter(cutoffDate);
+        }).toList();
+      }
+
       // Cache the fresh data
       await CacheService().set('statistics_data', {
         'streak': user['streak'] ?? 0,
         'xp': user['xp'] ?? 0,
-        'moods': moods,
+        'moods': filteredMoods,
         'journals': journals,
         'todos': todos,
       });
@@ -65,7 +79,7 @@ class _StatisticsTabState extends State<StatisticsTab> {
         setState(() {
           _currentStreak = user['streak'] ?? 0;
           _totalXP = user['xp'] ?? 0;
-          _moodLogs = moods;
+          _moodLogs = filteredMoods;
           _journalEntries = journals;
           _todos = todos;
           _isLoading = false;
@@ -132,6 +146,51 @@ class _StatisticsTabState extends State<StatisticsTab> {
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0A4B80),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border:
+                    Border.all(color: Color(0xFF0A4B80).withValues(alpha: 0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _timeRange,
+                  isExpanded: true,
+                  isDense: false,
+                  menuMaxHeight: 250,
+                  alignment: AlignmentDirectional.centerStart,
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0A4B80)),
+                  icon: const Icon(Icons.arrow_drop_down,
+                      color: Color(0xFF0A4B80), size: 24),
+                  items: const [
+                    DropdownMenuItem(value: 'week', child: Text('This Week')),
+                    DropdownMenuItem(value: 'month', child: Text('This Month')),
+                    DropdownMenuItem(value: 'all', child: Text('All Time')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _timeRange = value!;
+                      _isLoading = true;
+                    });
+                    _loadStatistics();
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -477,19 +536,17 @@ class _StatisticsTabState extends State<StatisticsTab> {
   Color _getMoodColor(String mood) {
     switch (mood.toLowerCase()) {
       case 'happy':
-        return const Color(0xFFFFD700);
-      case 'excited':
-        return const Color(0xFFFF6B6B);
+        return const Color(0xFFFFD54F); // Yellow - matches mood page
       case 'calm':
-        return const Color(0xFF4ECDC4);
+        return const Color(0xFF42A5F5); // Blue - matches mood page
+      case 'tired':
+        return const Color(0xFF78909C); // Blue Grey - matches mood page
       case 'anxious':
-        return const Color(0xFFFFA500);
+        return const Color(0xFFFFA726); // Orange - matches mood page
       case 'sad':
-        return const Color(0xFF95A5A6);
+        return const Color(0xFF9575CD); // Purple - matches mood page
       case 'angry':
-        return const Color(0xFFE74C3C);
-      case 'neutral':
-        return const Color(0xFFBDC3C7);
+        return const Color(0xFFEF5350); // Red - matches mood page
       default:
         return AppColors.primary;
     }

@@ -167,6 +167,14 @@ class ApiService {
     }
   }
 
+  Future<void> deleteMoodLog(int moodId) async {
+    try {
+      await _dioClient.delete('${ApiConstants.moods}/$moodId');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ==================== Journals ====================
 
   Future<Map<String, dynamic>> createJournal(

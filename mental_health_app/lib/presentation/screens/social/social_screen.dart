@@ -478,9 +478,9 @@ class _SocialScreenState extends State<SocialScreen>
       });
 
     // ✅ CHANGE: Use most recent mood log (updates immediately when friend logs new mood)
-    String currentMood = 'calm';
+    String currentMood = '';
     if (sortedMoodLogs.isNotEmpty) {
-      currentMood = sortedMoodLogs.first['mood'] ?? 'calm';
+      currentMood = sortedMoodLogs.first['mood'] ?? '';
     }
 
     // 🐛 DEBUG: Log what we're displaying
@@ -519,7 +519,7 @@ class _SocialScreenState extends State<SocialScreen>
         break;
       case 'unknown':
       default:
-        moodState = 'Calm'; // Fallback
+        moodState = ''; // No fallback - show placeholder if no mood
     }
 
     final genderPrefix = gender == 'female' ? 'Girl' : 'Boy';
@@ -568,21 +568,18 @@ class _SocialScreenState extends State<SocialScreen>
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14),
-                  child: Image.asset(
-                    'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback to Calm if mood-specific GIF doesn't exist
-                      return Image.asset(
-                        'assets/images/${genderPrefix}_Gif_33FPS/Calm$genderPrefix$characterNumber.gif',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(Icons.person,
-                              size: 32, color: AppColors.textSecondary);
-                        },
-                      );
-                    },
-                  ),
+                  child: moodState.isEmpty
+                      ? Icon(Icons.person,
+                          size: 32, color: AppColors.textSecondary)
+                      : Image.asset(
+                          'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Show placeholder if GIF doesn't exist
+                            return Icon(Icons.person,
+                                size: 32, color: AppColors.textSecondary);
+                          },
+                        ),
                 ),
               )
             else

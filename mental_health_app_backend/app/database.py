@@ -17,8 +17,12 @@ engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,           # Test connections before using
     pool_recycle=300,              # Recycle connections every 5 minutes
+    pool_size=5,                   # Reduce connection pool size
+    max_overflow=10,               # Max overflow connections
     connect_args={
-        "options": "-c statement_timeout=30000"  # 30 second timeout
+        "options": "-c statement_timeout=30000",  # 30 second timeout
+        "sslmode": "require",      # Force SSL
+        "connect_timeout": 10       # Connection timeout in seconds
     }
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
