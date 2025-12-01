@@ -14,6 +14,24 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # OAuth2 scheme for token authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
+# In-memory cache for authenticated users to reduce DB load
+# Cache structure: {user_id: (user_object, expiry_timestamp)}
+_user_cache = {}
+_cache_ttl_seconds = 60  # 1 minute TTL - balances freshness and performance
+
+def clear_auth_cache():
+    """Clear the authentication cache (useful for testing or manual refresh)"""
+    global _user_cache
+    _user_cache = {}
+
+def cleanup_expired_cache():
+    """Remove expired entries from auth cache to prevent memory leaks"""
+    now = datetime.utcnow()
+    expired_keys = [uid for uid, (_, expiry) in _user_cache.items() if now >= expiry]
+    for uid in expired_keys:
+        del _user_cache[uid]
+    return len(expired_keys)
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain password against a hashed password"""
     try:
@@ -51,7 +69,7 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
-    """Get the current authenticated user from JWT token"""
+    """Get the current authenticated user from JWT token with caching"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -74,9 +92,24 @@ async def get_current_user(
         except (ValueError, TypeError):
             raise credentials_exception
         
+        # Check cache first to avoid DB query
+        now = datetime.utcnow()
+        if user_id in _user_cache:
+            cached_user, expiry = _user_cache[user_id]
+            if now < expiry:
+                # Cache hit - return cached user without DB query
+                return cached_user
+            else:
+                # Expired - remove from cache
+                del _user_cache[user_id]
+        
+        # Cache miss or expired - fetch from DB
         user = db.query(models.User).filter(models.User.id == user_id).first()
         if user is None:
             raise credentials_exception
+        
+        # Store in cache with TTL
+        _user_cache[user_id] = (user, now + timedelta(seconds=_cache_ttl_seconds))
         
         return user
         

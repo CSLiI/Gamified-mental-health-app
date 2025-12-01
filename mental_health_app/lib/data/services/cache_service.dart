@@ -122,6 +122,7 @@ class CacheKeys {
   // User profile
   static const String userProfile = 'user_profile';
   static const String userCharacter = 'user_character';
+  static const String characterMoodState = 'character_mood_state';
 
   // Mood logs
   static const String recentMoods = 'recent_moods';

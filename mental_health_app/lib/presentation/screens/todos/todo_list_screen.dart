@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/cache_service.dart';
+import '../../widgets/quest_card.dart';
+import '../../../core/utils/debouncer.dart';
+import '../../widgets/level_up_dialog.dart';
 
 class TodoListScreen extends StatefulWidget {
   final DateTime? selectedDate;
@@ -20,16 +23,22 @@ class _TodoListScreenState extends State<TodoListScreen>
   late DateTime _currentDate;
 
   bool _isLoading = false;
+  bool _isLoadingQuests = false;
   List<dynamic> _todos = [];
-
-  // Task categories
-  final List<String> _categories = ['Daily', 'Weekly', 'Monthly', 'Yearly'];
+  List<Map<String, dynamic>> _dailyQuests = [];
+  List<Map<String, dynamic>> _weeklyQuests = [];
+  final Debouncer _actionDebouncer =
+      Debouncer(duration: const Duration(milliseconds: 500));
 
   @override
   void initState() {
     super.initState();
     _currentDate = widget.selectedDate ?? DateTime.now();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    // Listen to tab changes to update FloatingActionButton
+    _tabController.addListener(() {
+      setState(() {});
+    });
     _loadData();
   }
 
@@ -41,7 +50,37 @@ class _TodoListScreenState extends State<TodoListScreen>
   }
 
   Future<void> _loadData() async {
-    await _loadTodos();
+    await Future.wait([
+      _loadTodos(),
+      _loadQuests(),
+    ]);
+  }
+
+  Future<void> _loadQuests() async {
+    setState(() => _isLoadingQuests = true);
+
+    try {
+      // Ensure quests exist
+      await _apiService.generateDailyQuests();
+      await _apiService.generateWeeklyQuests();
+
+      final result = await _apiService.getActiveQuests();
+
+      if (mounted) {
+        setState(() {
+          _dailyQuests =
+              List<Map<String, dynamic>>.from(result['daily_quests'] ?? []);
+          _weeklyQuests =
+              List<Map<String, dynamic>>.from(result['weekly_quests'] ?? []);
+          _isLoadingQuests = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading quests: $e');
+      if (mounted) {
+        setState(() => _isLoadingQuests = false);
+      }
+    }
   }
 
   Future<void> _loadTodos() async {
@@ -84,53 +123,6 @@ class _TodoListScreenState extends State<TodoListScreen>
     } catch (e) {
       print('Error loading todos: $e');
     }
-  }
-
-  // Get tasks based on category
-  List<dynamic> _getTasksByCategory(String category) {
-    final now = DateTime.now();
-
-    return _todos.where((todo) {
-      final createdAt = DateTime.parse(todo['created_at']).toLocal();
-
-      switch (category) {
-        case 'Daily':
-          // Tasks for today
-          return createdAt.year == now.year &&
-              createdAt.month == now.month &&
-              createdAt.day == now.day;
-
-        case 'Weekly':
-          // Tasks for this week (Monday to Sunday)
-          final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-          final endOfWeek = startOfWeek.add(const Duration(days: 6));
-          return createdAt
-                  .isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
-              createdAt.isBefore(endOfWeek.add(const Duration(days: 1)));
-
-        case 'Monthly':
-          // Tasks for this month
-          return createdAt.year == now.year && createdAt.month == now.month;
-
-        case 'Yearly':
-          // Tasks for this year
-          return createdAt.year == now.year;
-
-        default:
-          return false;
-      }
-    }).toList()
-      ..sort((a, b) {
-        final aCompleted = a['is_completed'] ?? false;
-        final bCompleted = b['is_completed'] ?? false;
-        // Incomplete tasks first
-        if (aCompleted != bCompleted) {
-          return aCompleted ? 1 : -1;
-        }
-        // Then by creation date (newest first)
-        return DateTime.parse(b['created_at'])
-            .compareTo(DateTime.parse(a['created_at']));
-      });
   }
 
   String _formatDate(DateTime date) {
@@ -291,6 +283,15 @@ class _TodoListScreenState extends State<TodoListScreen>
       if (!isCompleted) {
         await _apiService.completeTodo(todoId);
         _apiService.checkAchievements();
+
+        // Update quest progress for general category
+        await _apiService.updateQuestProgress('general', increment: 1);
+
+        // Reload quests to show updated progress
+        await _loadQuests();
+
+        // Check if leveled up from quest XP
+        await _checkLevelUp();
       } else {
         await _apiService.uncompleteTodo(todoId);
       }
@@ -332,6 +333,143 @@ class _TodoListScreenState extends State<TodoListScreen>
     }
   }
 
+  Future<void> _generateQuests() async {
+    // Prevent rapid duplicate taps
+    _actionDebouncer.run(() async {
+      // Show loading state
+      if (mounted) {
+        setState(() => _isLoadingQuests = true);
+      }
+
+      try {
+        // Clear old quests before generating new ones
+        if (mounted) {
+          setState(() {
+            _dailyQuests = [];
+            _weeklyQuests = [];
+          });
+        }
+
+        // Generate new quests
+        await _apiService.generateDailyQuests();
+        await _apiService.generateWeeklyQuests();
+
+        // Force fresh load (no cache)
+        await _loadQuests();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✨ New quests generated!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoadingQuests = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to generate quests: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  Future<void> _checkLevelUp() async {
+    try {
+      final result = await _apiService.checkLevelUp();
+
+      if (result['leveled_up'] == true && mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => LevelUpDialog(
+            oldLevel: result['old_level'],
+            newLevel: result['new_level'],
+            milestoneXp: result['milestone_xp'] ?? 0,
+            rewardsUnlocked: List<Map<String, dynamic>>.from(
+                result['rewards_unlocked'] ?? []),
+            petsUnlocked:
+                List<Map<String, dynamic>>.from(result['pets_unlocked'] ?? []),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error checking level up: $e');
+    }
+  }
+
+  Widget _buildQuestList(List<Map<String, dynamic>> quests, String type) {
+    if (_isLoadingQuests && quests.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (quests.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _loadQuests,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.task_alt, size: 80, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No ${type == 'daily' ? 'Daily' : 'Weekly'} Quests',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap ✨ to generate new quests',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadQuests,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: quests.length,
+        itemBuilder: (context, index) {
+          final quest = quests[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: QuestCard(
+              key: ValueKey('${type}_${quest['id'] ?? quest['task']}'),
+              task: quest['task'],
+              category: quest['category'] ?? 'general',
+              difficulty: quest['difficulty'] ?? 'medium',
+              xpReward: quest['xp_reward'],
+              progressCurrent: quest['progress_current'] ?? 0,
+              progressTotal: quest['progress_total'] ?? 1,
+              isCompleted: quest['is_completed'] ?? false,
+              questType: type,
+              expiresAt: DateTime.parse(quest['expires_at']),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -343,35 +481,47 @@ class _TodoListScreenState extends State<TodoListScreen>
           icon: const Icon(Icons.arrow_back, color: Color(0xFF0A4B80)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Daily Tasks',
-              style: TextStyle(
-                color: Color(0xFF0A4B80),
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            Text(
-              _formatDate(_currentDate),
-              style: const TextStyle(
-                color: Color(0xFF5CACEE),
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
+        title: const Text(
+          'Tasks & Quests',
+          style: TextStyle(
+            color: Color(0xFF0A4B80),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: AppColors.primary,
+          tabs: const [
+            Tab(text: 'Daily Quests'),
+            Tab(text: 'Weekly Quests'),
+            Tab(text: 'My Todos'),
           ],
         ),
       ),
-      body: _buildTaskList('Daily', _todos),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddTaskDialog('Daily'),
-        backgroundColor: const Color(0xFF5CACEE),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Task', style: TextStyle(color: Colors.white)),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildQuestList(_dailyQuests, 'daily'),
+          _buildQuestList(_weeklyQuests, 'weekly'),
+          _buildTaskList('Daily', _todos),
+        ],
       ),
+      floatingActionButton: _tabController.index == 2
+          ? FloatingActionButton.extended(
+              onPressed: () => _showAddTaskDialog('Daily'),
+              backgroundColor: const Color(0xFF5CACEE),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label:
+                  const Text('New Task', style: TextStyle(color: Colors.white)),
+            )
+          : FloatingActionButton(
+              onPressed: _generateQuests,
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.auto_awesome, color: Colors.white),
+            ),
     );
   }
 

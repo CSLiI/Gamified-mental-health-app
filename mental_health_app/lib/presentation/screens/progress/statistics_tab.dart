@@ -12,7 +12,8 @@ class StatisticsTab extends StatefulWidget {
   State<StatisticsTab> createState() => _StatisticsTabState();
 }
 
-class _StatisticsTabState extends State<StatisticsTab> {
+class _StatisticsTabState extends State<StatisticsTab>
+    with AutomaticKeepAliveClientMixin {
   final ApiService _apiService = ApiService();
   List<dynamic> _moodLogs = [];
   List<dynamic> _journalEntries = [];
@@ -21,6 +22,9 @@ class _StatisticsTabState extends State<StatisticsTab> {
   int _currentStreak = 0;
   int _totalXP = 0;
   String _timeRange = 'week'; // 'week', 'month', 'all'
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -48,10 +52,26 @@ class _StatisticsTabState extends State<StatisticsTab> {
       }
 
       // Fetch fresh data in background
-      final user = await _apiService.getCurrentUser();
-      final moods = await _apiService.getMoodLogs();
-      final journals = await _apiService.getJournalEntries();
-      final todos = await _apiService.getTodos();
+      print('📊 Loading statistics...');
+
+      final results = await Future.wait([
+        _apiService.getCurrentUser(),
+        _apiService.getMoodLogs(),
+        _apiService.getJournalEntries(),
+        _apiService.getTodos(),
+      ]);
+
+      final user = results[0] as Map<String, dynamic>;
+      print('✅ User data loaded: ${user.toString()}');
+
+      final moods = results[1] as List<dynamic>;
+      print('✅ Mood logs loaded: ${moods.length} entries');
+
+      final journals = results[2] as List<dynamic>;
+      print('✅ Journal entries loaded: ${journals.length} entries');
+
+      final todos = results[3] as List<dynamic>;
+      print('✅ Todos loaded: ${todos.length} entries');
 
       // Filter moods by time range
       final now = DateTime.now();
@@ -68,7 +88,7 @@ class _StatisticsTabState extends State<StatisticsTab> {
 
       // Cache the fresh data
       await CacheService().set('statistics_data', {
-        'streak': user['streak'] ?? 0,
+        'streak': user['current_streak'] ?? 0,
         'xp': user['xp'] ?? 0,
         'moods': filteredMoods,
         'journals': journals,
@@ -77,18 +97,34 @@ class _StatisticsTabState extends State<StatisticsTab> {
 
       if (mounted) {
         setState(() {
-          _currentStreak = user['streak'] ?? 0;
+          _currentStreak = user['current_streak'] ?? 0;
           _totalXP = user['xp'] ?? 0;
           _moodLogs = filteredMoods;
           _journalEntries = journals;
           _todos = todos;
           _isLoading = false;
         });
+
+        print('📈 Statistics updated:');
+        print('  - Streak: $_currentStreak');
+        print('  - XP: $_totalXP');
+        print('  - Mood logs: ${_moodLogs.length}');
+        print('  - Journals: ${_journalEntries.length}');
+        print('  - Todos: ${_todos.length}');
       }
     } catch (e) {
-      print('Error loading statistics: $e');
+      print('❌ Error loading statistics: $e');
       if (mounted) {
         setState(() => _isLoading = false);
+
+        // Show error to user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load statistics: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     }
   }

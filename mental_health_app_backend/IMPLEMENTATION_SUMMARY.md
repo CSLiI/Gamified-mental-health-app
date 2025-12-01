@@ -1,3 +1,18 @@
+## Quest Generation Idempotency (Backend Best Practice)
+
+To ensure clients can reliably fetch quests without double-creating them under rapid interactions or multiple devices, implement idempotent generation on the server:
+
+- Generate-once semantics: One daily quest set per user per day; one weekly quest set per user per week.
+- Enforce via unique constraints:
+  - `UNIQUE (user_id, period_type, period_key)` where `period_key` represents the day (YYYY-MM-DD) for daily, or ISO week (YYYY-Wxx) for weekly.
+- Guard endpoints (`/quests/daily/generate`, `/quests/weekly/generate`):
+  - If a set already exists for the current period, return existing set without creating duplicates.
+  - Prefer upsert-style logic (insert if not exists).
+- Client behavior:
+  - Call fetch endpoints normally; generation can be implicit or explicitly called but will not duplicate.
+
+This prevents race conditions and keeps UI consistent when multiple screens trigger generation. It also allows the frontend to be fetch-first, improving perceived speed and reliability.
+
 # 🎉 Social Accountability Backend - COMPLETE
 
 ## ✅ Implementation Status: READY TO TEST

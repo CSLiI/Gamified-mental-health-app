@@ -4,6 +4,9 @@ import '../../../data/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../data/services/cache_service.dart';
+import '../../../core/utils/image_cache_manager.dart';
+import '../../../core/widgets/keep_alive_wrapper.dart';
+import '../../../core/utils/debouncer.dart';
 
 class SocialScreen extends StatefulWidget {
   const SocialScreen({super.key});
@@ -16,6 +19,7 @@ class _SocialScreenState extends State<SocialScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _apiService = ApiService();
   late TabController _tabController;
+  final Debouncer _actionDebouncer = Debouncer(milliseconds: 350);
 
   bool _isLoading = true;
   List<dynamic> _friends = [];
@@ -23,13 +27,13 @@ class _SocialScreenState extends State<SocialScreen>
   List<dynamic> _sentRequests = [];
 
   // Cache for friend mood data to avoid repeated API calls
-  final Map<int, Map<String, dynamic>> _friendMoodCache = {};
+  Map<int, Map<String, dynamic>> _friendMoodCache = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    WidgetsBinding.instance.addObserver(this); // ✅ Listen to app lifecycle
+    WidgetsBinding.instance.addObserver(this);
     _loadData();
   }
 
@@ -38,69 +42,95 @@ class _SocialScreenState extends State<SocialScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && _friends.isNotEmpty) {
-      _refreshMoodCache(); // Refresh when app comes back to foreground
+      _refreshMoodCache(_friends);
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Reload data when dependencies change (e.g., after login/logout)
-    _loadData();
-  }
-
-  // ✅ IMPROVED: Refresh only the mood cache silently (no loading spinner)
-  Future<void> _refreshMoodCache() async {
-    if (_friends.isEmpty) return;
+  /// Refresh friend mood data in background without showing loading spinner.
+  /// Processes friends in chunks to avoid overwhelming the server.
+  Future<void> _refreshMoodCache([List<dynamic>? friendsList]) async {
+    final listToUse = friendsList ?? _friends;
+    if (listToUse.isEmpty) return;
 
     // Don't show loading spinner - refresh silently in background
     try {
-      await Future.wait(_friends.map((friend) async {
-        final friendId = friend['friend_id'] as int;
-        try {
-          final results = await Future.wait([
-            _apiService.getFriendProfile(friendId),
-            _apiService
-                .getFriendCharacterMoodState(friendId)
-                .catchError((_) => <String, dynamic>{}),
-            _apiService
-                .getFriendMoodLogs(friendId)
-                .catchError((_) => <dynamic>[]),
-          ]);
+      // Process in chunks to avoid overwhelming the server/network
+      // Chunk size of 3 means 3 friends at a time (9 API calls)
+      const int chunkSize = 3;
+      for (var i = 0; i < listToUse.length; i += chunkSize) {
+        final end = (i + chunkSize < listToUse.length)
+            ? i + chunkSize
+            : listToUse.length;
+        final chunk = listToUse.sublist(i, end);
 
-          _friendMoodCache[friendId] = {
-            'profile': results[0],
-            'characterState': results[1],
-            'moodLogs': results[2],
-          };
-        } catch (e) {
-          print('Error refreshing mood data for friend $friendId: $e');
+        await Future.wait(chunk.map((friend) async {
+          final friendId = friend['friend_id'] as int;
+          try {
+            final results = await Future.wait([
+              _apiService.getFriendProfile(friendId),
+              _apiService
+                  .getFriendCharacterMoodState(friendId)
+                  .catchError((_) => <String, dynamic>{}),
+              _apiService
+                  .getFriendMoodLogs(friendId)
+                  .catchError((_) => <dynamic>[]),
+            ]);
+
+            _friendMoodCache[friendId] = {
+              'profile': results[0],
+              'characterState': results[1],
+              'moodLogs': results[2],
+            };
+          } catch (e) {
+            debugPrint('Error refreshing mood data for friend $friendId: $e');
+          }
+        }));
+
+        // Update UI after each chunk
+        if (mounted) {
+          setState(() {});
         }
-      }));
-
-      if (mounted) {
-        setState(() {}); // Silently update UI with fresh cache
       }
+
+      // Save updated cache to persistent storage
+      // Convert int keys to string for JSON serialization
+      final cacheToSave =
+          _friendMoodCache.map((key, value) => MapEntry(key.toString(), value));
+      await CacheService().set('social_mood_data', cacheToSave);
     } catch (e) {
-      print('Error refreshing mood cache: $e');
+      debugPrint('Error refreshing mood cache: $e');
     }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    WidgetsBinding.instance.removeObserver(this); // ✅ Clean up observer
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    if (_friends.isEmpty) {
+      setState(() => _isLoading = true);
+    }
+
     try {
-      // Check cache first
+      // Load friends list from cache first
       final cachedData = await CacheService().get<Map<String, dynamic>>(
         'social_data',
         maxAge: CacheService.shortCache,
       );
+
+      // Load mood cache from persistent storage
+      final cachedMoods = await CacheService().get<Map<String, dynamic>>(
+        'social_mood_data',
+        maxAge: CacheService.mediumCache,
+      );
+
+      if (cachedMoods != null) {
+        _friendMoodCache = cachedMoods.map((key, value) =>
+            MapEntry(int.parse(key), value as Map<String, dynamic>));
+      }
 
       if (cachedData != null && mounted) {
         setState(() {
@@ -116,38 +146,7 @@ class _SocialScreenState extends State<SocialScreen>
       final requests = await _apiService.getReceivedFriendRequests();
       final sent = await _apiService.getSentFriendRequests();
 
-      // Update cache
-      await CacheService().set('social_data', {
-        'friends': friends,
-        'requests': requests,
-        'sentRequests': sent,
-      });
-
-      // Pre-fetch all friends' mood data in parallel for fast loading
-      _friendMoodCache.clear();
-      await Future.wait(friends.map((friend) async {
-        final friendId = friend['friend_id'] as int;
-        try {
-          final results = await Future.wait([
-            _apiService.getFriendProfile(friendId),
-            _apiService
-                .getFriendCharacterMoodState(friendId)
-                .catchError((_) => <String, dynamic>{}),
-            _apiService
-                .getFriendMoodLogs(friendId)
-                .catchError((_) => <dynamic>[]),
-          ]);
-
-          _friendMoodCache[friendId] = {
-            'profile': results[0],
-            'characterState': results[1],
-            'moodLogs': results[2],
-          };
-        } catch (e) {
-          print('Error loading mood data for friend $friendId: $e');
-        }
-      }));
-
+      // Update state with fresh data
       if (mounted) {
         setState(() {
           _friends = friends;
@@ -156,8 +155,20 @@ class _SocialScreenState extends State<SocialScreen>
           _isLoading = false;
         });
       }
+
+      // Update cache
+      await CacheService().set('social_data', {
+        'friends': friends,
+        'requests': requests,
+        'sentRequests': sent,
+      });
+
+      // Always fetch fresh mood details in background
+      if (friends.isNotEmpty) {
+        await _refreshMoodCache(friends);
+      }
     } catch (e) {
-      print('Error loading social data: $e');
+      debugPrint('Error loading social data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -270,9 +281,9 @@ class _SocialScreenState extends State<SocialScreen>
                     : TabBarView(
                         controller: _tabController,
                         children: [
-                          _buildFriendsTab(),
-                          _buildRequestsTab(),
-                          _buildSentTab(),
+                          KeepAliveWrapper(child: _buildFriendsTab()),
+                          KeepAliveWrapper(child: _buildRequestsTab()),
+                          KeepAliveWrapper(child: _buildSentTab()),
                         ],
                       ),
               ),
@@ -477,17 +488,11 @@ class _SocialScreenState extends State<SocialScreen>
         return dateB.compareTo(dateA); // Descending order (newest first)
       });
 
-    // ✅ CHANGE: Use most recent mood log (updates immediately when friend logs new mood)
-    String currentMood = '';
+    // Use most recent mood log
+    String currentMood = 'calm'; // Default to calm if no mood logs
     if (sortedMoodLogs.isNotEmpty) {
-      currentMood = sortedMoodLogs.first['mood'] ?? '';
+      currentMood = sortedMoodLogs.first['mood'] ?? 'calm';
     }
-
-    // 🐛 DEBUG: Log what we're displaying
-    print('🎭 [FRIEND CARD] Friend: $friendName (ID: $friendId)');
-    print('   Sorted mood logs: ${sortedMoodLogs.take(3).toList()}');
-    print('   Most Recent Mood: "$currentMood"');
-    print('   Total mood logs: ${moodLogs.length}');
 
     final Color moodColor = _getMoodColor(currentMood);
 
@@ -530,8 +535,8 @@ class _SocialScreenState extends State<SocialScreen>
       onTap: () async {
         await context
             .push('/friend/$friendId?name=${Uri.encodeComponent(friendName)}');
-        // ✅ FIX: Refresh mood cache when returning from friend profile
-        _refreshMoodCache();
+        // ✅ FIX: Reload entire friends list when returning from friend profile
+        await _loadData();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -571,14 +576,10 @@ class _SocialScreenState extends State<SocialScreen>
                   child: moodState.isEmpty
                       ? Icon(Icons.person,
                           size: 32, color: AppColors.textSecondary)
-                      : Image.asset(
-                          'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
+                      : ImageCacheManager().buildCachedImage(
+                          assetPath:
+                              'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            // Show placeholder if GIF doesn't exist
-                            return Icon(Icons.person,
-                                size: 32, color: AppColors.textSecondary);
-                          },
                         ),
                 ),
               )
@@ -2094,107 +2095,119 @@ class _SocialScreenState extends State<SocialScreen>
   }
 
   Future<void> _sendFriendRequest(String query) async {
-    try {
-      await _apiService.sendFriendRequest(query);
-      if (mounted) {
-        _loadData();
+    _actionDebouncer.run(() async {
+      try {
+        await _apiService.sendFriendRequest(query);
+        if (mounted) {
+          _loadData();
+        }
+      } catch (e) {
+        debugPrint('Error sending friend request: $e');
+        if (mounted) {
+          _loadData();
+        }
       }
-    } catch (e) {
-      print('Error sending friend request: $e');
-      if (mounted) {
-        _loadData();
-      }
-    }
+    });
   }
 
   Future<void> _acceptFriendRequest(int requestId) async {
-    try {
-      await _apiService.acceptFriendRequest(requestId);
-      if (mounted) {
-        _loadData();
+    _actionDebouncer.run(() async {
+      try {
+        await _apiService.acceptFriendRequest(requestId);
+        if (mounted) {
+          _loadData();
+        }
+      } catch (e) {
+        debugPrint('Error accepting friend request: $e');
+        if (mounted) {
+          _loadData();
+        }
       }
-    } catch (e) {
-      print('Error accepting friend request: $e');
-      if (mounted) {
-        _loadData();
-      }
-    }
+    });
   }
 
   Future<void> _rejectFriendRequest(int requestId) async {
-    try {
-      await _apiService.rejectFriendRequest(requestId);
-      if (mounted) {
-        _loadData();
+    _actionDebouncer.run(() async {
+      try {
+        await _apiService.rejectFriendRequest(requestId);
+        if (mounted) {
+          _loadData();
+        }
+      } catch (e) {
+        debugPrint('Error rejecting friend request: $e');
+        if (mounted) {
+          _loadData();
+        }
       }
-    } catch (e) {
-      print('Error rejecting friend request: $e');
-      if (mounted) {
-        _loadData();
-      }
-    }
+    });
   }
 
   Future<void> _cancelFriendRequest(int requestId) async {
-    try {
-      await _apiService.cancelFriendRequest(requestId);
-      if (mounted) {
-        _loadData();
+    _actionDebouncer.run(() async {
+      try {
+        await _apiService.cancelFriendRequest(requestId);
+        if (mounted) {
+          _loadData();
+        }
+      } catch (e) {
+        debugPrint('Error cancelling friend request: $e');
+        if (mounted) {
+          _loadData();
+        }
       }
-    } catch (e) {
-      print('Error cancelling friend request: $e');
-      if (mounted) {
-        _loadData();
-      }
-    }
+    });
   }
 
   Future<void> _removeFriend(int friendId) async {
-    try {
-      await _apiService.removeFriend(friendId);
-      if (mounted) {
-        _loadData();
+    _actionDebouncer.run(() async {
+      try {
+        await _apiService.removeFriend(friendId);
+        if (mounted) {
+          _loadData();
+        }
+      } catch (e) {
+        debugPrint('Error removing friend: $e');
+        if (mounted) {
+          _loadData();
+        }
       }
-    } catch (e) {
-      print('Error removing friend: $e');
-      if (mounted) {
-        _loadData();
-      }
-    }
+    });
   }
 
   Future<void> _sendEncouragement(Map<String, dynamic> friend) async {
-    try {
-      final friendId = friend['friend_id'];
-      await _apiService.sendEncouragement(
-        friendId,
-        'Keep up the great work! 💪',
-      );
+    _actionDebouncer.run(() async {
+      try {
+        final friendId = friend['friend_id'];
+        await _apiService.sendEncouragement(
+          friendId,
+          'Keep up the great work! 💪',
+        );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Encouragement sent! 💪'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Encouragement sent! 💪'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-          ),
-        );
+          );
+        }
+      } catch (e) {
+        debugPrint('Error sending encouragement: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to send encouragement: $e'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
-    } catch (e) {
-      print('Error sending encouragement: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send encouragement: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+    });
   }
 
   Future<void> _viewFriendProfile(Map<String, dynamic> friend) async {
@@ -2202,7 +2215,10 @@ class _SocialScreenState extends State<SocialScreen>
       final friendUserId = friend['friend_user_id'] ?? friend['user_id'];
       if (friendUserId == null) return;
 
-      final profile = await _apiService.getFriendProfile(friendUserId);
+      final profile =
+          await _actionDebouncer.runAsync<Map<String, dynamic>>(() async {
+        return await _apiService.getFriendProfile(friendUserId);
+      });
 
       if (!mounted) return;
 
@@ -2210,12 +2226,12 @@ class _SocialScreenState extends State<SocialScreen>
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('${profile['first_name']} ${profile['last_name']}'),
+          title: Text('${profile?['first_name']} ${profile?['last_name']}'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Character image/gif
-              if (profile['character'] != null) ...[
+              if (profile?['character'] != null) ...[
                 Container(
                   width: 150,
                   height: 150,
@@ -2227,7 +2243,7 @@ class _SocialScreenState extends State<SocialScreen>
                   ),
                   child: Center(
                     child: Text(
-                      profile['character']['name'] ?? 'Character',
+                      profile?['character']['name'] ?? 'Character',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -2239,12 +2255,12 @@ class _SocialScreenState extends State<SocialScreen>
                 const SizedBox(height: 16),
               ],
               Text(
-                profile['email'] ?? '',
+                profile?['email'] ?? '',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
-              if (profile['interests'] != null &&
-                  profile['interests'].isNotEmpty) ...[
+              if (profile?['interests'] != null &&
+                  profile!['interests'].isNotEmpty) ...[
                 const Divider(),
                 const SizedBox(height: 8),
                 const Text(
@@ -2254,7 +2270,7 @@ class _SocialScreenState extends State<SocialScreen>
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: (profile['interests'] as List).map((interest) {
+                  children: (profile!['interests'] as List).map((interest) {
                     return Chip(
                       label: Text(interest['name'] ?? ''),
                       backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -2309,33 +2325,35 @@ class _SocialScreenState extends State<SocialScreen>
             onPressed: () async {
               if (messageController.text.trim().isEmpty) return;
 
-              try {
-                final friendId = friend['friend_id'];
-                await _apiService.sendMessage(
-                  friendId,
-                  messageController.text.trim(),
-                );
+              await _actionDebouncer.run(() async {
+                try {
+                  final friendId = friend['friend_id'];
+                  await _apiService.sendMessage(
+                    friendId,
+                    messageController.text.trim(),
+                  );
 
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Message sent! 💬'),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Message sent! 💬'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print('Error sending message: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Failed to send message'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
                 }
-              } catch (e) {
-                print('Error sending message: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Failed to send message'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                }
-              }
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,

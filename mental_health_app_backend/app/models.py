@@ -26,6 +26,18 @@ class PeriodTypeEnum(str, enum.Enum):
     monthly = "monthly"
     yearly = "yearly"
 
+class QuestDifficultyEnum(str, enum.Enum):
+    easy = "easy"
+    medium = "medium"
+    hard = "hard"
+
+class QuestCategoryEnum(str, enum.Enum):
+    mood = "mood"
+    journal = "journal"
+    social = "social"
+    streak = "streak"
+    general = "general"
+
 # Users table
 class User(Base):
     __tablename__ = "users"
@@ -42,6 +54,15 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     level = Column(Integer, default=1)
     xp = Column(Integer, default=0)
+    last_active = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Daily check-in and streak tracking
+    last_daily_claim = Column(DateTime(timezone=True))
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    total_daily_claims = Column(Integer, default=0)
+    streak_freeze_available = Column(Boolean, default=False)
+    streak_freeze_used_this_week = Column(Boolean, default=False)
     
     # Relationships
     user_characters = relationship("UserCharacter", back_populates="user", cascade="all, delete-orphan")
@@ -165,6 +186,16 @@ class Todo(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True))
     
+    # Quest system fields
+    is_quest = Column(Boolean, default=False)
+    quest_type = Column(String(50))  # daily, weekly
+    difficulty = Column(SQLEnum(QuestDifficultyEnum))
+    category = Column(SQLEnum(QuestCategoryEnum))
+    xp_reward = Column(Integer, default=0)
+    progress_current = Column(Integer, default=0)
+    progress_total = Column(Integer, default=1)
+    expires_at = Column(DateTime(timezone=True))
+    
     # Relationships
     user = relationship("User", back_populates="todos")
 
@@ -231,6 +262,8 @@ class Reward(Base):
     cost_xp = Column(Integer, default=0)
     rarity = Column(String(20))  # common, rare, epic, legendary
     is_limited = Column(Boolean, default=False)
+    tier = Column(Integer, default=1)  # Tier 1-5, unlocked by level
+    required_level = Column(Integer, default=1)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
@@ -322,7 +355,50 @@ class Message(Base):
     # Relationships
     sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
     receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
+
+# Pet/Companion System
+class Pet(Base):
+    __tablename__ = "pets"
     
-# Update User model to include relationships (add these lines to User class):
-# user_achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
-# user_rewards = relationship("UserReward", back_populates="user", cascade="all, delete-orphan")
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    emoji = Column(String(10), nullable=False)  # 🐉🦊🐱🐶🦋🦄
+    description = Column(Text)
+    unlock_level = Column(Integer, default=1)
+    rarity = Column(String(20))  # common, rare, epic, legendary
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user_pets = relationship("UserPet", back_populates="pet", cascade="all, delete-orphan")
+
+class UserPet(Base):
+    __tablename__ = "user_pets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    pet_id = Column(Integer, ForeignKey("pets.id", ondelete="CASCADE"), nullable=False)
+    unlocked_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_active = Column(Boolean, default=False)
+    affection_level = Column(Integer, default=1)
+    
+    # Relationships
+    user = relationship("User", backref="pets")
+    pet = relationship("Pet", back_populates="user_pets")
+
+# Mystery Box System
+class MysteryBox(Base):
+    __tablename__ = "mystery_boxes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    box_type = Column(String(50))  # bronze, silver, gold, legendary
+    is_opened = Column(Boolean, default=False)
+    earned_from = Column(String(100))  # daily_claim, achievement, level_up
+    reward_type = Column(String(50))  # xp, pet, cosmetic
+    reward_id = Column(Integer)  # ID of reward if applicable
+    reward_amount = Column(Integer)  # Amount of XP or quantity
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    opened_at = Column(DateTime(timezone=True))
+    
+    # Relationships
+    user = relationship("User", backref="mystery_boxes")

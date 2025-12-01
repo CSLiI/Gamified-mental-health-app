@@ -4,6 +4,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../data/services/cache_service.dart';
+import '../../../core/utils/image_cache_manager.dart';
+import '../../widgets/level_up_dialog.dart';
+import '../../../core/utils/debouncer.dart';
 
 class MoodScreen extends StatefulWidget {
   final int characterId;
@@ -28,6 +31,7 @@ class _MoodScreenState extends State<MoodScreen>
   final _apiService = ApiService();
   final _noteController = TextEditingController();
   late TabController _tabController;
+  final Debouncer _moodTapDebouncer = Debouncer(milliseconds: 250);
 
   // Character details from onboarding
   int _characterId = 1;
@@ -69,12 +73,14 @@ class _MoodScreenState extends State<MoodScreen>
         print(
             '✅ MOOD: Character found - Gender: ${character['gender']}, Number: ${character['number']}');
 
-        setState(() {
-          _characterId = character['id'] ?? 1;
-          _characterGender = character['gender'] ?? 'Boy';
-          _characterNumber = character['number'] ?? 1;
-          _characterLoaded = true;
-        });
+        if (mounted) {
+          setState(() {
+            _characterId = character['id'] ?? 1;
+            _characterGender = character['gender'] ?? 'Boy';
+            _characterNumber = character['number'] ?? 1;
+            _characterLoaded = true;
+          });
+        }
 
         // Cache to user-specific SharedPreferences for offline access
         final user = await _apiService.getCurrentUser();
@@ -94,14 +100,16 @@ class _MoodScreenState extends State<MoodScreen>
         final user = await _apiService.getCurrentUser();
         final userId = user['id'];
         final prefs = await SharedPreferences.getInstance();
-        setState(() {
-          _characterId = prefs.getInt('selected_character_id_$userId') ?? 1;
-          _characterGender =
-              prefs.getString('selected_character_gender_$userId') ?? 'Boy';
-          _characterNumber =
-              prefs.getInt('selected_character_number_$userId') ?? 1;
-          _characterLoaded = true;
-        });
+        if (mounted) {
+          setState(() {
+            _characterId = prefs.getInt('selected_character_id_$userId') ?? 1;
+            _characterGender =
+                prefs.getString('selected_character_gender_$userId') ?? 'Boy';
+            _characterNumber =
+                prefs.getInt('selected_character_number_$userId') ?? 1;
+            _characterLoaded = true;
+          });
+        }
         print('📦 MOOD: Loaded character from cache for user $userId');
       } catch (e2) {
         print('❌ MOOD: Error loading from cache: $e2');
@@ -223,12 +231,16 @@ class _MoodScreenState extends State<MoodScreen>
       // Update cache with time range key
       await CacheService().set(cacheKey, filteredMoods);
 
-      setState(() {
-        _moodHistory = filteredMoods;
-        _isLoadingHistory = false;
-      });
+      if (mounted) {
+        setState(() {
+          _moodHistory = filteredMoods;
+          _isLoadingHistory = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoadingHistory = false);
+      if (mounted) {
+        setState(() => _isLoadingHistory = false);
+      }
     }
   }
 
@@ -250,7 +262,9 @@ class _MoodScreenState extends State<MoodScreen>
       // Update cache
       await CacheService().set('mood_stats', stats);
 
-      setState(() => _moodStats = stats);
+      if (mounted) {
+        setState(() => _moodStats = stats);
+      }
     } catch (e) {
       print('Error loading stats: $e');
     }
@@ -304,14 +318,9 @@ class _MoodScreenState extends State<MoodScreen>
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(17),
-                            child: Image.asset(
-                              gifPath,
+                            child: ImageCacheManager().buildCachedImage(
+                              assetPath: gifPath,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Fallback to icon if image fails
-                                return Icon(moodData['icon'],
-                                    color: moodColor, size: 80);
-                              },
                             ),
                           ),
                         )
@@ -434,11 +443,20 @@ class _MoodScreenState extends State<MoodScreen>
       }
 
       // Check for achievements silently
-      _apiService.checkAchievements();
+      final achievementResult = await _apiService.checkAchievements();
       _noteController.clear();
+
+      // Update quest progress for mood category
+      await _apiService.updateQuestProgress('mood', increment: 1);
 
       // Reload data
       await _loadData();
+
+      // Check for level-up if XP was gained
+      if (achievementResult['xp_earned'] != null &&
+          achievementResult['xp_earned'] > 0) {
+        await _checkLevelUp();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -452,6 +470,30 @@ class _MoodScreenState extends State<MoodScreen>
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _checkLevelUp() async {
+    try {
+      final result = await _apiService.checkLevelUp();
+
+      if (result['leveled_up'] == true && mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => LevelUpDialog(
+            oldLevel: result['old_level'],
+            newLevel: result['new_level'],
+            milestoneXp: result['milestone_xp'] ?? 0,
+            rewardsUnlocked: List<Map<String, dynamic>>.from(
+                result['rewards_unlocked'] ?? []),
+            petsUnlocked:
+                List<Map<String, dynamic>>.from(result['pets_unlocked'] ?? []),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error checking level up: $e');
     }
   }
 
@@ -573,11 +615,12 @@ class _MoodScreenState extends State<MoodScreen>
               final mood = entry.key;
               final moodData = entry.value;
               final String? gifPath = moodData['gifPath'] as String?;
-
               return GestureDetector(
                 onTap: () {
-                  // Show note dialog
-                  _showNoteDialog(mood);
+                  _moodTapDebouncer.run(() {
+                    // Show note dialog
+                    _showNoteDialog(mood);
+                  });
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -610,14 +653,9 @@ class _MoodScreenState extends State<MoodScreen>
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              gifPath,
+                            child: ImageCacheManager().buildCachedImage(
+                              assetPath: gifPath,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Fallback to icon if image fails
-                                return Icon(moodData['icon'],
-                                    size: 35, color: Colors.white);
-                              },
                             ),
                           ),
                         )
@@ -884,26 +922,9 @@ class _MoodScreenState extends State<MoodScreen>
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(30),
-                        child: Image.asset(
-                          gifPath,
+                        child: ImageCacheManager().buildCachedImage(
+                          assetPath: gifPath,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            // Fallback to icon
-                            return Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: (moodData?['color'] as Color?)
-                                        ?.withValues(alpha: 25) ??
-                                    Colors.grey.withValues(alpha: 25),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                moodData?['icon'] ?? Icons.mood,
-                                color: moodData?['color'] ?? Colors.grey,
-                                size: 24,
-                              ),
-                            );
-                          },
                         ),
                       ),
                     )

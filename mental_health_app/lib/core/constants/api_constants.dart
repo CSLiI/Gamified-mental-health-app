@@ -4,8 +4,10 @@ class ApiConstants {
   // ⚠️ IMPORTANT: Change this based on your testing device
 
   // FOR ANDROID EMULATOR (default):
-  static const String baseUrl = 'http://192.168.68.103:8000';
-  //static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'http://10.0.2.2:8000';
+  
+  // FOR PHYSICAL DEVICE: Uncomment and use your computer's IP
+  // static const String baseUrl = 'http://YOUR_IP_HERE:8000';
   // FOR iOS SIMULATOR (uncomment this and comment above):
   // static const String baseUrl = 'http://localhost:8000';
 
@@ -84,6 +86,44 @@ class ApiConstants {
   // Interest Endpoints
   static const String interests = '/interests';
   static const String popularInterests = '/interests/popular';
+
+  // Daily Reward Endpoints
+  static const String dailyStatus = '/daily/status';
+  static const String dailyClaim = '/daily/claim';
+  static const String dailyCalendar = '/daily/calendar';
+  static const String streakFreeze = '/daily/streak-freeze';
+  static const String useStreakFreeze = '/daily/streak-freeze/use';
+
+  // Quest Endpoints
+  static const String questsActive = '/quests/active';
+  static const String questsDailyGenerate = '/quests/daily/generate';
+  static const String questsWeeklyGenerate = '/quests/weekly/generate';
+  static const String questsProgress = '/quests/progress';
+  static const String questsCleanup = '/quests/cleanup';
+
+  // Level Endpoints
+  static const String levelCheck = '/level/check';
+  static const String levelProgress = '/level/progress';
+
+  // Pet Endpoints
+  static const String petsAll = '/pets/all';
+  static const String petsUnlockable = '/pets/unlockable';
+  static const String petsMy = '/pets/my';
+  static const String petsUnlock = '/pets/unlock';
+  static const String petsActive = '/pets/active';
+  static const String petsAffection = '/pets/affection';
+
+  // Mystery Box Endpoints
+  static const String mysteryBoxes = '/mystery-boxes/unopened';
+  static const String mysteryBoxOpen = '/mystery-boxes/open';
+
+  // Comeback Reward Endpoints
+  static const String comebackCheck = '/comeback/check';
+  static const String comebackUpdateActivity = '/comeback/update-activity';
+
+  // Tiered Rewards Endpoints
+  static const String rewardsTiers = '/rewards/tiers';
+  static const String rewardsByTier = '/rewards/tier';
 
   // Timeouts - Increased for better reliability
   static const Duration connectTimeout = Duration(seconds: 60);

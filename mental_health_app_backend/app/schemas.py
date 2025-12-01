@@ -76,6 +76,14 @@ class User(UserBase):
     level: int
     xp: int
     
+    # Daily check-in and streak tracking
+    last_daily_claim: Optional[datetime] = None
+    current_streak: int = 0
+    longest_streak: int = 0
+    total_daily_claims: int = 0
+    streak_freeze_available: bool = False
+    streak_freeze_used_this_week: bool = False
+    
     class Config:
         from_attributes = True
 
@@ -458,3 +466,43 @@ class UserProfileResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# ==================== Daily Rewards ====================
+class DailyStatusResponse(BaseModel):
+    can_claim: bool
+    current_streak: int
+    last_claim_date: Optional[str] = None
+    total_claims: int
+    longest_streak: int
+
+class DailyClaimResponse(BaseModel):
+    success: bool
+    xp_earned: Optional[int] = None
+    base_xp: Optional[int] = None
+    streak_bonus: Optional[int] = None
+    milestone_bonus: Optional[int] = None
+    milestone_message: Optional[str] = None
+    new_streak: Optional[int] = None
+    total_xp: Optional[int] = None
+    total_claims: Optional[int] = None
+    message: Optional[str] = None
+    streak: Optional[int] = None
+
+class CalendarDay(BaseModel):
+    date: str
+    claimed: bool
+    is_today: bool
+
+class DailyCalendarResponse(BaseModel):
+    days: List[CalendarDay]
+    current_streak: int
+    longest_streak: int
+
+class StreakFreezeResponse(BaseModel):
+    freeze_available: bool
+    freeze_used_this_week: bool
+
+class StreakFreezeUseResponse(BaseModel):
+    success: bool
+    message: str
+    streak_protected: Optional[int] = None

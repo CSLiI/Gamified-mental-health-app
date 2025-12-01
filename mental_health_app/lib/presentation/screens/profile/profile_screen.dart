@@ -5,6 +5,8 @@ import '../../../data/services/api_service.dart';
 import '../../../data/services/dio_client.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../data/services/cache_service.dart';
+import '../../../core/utils/image_cache_manager.dart';
+import '../../../core/utils/debouncer.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,6 +18,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _apiService = ApiService();
   final _dioClient = DioClient();
+  final Debouncer _actionDebouncer = Debouncer(milliseconds: 350);
 
   Map<String, dynamic>? _userData;
   List<dynamic> _achievements = [];
@@ -45,9 +48,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
 
-      // Fetch fresh data in background
-      final user = await _apiService.getCurrentUser();
-      final achievements = await _apiService.getMyAchievements();
+      // Fetch fresh data in background using Future.wait
+      final results = await Future.wait([
+        _apiService.getCurrentUser(),
+        _apiService.getMyAchievements(),
+      ]);
+
+      final user = results[0] as Map<String, dynamic>;
+      final achievements = results[1] as List<dynamic>;
 
       // Get character mood state if user has a character
       Map<String, dynamic>? moodState;
@@ -66,15 +74,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'moodState': moodState,
       });
 
-      setState(() {
-        _userData = user;
-        _achievements = achievements;
-        _moodState = moodState;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _userData = user;
+          _achievements = achievements;
+          _moodState = moodState;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error loading profile: $e');
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -101,9 +113,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (confirmed == true) {
-      await _dioClient.logout();
-      if (!mounted) return;
-      context.go('/login');
+      await _actionDebouncer.run(() async {
+        await _dioClient.logout();
+        if (!mounted) return;
+        context.go('/login');
+      });
     }
   }
 
@@ -547,23 +561,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final genderPrefix = gender == 'female' ? 'Girl' : 'Boy';
 
     // Format: HappyBoy1.gif
-    return Image.asset(
-      'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
+    return ImageCacheManager().buildCachedImage(
+      assetPath:
+          'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        // Fallback to Calm if mood-specific GIF doesn't exist
-        return Image.asset(
-          'assets/images/${genderPrefix}_Gif_33FPS/Calm$genderPrefix$characterNumber.gif',
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(
-              Icons.person,
-              size: 60,
-              color: Colors.white,
-            );
-          },
-        );
-      },
     );
   }
 
@@ -589,7 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
+          onTap: () => _actionDebouncer.run(() async => onTap()),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(

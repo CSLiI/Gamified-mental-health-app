@@ -38,6 +38,9 @@ class _WeeklyGoalsScreenState extends State<WeeklyGoalsScreen> {
 
   Future<void> _loadGoals() async {
     try {
+      // Generate weekly quests if they don't exist
+      await _apiService.generateWeeklyQuests();
+
       // Check cache first
       final cachedTodos = await CacheService().get<List<dynamic>>(
         'todos_weekly',
@@ -312,7 +315,7 @@ class _WeeklyGoalsScreenState extends State<WeeklyGoalsScreen> {
                         final isCompleted = goal['is_completed'] ?? false;
 
                         return Dismissible(
-                          key: Key(goal['id'].toString()),
+                          key: ValueKey<int>(goal['id'] as int),
                           background: Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(

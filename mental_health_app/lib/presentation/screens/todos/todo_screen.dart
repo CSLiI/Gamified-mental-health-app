@@ -6,6 +6,7 @@ import 'todo_list_screen.dart';
 import 'weekly_goals_screen.dart';
 import 'monthly_goals_screen.dart';
 import 'yearly_goals_screen.dart';
+import '../../../core/utils/debouncer.dart';
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -20,6 +21,8 @@ class _TodoScreenState extends State<TodoScreen> {
   List<dynamic> _todos = [];
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  final Debouncer _navDebouncer =
+      Debouncer(duration: const Duration(milliseconds: 400));
 
   @override
   void initState() {
@@ -30,6 +33,9 @@ class _TodoScreenState extends State<TodoScreen> {
 
   Future<void> _loadTodos() async {
     try {
+      // Generate daily quests for today if they don't exist
+      await _apiService.generateDailyQuests();
+
       // Load only 'daily' period type tasks for calendar
       final todos = await _apiService.getTodos(limit: 500, periodType: 'daily');
       if (mounted) {
@@ -39,6 +45,7 @@ class _TodoScreenState extends State<TodoScreen> {
         });
       }
     } catch (e) {
+      print('Error loading todos: $e');
       if (mounted) {
         setState(() => _isLoadingTodos = false);
       }
@@ -275,14 +282,15 @@ class _TodoScreenState extends State<TodoScreen> {
                               _selectedDay = selectedDay;
                               _focusedDay = focusedDay;
                             });
-                            // Navigate to DAILY tasks only for selected date
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    TodoListScreen(selectedDate: selectedDay),
-                              ),
-                            ).then((_) => _loadTodos());
+                            _navDebouncer.run(() {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      TodoListScreen(selectedDate: selectedDay),
+                                ),
+                              ).then((_) => _loadTodos());
+                            });
                           },
                           onPageChanged: (focusedDay) {
                             setState(() {
@@ -427,12 +435,14 @@ class _TodoScreenState extends State<TodoScreen> {
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => TodoListScreen(
-                    selectedDate: _selectedDay ?? DateTime.now())),
-          ).then((_) => _loadTodos());
+          _navDebouncer.run(() {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => TodoListScreen(
+                      selectedDate: _selectedDay ?? DateTime.now())),
+            ).then((_) => _loadTodos());
+          });
         },
         backgroundColor: const Color(0xFF5CACEE),
         icon: const Icon(Icons.add, color: Colors.white),

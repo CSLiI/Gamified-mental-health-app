@@ -8,6 +8,10 @@ import '../../../data/services/api_service.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../data/services/cache_service.dart';
 
+import '../../../core/utils/image_cache_manager.dart';
+import '../../../core/utils/debouncer.dart';
+import 'package:flutter/services.dart';
+
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigate;
 
@@ -22,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _apiService = ApiService();
+  final Debouncer _navDebouncer = Debouncer(milliseconds: 350);
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _characterState;
   bool _isLoading = true;
@@ -30,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _precacheCharacterGifs();
+    });
   }
 
   Future<void> _loadData() async {
@@ -48,15 +56,19 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
 
-      // Fetch fresh data in background
-      final user = await _apiService.getCurrentUser();
-      Map<String, dynamic>? characterState;
+      // Fetch fresh data in background using Future.wait for parallelism
+      // Note: CharacterProvider and MoodProvider are already loading in HomeNavigation
+      // We only need to fetch what's specific to this screen
+      final results = await Future.wait([
+        _apiService.getCurrentUser(),
+        _apiService.getCharacterMoodState().catchError((e) {
+          debugPrint('Character state error: $e');
+          return <String, dynamic>{};
+        }),
+      ]);
 
-      try {
-        characterState = await _apiService.getCharacterMoodState();
-      } catch (e) {
-        print('Character state error: $e');
-      }
+      final user = results[0] as Map<String, dynamic>;
+      final characterState = results[1] as Map<String, dynamic>?;
 
       // Update cache
       await CacheService().set('home_data', {
@@ -72,10 +84,26 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error loading data: $e');
+      debugPrint('Error loading data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _precacheCharacterGifs() async {
+    try {
+      // Use currently loaded character info if available
+      final gender = context.read<CharacterProvider>().characterGender;
+      final number = context.read<CharacterProvider>().characterNumber;
+      final base = 'assets/images/${gender}_Gif_33FPS';
+      final moods = ['Happy', 'Calm', 'Tired', 'Anxious', 'Sad', 'Angry'];
+      for (final m in moods) {
+        final asset = AssetImage('$base/$m$gender$number.gif');
+        await precacheImage(asset, context);
+      }
+    } catch (_) {
+      // Best-effort precache; ignore failures
     }
   }
 
@@ -270,6 +298,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCharacterCard() {
     return Consumer2<MoodProvider, CharacterProvider>(
       builder: (context, moodProvider, characterProvider, child) {
+        // Wait for character to load to prevent default GIF from showing
+        if (characterProvider.isLoading) {
+          return SkeletonLoader.card(height: 400);
+        }
+
         final mood = moodProvider.currentMood;
         final moodColor = moodProvider.getMoodColor();
 
@@ -315,19 +348,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 120,
                       height: 120,
                       color: Colors.grey[200],
-                      child: Image.asset(
-                        _getCharacterGifPath(
+                      child: ImageCacheManager().buildCachedImage(
+                        assetPath: _getCharacterGifPath(
                           mood ?? 'calm',
                           characterProvider.characterGender,
                           characterProvider.characterNumber,
                         ),
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(Icons.person,
-                                size: 50, color: Colors.grey),
-                          );
-                        },
                       ),
                     ),
                   ),
@@ -567,17 +594,19 @@ class _HomeScreenState extends State<HomeScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
-            // Map labels to new navbar indices
-            // New navbar: [Home=0, Social=1, Progress=2, Mood=3, Profile=4]
-            if (label == 'Log Mood') {
-              widget.onNavigate?.call(3); // Mood tab
-            } else if (label == 'Journal') {
-              context.go('/journal'); // Navigate to journal route
-            } else if (label == 'Quests') {
-              context.go('/todos'); // Navigate to todos route
-            } else if (label == 'Achievements') {
-              widget.onNavigate?.call(2); // Progress tab
-            }
+            _navDebouncer.run(() {
+              // Map labels to new navbar indices
+              // New navbar: [Home=0, Social=1, Progress=2, Mood=3, Profile=4]
+              if (label == 'Log Mood') {
+                widget.onNavigate?.call(3); // Mood tab
+              } else if (label == 'Journal') {
+                context.go('/journal'); // Navigate to journal route
+              } else if (label == 'Quests') {
+                context.go('/todos'); // Navigate to todos route
+              } else if (label == 'Achievements') {
+                widget.onNavigate?.call(2); // Progress tab
+              }
+            });
           },
           child: Padding(
             padding: const EdgeInsets.all(20),

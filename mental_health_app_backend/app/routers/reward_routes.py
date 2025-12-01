@@ -69,8 +69,37 @@ def get_available_rewards(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get rewards current user can afford"""
-    return reward_crud.get_available_rewards(db, current_user.xp)
+    """Get rewards current user can afford and has unlocked by level"""
+    return reward_crud.get_available_rewards(db, current_user.xp, current_user.level)
+
+@router.get("/tiers")
+def get_all_tiers(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all rewards grouped by tier with lock status"""
+    return reward_crud.get_all_tiers_grouped(db, current_user.level)
+
+@router.get("/tier/{tier}")
+def get_rewards_by_tier(
+    tier: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get rewards in a specific tier"""
+    if tier < 1 or tier > 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tier must be between 1 and 5"
+        )
+    
+    rewards = reward_crud.get_rewards_by_tier(db, tier, current_user.level)
+    
+    return {
+        "tier": tier,
+        "user_level": current_user.level,
+        "rewards": rewards
+    }
 
 @router.post("/me/unlock/{reward_id}")
 def unlock_reward(

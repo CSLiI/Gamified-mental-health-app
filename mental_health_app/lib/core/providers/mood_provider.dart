@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/services/api_service.dart';
+import 'user_provider.dart';
 
 class MoodProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final UserProvider _userProvider;
 
   String? _currentMood;
   bool _isLoading = false;
   String? _error;
+
+  MoodProvider(this._userProvider);
 
   String? get currentMood => _currentMood;
   bool get isLoading => _isLoading;
@@ -33,13 +37,20 @@ class MoodProvider extends ChangeNotifier {
 
   Future<void> loadMood() async {
     print('😊 MoodProvider: Loading mood...');
+    if (_isLoading) return; // Prevent duplicate calls
+
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final user = await _apiService.getCurrentUser();
-      final userId = user['id'];
+      final userId = _userProvider.userId;
+      if (userId == null) {
+        print('⚠️ MoodProvider: No user loaded yet');
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
 
       // Try cache first
       final prefs = await SharedPreferences.getInstance();
@@ -74,8 +85,11 @@ class MoodProvider extends ChangeNotifier {
 
   Future<void> updateMood(String mood) async {
     try {
-      final user = await _apiService.getCurrentUser();
-      final userId = user['id'];
+      final userId = _userProvider.userId;
+      if (userId == null) {
+        print('⚠️ MoodProvider: No user loaded for mood update');
+        return;
+      }
 
       // Update local state immediately
       _currentMood = mood;

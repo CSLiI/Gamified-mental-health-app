@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'navigation_service.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
@@ -11,6 +12,7 @@ import '../../presentation/screens/journal/journal_screen.dart';
 import '../../presentation/screens/todos/todo_screen.dart';
 
 final appRouter = GoRouter(
+  navigatorKey: NavigationService.navigatorKey,
   initialLocation: '/splash',
   routes: [
     GoRoute(

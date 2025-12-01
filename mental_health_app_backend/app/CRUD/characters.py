@@ -108,8 +108,6 @@ def get_character_mood_state(db: Session, user_id: int, days: int = 7):
     """Calculate character state based on user's recent moods"""
     date_from = datetime.utcnow() - timedelta(days=days)
     
-    print(f"[DEBUG CRUD] Fetching mood logs for user_id: {user_id} from date: {date_from}")
-    
     mood_counts = db.query(
         models.MoodLog.mood,
         func.count(models.MoodLog.id).label('count')
@@ -117,8 +115,6 @@ def get_character_mood_state(db: Session, user_id: int, days: int = 7):
         models.MoodLog.user_id == user_id,
         models.MoodLog.logged_at >= date_from
     ).group_by(models.MoodLog.mood).all()
-    
-    print(f"[DEBUG CRUD] Found mood counts for user {user_id}: {[(mood.value, count) for mood, count in mood_counts]}")
     
     if not mood_counts:
         return {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/mood_provider.dart';
 import '../../../core/providers/character_provider.dart';
 import 'home_screen.dart';
@@ -8,6 +9,9 @@ import '../mood/mood_screen.dart';
 import '../social/social_screen.dart';
 import '../progress/progress_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../../core/utils/debouncer.dart';
+import '../../../data/services/api_service.dart';
+import '../../../data/services/cache_service.dart';
 
 class HomeNavigation extends StatefulWidget {
   const HomeNavigation({super.key});
@@ -18,22 +22,29 @@ class HomeNavigation extends StatefulWidget {
 
 class _HomeNavigationState extends State<HomeNavigation> {
   int _currentIndex = 0;
+  final Debouncer _tabDebouncer = Debouncer(milliseconds: 250);
 
   @override
   void initState() {
     super.initState();
-    // Load initial data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Load initial data - UserProvider first to avoid redundant API calls
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Load user first (single API call, cached)
+      await context.read<UserProvider>().loadUser();
+      // Then load mood and character (they use cached userId)
       context.read<MoodProvider>().loadMood();
       context.read<CharacterProvider>().loadCharacter();
+      _prefetchCritical();
     });
   }
 
   void _onTabSelected(int index) {
-    setState(() {
-      _currentIndex = index;
+    _tabDebouncer.run(() {
+      setState(() {
+        _currentIndex = index;
+      });
+      HapticFeedback.lightImpact();
     });
-    HapticFeedback.lightImpact();
   }
 
   void _onMoodSelected(String mood) async {
@@ -48,18 +59,40 @@ class _HomeNavigationState extends State<HomeNavigation> {
     }
   }
 
+  Future<void> _prefetchCritical() async {
+    final api = ApiService();
+    try {
+      final results = await Future.wait([
+        api.getCurrentUser(),
+        api.getCharacterMoodState().catchError((_) => <String, dynamic>{}),
+      ]);
+
+      final user = results[0] as Map<String, dynamic>;
+      final characterState = results[1] as Map<String, dynamic>?;
+
+      // Warm caches for fast first-paint on Home
+      await CacheService().set('home_data', {
+        'user': user,
+        'characterState': characterState,
+      });
+
+      // Also warm social mood cache minimally with self data
+      await CacheService().set('social_mood_data', {
+        '${user['id']}': {
+          'profile': user,
+          'characterState': characterState ?? {},
+          'moodLogs': [],
+        }
+      });
+    } catch (_) {
+      // Ignore errors; prefetch is best-effort
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<MoodProvider, CharacterProvider>(
       builder: (context, moodProvider, characterProvider, child) {
-        if (moodProvider.isLoading || characterProvider.isLoading) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
         final screens = [
           HomeScreen(onNavigate: _onTabSelected),
           const SocialScreen(),
@@ -95,7 +128,10 @@ class _HomeNavigationState extends State<HomeNavigation> {
                 ],
               ),
             ),
-            child: screens[_currentIndex],
+            child: IndexedStack(
+              index: _currentIndex,
+              children: screens,
+            ),
           ),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(

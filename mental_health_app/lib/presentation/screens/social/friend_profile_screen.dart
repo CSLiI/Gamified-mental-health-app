@@ -5,6 +5,9 @@ import '../../../data/services/api_service.dart';
 import 'friend_profile/tabs/challenges_tab.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../data/services/cache_service.dart';
+import '../../../core/utils/image_cache_manager.dart';
+import '../../../core/widgets/keep_alive_wrapper.dart';
+import '../../../core/utils/debouncer.dart';
 
 class FriendProfileScreen extends StatefulWidget {
   final int friendId;
@@ -33,6 +36,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   // Tab Controller
   late TabController _tabController;
+  final Debouncer _actionDebouncer =
+      Debouncer(duration: const Duration(milliseconds: 500));
 
   @override
   void initState() {
@@ -73,27 +78,20 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       final currentUser = await _apiService.getCurrentUser();
       final currentUserId = currentUser['id'];
 
-      final profile = await _apiService.getFriendProfile(widget.friendId);
-      final characterState =
-          await _apiService.getFriendCharacterMoodState(widget.friendId);
-      final todos = await _apiService.getFriendTodos(widget.friendId,
-          periodType: 'daily');
-      final moodLogs = await _apiService.getFriendMoodLogs(widget.friendId);
-      final messages = await _apiService.getMessages(widget.friendId);
+      // Fetch all friend data in parallel
+      final results = await Future.wait([
+        _apiService.getFriendProfile(widget.friendId),
+        _apiService.getFriendCharacterMoodState(widget.friendId),
+        _apiService.getFriendTodos(widget.friendId, periodType: 'daily'),
+        _apiService.getFriendMoodLogs(widget.friendId),
+        _apiService.getMessages(widget.friendId),
+      ]);
 
-      print('📊 [FRIEND PROFILE DEBUG]');
-      print('Current user ID: $currentUserId');
-      print('Friend ID: ${widget.friendId}');
-      print('Profile data: $profile');
-      print('Character state: $characterState');
-      print('Character state value: ${characterState['character_state']}');
-      print('Dominant mood: ${characterState['dominant_mood']}');
-      print('Mood score: ${characterState['mood_score']}');
-      print('Todos count: ${todos.length}');
-      print('Mood logs count: ${moodLogs.length}');
-      print('Messages count: ${messages.length}');
-      print('Level: ${profile['level']}, XP: ${profile['xp']}');
-      print('Current streak: ${profile['current_streak']}');
+      final profile = results[0] as Map<String, dynamic>;
+      final characterState = results[1] as Map<String, dynamic>;
+      final todos = results[2] as List<dynamic>;
+      final moodLogs = results[3] as List<dynamic>;
+      final messages = results[4] as List<dynamic>;
 
       // Update cache
       await CacheService().set(cacheKey, {
@@ -117,7 +115,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         });
       }
     } catch (e) {
-      print('❌ Error loading friend data: $e');
+      debugPrint('Error loading friend data: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -405,32 +403,35 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 return;
               }
 
-              try {
-                await _apiService.sendEncouragement(
-                  widget.friendId,
-                  controller.text.trim(),
-                );
+              final message = controller.text.trim();
+              Navigator.pop(context); // Close dialog immediately
 
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          'Encouragement sent to ${widget.friendName}! 💚'),
-                      backgroundColor: AppColors.success,
-                    ),
+              // Show optimistic success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content:
+                      Text('Encouragement sent to ${widget.friendName}! 💚'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+
+              _actionDebouncer.run(() async {
+                try {
+                  await _apiService.sendEncouragement(
+                    widget.friendId,
+                    message,
                   );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to send: $e'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
                 }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to send: $e'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                }
-              }
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
@@ -508,34 +509,43 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 return;
               }
 
-              try {
-                await _apiService.sendMessage(
-                  widget.friendId,
-                  '🏆 Challenge: ${controller.text.trim()}',
-                );
+              final challengeText = controller.text.trim();
+              Navigator.pop(context); // Close immediately
 
-                if (mounted) {
-                  Navigator.pop(context);
-                  // Refresh data immediately to show new challenge
-                  await _loadFriendData();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content:
-                          Text('Challenge sent to ${widget.friendName}! 🎯'),
-                      backgroundColor: AppColors.warning,
-                    ),
+              // Show optimistic success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Challenge sent to ${widget.friendName}! 🎯'),
+                  backgroundColor: AppColors.warning,
+                ),
+              );
+
+              _actionDebouncer.run(() async {
+                try {
+                  await _apiService.sendMessage(
+                    widget.friendId,
+                    '🏆 Challenge: $challengeText',
                   );
+
+                  // Silent refresh of messages to show the new challenge
+                  final newMessages =
+                      await _apiService.getMessages(widget.friendId);
+                  if (mounted) {
+                    setState(() {
+                      _friendMessages = newMessages;
+                    });
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to send: $e'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
                 }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to send: $e'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                }
-              }
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.warning,
@@ -658,15 +668,17 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                                   physics: const BouncingScrollPhysics(),
                                   children: [
                                     // Goals Tab
-                                    _buildGoalsTab(),
+                                    KeepAliveWrapper(child: _buildGoalsTab()),
 
                                     // Challenges Tab
-                                    ChallengesTab(
-                                      friendMessages: _friendMessages,
-                                      currentUserId: _currentUserId ?? 0,
-                                      friendId: widget.friendId,
-                                      onToggleCompletion:
-                                          _toggleChallengeCompletion,
+                                    KeepAliveWrapper(
+                                      child: ChallengesTab(
+                                        friendMessages: _friendMessages,
+                                        currentUserId: _currentUserId ?? 0,
+                                        friendId: widget.friendId,
+                                        onToggleCompletion:
+                                            _toggleChallengeCompletion,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -790,25 +802,43 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         ? (sortedMoodLogs.first['mood'] ?? 'calm')
         : 'calm';
 
-    print('🎭 [CHARACTER DISPLAY] Most recent mood: $currentMood');
-    print('🎭 [CHARACTER DISPLAY] Mood score (7-day): $moodScore');
-
+    // ✅ HANDLE NULL: Show placeholder if friend hasn't chosen character
     if (character == null) {
-      return const SizedBox.shrink();
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.grey[300]!, width: 2),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.person_outline, size: 120, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              '${widget.friendName} hasn\'t chosen a character yet',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
     }
 
     // Fix: use 'number' not 'character_number'
-    final gender = character['gender'] ?? 'Boy';
+    final gender = character['gender'] ?? 'male';
     final number = character['number'] ?? 1;
 
-    // Capitalize gender for GIF path
-    final genderCapitalized = gender == 'female' ? 'Girl' : 'Boy';
+    // Capitalize gender for GIF path (backend returns 'male'/'female')
+    final genderCapitalized = gender.toLowerCase() == 'female' ? 'Girl' : 'Boy';
     // Use current mood for GIF display, not character state
     final gifPath =
         _getCharacterGifPath(currentMood, genderCapitalized, number);
     final moodColor = _getMoodColor(currentMood);
-
-    print('🎭 [CHARACTER DISPLAY] GIF path: $gifPath');
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -854,16 +884,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                gifPath,
+              child: ImageCacheManager().buildCachedImage(
+                assetPath: gifPath,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.person,
-                    size: 100,
-                    color: moodColor,
-                  );
-                },
               ),
             ),
           ),
@@ -1253,27 +1276,41 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
   Future<void> _toggleChallengeCompletion(
       int messageId, bool isCompleted) async {
-    try {
-      // Update challenge completion status via API
-      await _apiService.updateMessageCompletion(messageId, isCompleted);
-
-      // Reload data to reflect changes
-      await _loadFriendData();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isCompleted
-                  ? 'Challenge marked as completed! 🎉'
-                  : 'Challenge marked as incomplete',
-            ),
-            backgroundColor: isCompleted ? AppColors.success : Colors.grey[700],
-            duration: const Duration(seconds: 2),
-          ),
-        );
+    // 1. Optimistic Update
+    setState(() {
+      final index = _friendMessages.indexWhere((m) => m['id'] == messageId);
+      if (index != -1) {
+        _friendMessages[index]['is_completed'] = isCompleted;
       }
+    });
+
+    // Show feedback immediately
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isCompleted
+                ? 'Challenge marked as completed! 🎉'
+                : 'Challenge marked as incomplete',
+          ),
+          backgroundColor: isCompleted ? AppColors.success : Colors.grey[700],
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+
+    try {
+      // 2. API Call in background
+      await _apiService.updateMessageCompletion(messageId, isCompleted);
     } catch (e) {
+      // 3. Revert on failure
+      setState(() {
+        final index = _friendMessages.indexWhere((m) => m['id'] == messageId);
+        if (index != -1) {
+          _friendMessages[index]['is_completed'] = !isCompleted;
+        }
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'core/providers/user_provider.dart';
 import 'core/providers/mood_provider.dart';
 import 'core/providers/character_provider.dart';
 import 'core/router/app_router.dart';
@@ -16,8 +17,19 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => MoodProvider()),
-        ChangeNotifierProvider(create: (_) => CharacterProvider()),
+        // UserProvider first - provides cached user data to other providers
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        // Inject UserProvider into other providers to eliminate redundant API calls
+        ChangeNotifierProxyProvider<UserProvider, MoodProvider>(
+          create: (context) => MoodProvider(context.read<UserProvider>()),
+          update: (_, userProvider, moodProvider) =>
+              moodProvider ?? MoodProvider(userProvider),
+        ),
+        ChangeNotifierProxyProvider<UserProvider, CharacterProvider>(
+          create: (context) => CharacterProvider(context.read<UserProvider>()),
+          update: (_, userProvider, characterProvider) =>
+              characterProvider ?? CharacterProvider(userProvider),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -42,7 +54,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Mental Health App',
+      title: 'Echo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(

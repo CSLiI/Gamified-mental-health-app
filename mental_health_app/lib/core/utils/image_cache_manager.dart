@@ -15,23 +15,37 @@ class ImageCacheManager {
     if (_isInitialized) return;
 
     final characterAssets = [
-      // Boy character states
-      'assets/images/Boy_Gif_33FPS/Boy_Happy.gif',
-      'assets/images/Boy_Gif_33FPS/Boy_Sad.gif',
-      'assets/images/Boy_Gif_33FPS/Boy_Angry.gif',
-      'assets/images/Boy_Gif_33FPS/Boy_Anxious.gif',
-      'assets/images/Boy_Gif_33FPS/Boy_Calm.gif',
-      'assets/images/Boy_Gif_33FPS/Boy_Excited.gif',
-      'assets/images/Boy_Gif_33FPS/Boy_Tired.gif',
+      // Boy character 1 states
+      'assets/images/Boy_Gif_33FPS/HappyBoy1.gif',
+      'assets/images/Boy_Gif_33FPS/SadBoy1.gif',
+      'assets/images/Boy_Gif_33FPS/AngryBoy1.gif',
+      'assets/images/Boy_Gif_33FPS/AnxiousBoy1.gif',
+      'assets/images/Boy_Gif_33FPS/CalmBoy1.gif',
+      'assets/images/Boy_Gif_33FPS/TiredBoy1.gif',
 
-      // Girl character states
-      'assets/images/Girl_Gif_33FPS/Girl_Happy.gif',
-      'assets/images/Girl_Gif_33FPS/Girl_Sad.gif',
-      'assets/images/Girl_Gif_33FPS/Girl_Angry.gif',
-      'assets/images/Girl_Gif_33FPS/Girl_Anxious.gif',
-      'assets/images/Girl_Gif_33FPS/Girl_Calm.gif',
-      'assets/images/Girl_Gif_33FPS/Girl_Excited.gif',
-      'assets/images/Girl_Gif_33FPS/Girl_Tired.gif',
+      // Boy character 2 states
+      'assets/images/Boy_Gif_33FPS/HappyBoy2.gif',
+      'assets/images/Boy_Gif_33FPS/SadBoy2.gif',
+      'assets/images/Boy_Gif_33FPS/AngryBoy2.gif',
+      'assets/images/Boy_Gif_33FPS/AnxiousBoy2.gif',
+      'assets/images/Boy_Gif_33FPS/CalmBoy2.gif',
+      'assets/images/Boy_Gif_33FPS/TiredBoy2.gif',
+
+      // Girl character 1 states
+      'assets/images/Girl_Gif_33FPS/HappyGirl1.gif',
+      'assets/images/Girl_Gif_33FPS/SadGirl1.gif',
+      'assets/images/Girl_Gif_33FPS/AngryGirl1.gif',
+      'assets/images/Girl_Gif_33FPS/AnxiousGirl1.gif',
+      'assets/images/Girl_Gif_33FPS/CalmGirl1.gif',
+      'assets/images/Girl_Gif_33FPS/TiredGirl1.gif',
+
+      // Girl character 2 states
+      'assets/images/Girl_Gif_33FPS/HappyGirl2.gif',
+      'assets/images/Girl_Gif_33FPS/SadGirl2.gif',
+      'assets/images/Girl_Gif_33FPS/AngryGirl2.gif',
+      'assets/images/Girl_Gif_33FPS/AnxiousGirl2.gif',
+      'assets/images/Girl_Gif_33FPS/CalmGirl2.gif',
+      'assets/images/Girl_Gif_33FPS/TiredGirl2.gif',
     ];
 
     // Preload all character GIFs in parallel
@@ -44,21 +58,15 @@ class ImageCacheManager {
 
   /// Preload specific character's all mood states
   Future<void> preloadCharacter(
-      BuildContext context, String characterName) async {
-    final moods = [
-      'Happy',
-      'Sad',
-      'Angry',
-      'Anxious',
-      'Calm',
-      'Excited',
-      'Tired'
-    ];
+      BuildContext context, String gender, int number) async {
+    final moods = ['Happy', 'Sad', 'Angry', 'Anxious', 'Calm', 'Tired'];
+
+    final genderCapitalized = gender.toLowerCase() == 'female' ? 'Girl' : 'Boy';
 
     await Future.wait(
       moods.map((mood) {
         final asset =
-            'assets/images/${characterName}_Gif_33FPS/${characterName}_$mood.gif';
+            'assets/images/${genderCapitalized}_Gif_33FPS/$mood$genderCapitalized$number.gif';
         return _precacheImage(context, asset);
       }),
     );

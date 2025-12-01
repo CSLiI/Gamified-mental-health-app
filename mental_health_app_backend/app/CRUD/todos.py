@@ -22,8 +22,11 @@ def create_todo(db: Session, user_id: int, todo: schemas.TodoCreate):
     return db_todo
 
 def get_todos(db: Session, user_id: int, skip: int = 0, limit: int = 100, completed: Optional[bool] = None, period_type: Optional[str] = None):
-    """Get all todos for a user"""
-    query = db.query(models.Todo).filter(models.Todo.user_id == user_id)
+    """Get all todos for a user (excluding quests)"""
+    query = db.query(models.Todo).filter(
+        models.Todo.user_id == user_id,
+        models.Todo.is_quest == False  # Exclude quests from todo list
+    )
     
     if completed is not None:
         query = query.filter(models.Todo.is_completed == completed)

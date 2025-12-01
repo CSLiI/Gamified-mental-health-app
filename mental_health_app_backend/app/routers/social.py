@@ -267,8 +267,6 @@ async def get_friend_character_mood_state(
     current_user: User = Depends(get_current_user)
 ):
     """Get a friend's character mood state based on recent mood logs (must be friends to view)"""
-    print(f"[DEBUG] Getting mood state for user_id: {user_id}, requested by: {current_user.id}")
-    
     # Check if users are friends
     if not check_friendship(db, current_user.id, user_id):
         raise HTTPException(
@@ -281,7 +279,6 @@ async def get_friend_character_mood_state(
     
     # Get the friend's character mood state
     result = get_character_mood_state(db, user_id, days)
-    print(f"[DEBUG] Mood state for user {user_id}: {result.get('character_state')}, mood_score: {result.get('mood_score')}")
     return result
 
 @router.get("/users/{user_id}/mood-logs")

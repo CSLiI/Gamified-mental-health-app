@@ -324,6 +324,61 @@ def seed_journal_prompts(db):
     created = prompt_crud.seed_default_prompts(db)
     print(f"✓ Created {len(created)} journal prompts")
 
+def seed_pets(db):
+    """Seed initial pets"""
+    print("Seeding pets...")
+    
+    pets_data = [
+        {"name": "Dragon", "emoji": "🐉", "description": "Fierce and loyal companion", "unlock_level": 1, "rarity": "common"},
+        {"name": "Fox", "emoji": "🦊", "description": "Clever and playful friend", "unlock_level": 1, "rarity": "common"},
+        {"name": "Cat", "emoji": "🐱", "description": "Independent and curious", "unlock_level": 1, "rarity": "common"},
+        {"name": "Dog", "emoji": "🐶", "description": "Faithful and cheerful buddy", "unlock_level": 3, "rarity": "common"},
+        {"name": "Butterfly", "emoji": "🦋", "description": "Symbol of transformation", "unlock_level": 5, "rarity": "rare"},
+        {"name": "Unicorn", "emoji": "🦄", "description": "Magical and majestic", "unlock_level": 10, "rarity": "epic"},
+        {"name": "Panda", "emoji": "🐼", "description": "Peaceful and wise", "unlock_level": 15, "rarity": "epic"},
+        {"name": "Frog", "emoji": "🐸", "description": "Adaptable and positive", "unlock_level": 7, "rarity": "rare"},
+        {"name": "Owl", "emoji": "🦉", "description": "Wise and observant", "unlock_level": 12, "rarity": "rare"},
+        {"name": "Phoenix", "emoji": "🔥", "description": "Symbol of rebirth", "unlock_level": 20, "rarity": "legendary"}
+    ]
+    
+    created = 0
+    for pet_data in pets_data:
+        existing = db.query(models.Pet).filter(models.Pet.name == pet_data["name"]).first()
+        if not existing:
+            pet = models.Pet(**pet_data)
+            db.add(pet)
+            created += 1
+    
+    db.commit()
+    print(f"✓ Created {created} pets")
+
+def update_rewards_with_tiers(db):
+    """Update existing rewards with tier and required_level"""
+    print("Updating rewards with tier system...")
+    
+    rewards = db.query(models.Reward).all()
+    
+    for reward in rewards:
+        # Assign tier based on cost
+        if reward.cost_xp <= 100:
+            reward.tier = 1
+            reward.required_level = 1
+        elif reward.cost_xp <= 250:
+            reward.tier = 2
+            reward.required_level = 5
+        elif reward.cost_xp <= 500:
+            reward.tier = 3
+            reward.required_level = 10
+        elif reward.cost_xp <= 1000:
+            reward.tier = 4
+            reward.required_level = 15
+        else:
+            reward.tier = 5
+            reward.required_level = 20
+    
+    db.commit()
+    print(f"✓ Updated {len(rewards)} rewards with tier system")
+
 def main():
     """Main seeding function"""
     print("\n" + "="*50)
@@ -337,7 +392,9 @@ def main():
         seed_interests(db)
         seed_achievements(db)
         seed_rewards(db)
+        update_rewards_with_tiers(db)
         seed_journal_prompts(db)
+        seed_pets(db)
         
         print("\n" + "="*50)
         print("✓ SEEDING COMPLETED SUCCESSFULLY!")

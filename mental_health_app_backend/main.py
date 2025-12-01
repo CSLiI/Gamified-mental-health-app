@@ -12,7 +12,13 @@ from app.routers import (
     reward_routes,
     journal_prompt_routes,
     friend_routes,
-    social
+    social,
+    daily_routes,
+    quest_routes,
+    level_routes,
+    pet_routes,
+    mystery_box_routes,
+    comeback_routes
 )
 from app.database import engine
 from app import models
@@ -49,7 +55,13 @@ app.include_router(achievement_routes.router)
 app.include_router(reward_routes.router)
 app.include_router(journal_prompt_routes.router)
 app.include_router(friend_routes.router)
+app.include_router(daily_routes.router)
 app.include_router(social.router)
+app.include_router(quest_routes.router)
+app.include_router(level_routes.router)
+app.include_router(pet_routes.router)
+app.include_router(mystery_box_routes.router)
+app.include_router(comeback_routes.router)
 
 @app.get("/")
 def read_root():

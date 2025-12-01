@@ -35,9 +35,51 @@ def get_rewards_by_rarity(db: Session, rarity: str):
     """Get rewards by rarity"""
     return db.query(models.Reward).filter(models.Reward.rarity == rarity).all()
 
-def get_available_rewards(db: Session, user_xp: int):
-    """Get rewards user can afford with their XP"""
-    return db.query(models.Reward).filter(models.Reward.cost_xp <= user_xp).all()
+def get_available_rewards(db: Session, user_xp: int, user_level: int = None):
+    """Get rewards user can afford with their XP and level"""
+    query = db.query(models.Reward).filter(models.Reward.cost_xp <= user_xp)
+    
+    if user_level is not None:
+        query = query.filter(models.Reward.required_level <= user_level)
+    
+    return query.all()
+
+def get_rewards_by_tier(db: Session, tier: int, user_level: int = None):
+    """Get rewards in a specific tier"""
+    query = db.query(models.Reward).filter(models.Reward.tier == tier)
+    
+    if user_level is not None:
+        query = query.filter(models.Reward.required_level <= user_level)
+    
+    return query.all()
+
+def get_all_tiers_grouped(db: Session, user_level: int):
+    """Get all rewards grouped by tier with lock status"""
+    tiers = {}
+    
+    for tier_num in range(1, 6):  # Tiers 1-5
+        rewards_in_tier = db.query(models.Reward).filter(
+            models.Reward.tier == tier_num
+        ).all()
+        
+        tiers[f"tier_{tier_num}"] = {
+            "tier": tier_num,
+            "unlocked": all(r.required_level <= user_level for r in rewards_in_tier),
+            "rewards": [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "cost_xp": r.cost_xp,
+                    "required_level": r.required_level,
+                    "locked": r.required_level > user_level,
+                    "category": r.category,
+                    "rarity": r.rarity
+                }
+                for r in rewards_in_tier
+            ]
+        }
+    
+    return tiers
 
 # ==================== USER REWARD OPERATIONS ====================
 def unlock_reward_for_user(db: Session, user_id: int, reward_id: int):
@@ -62,6 +104,10 @@ def unlock_reward_for_user(db: Session, user_id: int, reward_id: int):
     
     if not user:
         return {"success": False, "message": "User not found"}
+    
+    # Check if user meets level requirement
+    if user.level < reward.required_level:
+        return {"success": False, "message": f"Requires level {reward.required_level}"}
     
     # Check if user has enough XP
     if user.xp < reward.cost_xp:

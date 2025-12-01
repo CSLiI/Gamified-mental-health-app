@@ -11,12 +11,16 @@ class AchievementsTab extends StatefulWidget {
   State<AchievementsTab> createState() => _AchievementsTabState();
 }
 
-class _AchievementsTabState extends State<AchievementsTab> {
+class _AchievementsTabState extends State<AchievementsTab>
+    with AutomaticKeepAliveClientMixin {
   final ApiService _apiService = ApiService();
   List<dynamic> _allAchievements = [];
   List<dynamic> _userAchievements = [];
   bool _isLoading = true;
   Map<String, dynamic>? _userData;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -42,9 +46,15 @@ class _AchievementsTabState extends State<AchievementsTab> {
       }
 
       // Fetch fresh data
-      final user = await _apiService.getCurrentUser();
-      final allAchievements = await _apiService.getAllAchievements();
-      final userAchievements = await _apiService.getUserAchievements();
+      final results = await Future.wait([
+        _apiService.getCurrentUser(),
+        _apiService.getAllAchievements(),
+        _apiService.getUserAchievements(),
+      ]);
+
+      final user = results[0] as Map<String, dynamic>;
+      final allAchievements = results[1] as List<dynamic>;
+      final userAchievements = results[2] as List<dynamic>;
 
       // Cache fresh data
       await CacheService().set('achievements_data', {

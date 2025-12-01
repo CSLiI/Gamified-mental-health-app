@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/cache_service.dart';
+import '../../widgets/level_up_dialog.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -134,7 +135,10 @@ class _JournalScreenState extends State<JournalScreen> {
       if (!mounted) return;
 
       // Check for achievements silently
-      _apiService.checkAchievements();
+      final achievementResult = await _apiService.checkAchievements();
+
+      // Update quest progress for journal category
+      await _apiService.updateQuestProgress('journal', increment: 1);
 
       // Clear data and reset state
       _titleController.clear();
@@ -145,6 +149,12 @@ class _JournalScreenState extends State<JournalScreen> {
       });
 
       await _loadJournals();
+
+      // Check for level-up if XP was gained
+      if (achievementResult['xp_earned'] != null &&
+          achievementResult['xp_earned'] > 0) {
+        await _checkLevelUp();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,6 +168,30 @@ class _JournalScreenState extends State<JournalScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _checkLevelUp() async {
+    try {
+      final result = await _apiService.checkLevelUp();
+
+      if (result['leveled_up'] == true && mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => LevelUpDialog(
+            oldLevel: result['old_level'],
+            newLevel: result['new_level'],
+            milestoneXp: result['milestone_xp'] ?? 0,
+            rewardsUnlocked: List<Map<String, dynamic>>.from(
+                result['rewards_unlocked'] ?? []),
+            petsUnlocked:
+                List<Map<String, dynamic>>.from(result['pets_unlocked'] ?? []),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error checking level up: $e');
     }
   }
 
