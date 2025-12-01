@@ -5,7 +5,7 @@ class ApiConstants {
 
   // FOR ANDROID EMULATOR (default):
   static const String baseUrl = 'http://10.0.2.2:8000';
-  
+
   // FOR PHYSICAL DEVICE: Uncomment and use your computer's IP
   // static const String baseUrl = 'http://YOUR_IP_HERE:8000';
   // FOR iOS SIMULATOR (uncomment this and comment above):
