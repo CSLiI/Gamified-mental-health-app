@@ -54,6 +54,7 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     level = Column(Integer, default=1)
     xp = Column(Integer, default=0)
+    energy = Column(Integer, default=50)
     last_active = Column(DateTime(timezone=True), server_default=func.now())
     
     # Daily check-in and streak tracking
@@ -63,6 +64,12 @@ class User(Base):
     total_daily_claims = Column(Integer, default=0)
     streak_freeze_available = Column(Boolean, default=False)
     streak_freeze_used_this_week = Column(Boolean, default=False)
+    
+    # Social challenge tracking (for achievements)
+    completed_challenges = Column(Integer, default=0)
+    
+    # Builtin rewards XP tracking (frontend shop)
+    builtin_xp_spent = Column(Integer, default=0)
     
     # Relationships
     user_characters = relationship("UserCharacter", back_populates="user", cascade="all, delete-orphan")
@@ -196,6 +203,9 @@ class Todo(Base):
     progress_total = Column(Integer, default=1)
     expires_at = Column(DateTime(timezone=True))
     
+    # Track if reward has been claimed (to prevent farming by checking/unchecking)
+    reward_claimed = Column(Boolean, default=False)
+    
     # Relationships
     user = relationship("User", back_populates="todos")
 
@@ -227,7 +237,7 @@ class Achievement(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, unique=True)
     description = Column(Text)
-    category = Column(SQLEnum(AchievementCategory), nullable=False)
+    category = Column(String, nullable=False)
     icon_url = Column(Text)
     xp_reward = Column(Integer, default=0)
     requirement_count = Column(Integer, default=1)
@@ -351,6 +361,7 @@ class Message(Base):
     is_read = Column(Boolean, default=False)
     is_completed = Column(Boolean, default=False)  # For marking challenges as completed
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True))  # When challenge was completed
     
     # Relationships
     sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
@@ -366,6 +377,7 @@ class Pet(Base):
     description = Column(Text)
     unlock_level = Column(Integer, default=1)
     rarity = Column(String(20))  # common, rare, epic, legendary
+    lottie_file = Column(String(255))  # Path to lottie json file
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
@@ -380,6 +392,9 @@ class UserPet(Base):
     unlocked_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=False)
     affection_level = Column(Integer, default=1)
+    hunger = Column(Integer, default=50)  # 0-100
+    last_fed_at = Column(DateTime(timezone=True))
+    nickname = Column(String(100))
     
     # Relationships
     user = relationship("User", backref="pets")
@@ -402,3 +417,43 @@ class MysteryBox(Base):
     
     # Relationships
     user = relationship("User", backref="mystery_boxes")
+
+
+# ==================== BUILTIN REWARDS TABLES ====================
+
+class BuiltinUserReward(Base):
+    """Tracks which builtin rewards (themes, banners, frames) the user has purchased"""
+    __tablename__ = "builtin_user_rewards"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    reward_id = Column(Integer, nullable=False)  # Frontend catalog ID (10000-10009 for themes/banners)
+    category = Column(String(50), nullable=False)  # themes, banners, frames, profile_items
+    purchased_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", backref="builtin_rewards")
+    
+    __table_args__ = (
+        # Ensure user can't purchase same item twice
+        CheckConstraint('reward_id >= 10000', name='valid_builtin_reward_id'),
+    )
+
+
+class BuiltinEquippedReward(Base):
+    """Tracks which builtin rewards the user currently has equipped"""
+    __tablename__ = "builtin_equipped_rewards"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=False)
+    reward_id = Column(Integer, nullable=False)
+    category = Column(String(50), nullable=False)  # themes, banners, frames, profile_items
+    equipped_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", backref="builtin_equipped")
+    
+    __table_args__ = (
+        # User can only have one item equipped per category
+        CheckConstraint('reward_id >= 10000', name='valid_builtin_equipped_id'),
+    )

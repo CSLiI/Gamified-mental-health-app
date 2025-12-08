@@ -68,6 +68,7 @@ class _RewardUnlockDialogState extends State<RewardUnlockDialog>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final category = widget.reward['category'] as String;
     final color = _getCategoryColor(category);
 
@@ -97,7 +98,7 @@ class _RewardUnlockDialogState extends State<RewardUnlockDialog>
               constraints: const BoxConstraints(maxWidth: 350),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -150,10 +151,10 @@ class _RewardUnlockDialogState extends State<RewardUnlockDialog>
                   Text(
                     widget.reward['name'],
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -246,7 +247,7 @@ class _RewardUnlockDialogState extends State<RewardUnlockDialog>
       case 'accessory':
         return const Color(0xFF2196F3);
       default:
-        return AppColors.primary;
+        return Theme.of(context).primaryColor;
     }
   }
 

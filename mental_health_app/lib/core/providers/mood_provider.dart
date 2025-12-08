@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/services/api_service.dart';
+import '../constants/storage_keys.dart';
 import 'user_provider.dart';
 
 class MoodProvider extends ChangeNotifier {
@@ -54,7 +55,7 @@ class MoodProvider extends ChangeNotifier {
 
       // Try cache first
       final prefs = await SharedPreferences.getInstance();
-      final cachedMood = prefs.getString('last_selected_mood_$userId');
+      final cachedMood = prefs.getString(StorageKeys.lastSelectedMood(userId));
 
       if (cachedMood != null) {
         _currentMood = cachedMood;
@@ -67,7 +68,8 @@ class MoodProvider extends ChangeNotifier {
         final recentMoods = await _apiService.getMoodLogs(limit: 1);
         if (recentMoods.isNotEmpty) {
           _currentMood = recentMoods[0]['mood'] as String;
-          await prefs.setString('last_selected_mood_$userId', _currentMood!);
+          await prefs.setString(
+              StorageKeys.lastSelectedMood(userId), _currentMood!);
           print('✅ MoodProvider: Loaded mood from backend: $_currentMood');
         } else {
           print('ℹ️ MoodProvider: No mood logs found');
@@ -97,7 +99,7 @@ class MoodProvider extends ChangeNotifier {
 
       // Persist to cache
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_selected_mood_$userId', mood);
+      await prefs.setString(StorageKeys.lastSelectedMood(userId), mood);
 
       print('✅ MoodProvider: Mood updated to $mood');
     } catch (e) {
@@ -118,11 +120,21 @@ class MoodProvider extends ChangeNotifier {
           notifyListeners();
 
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('last_selected_mood_$userId', latestMood);
+          await prefs.setString(
+              StorageKeys.lastSelectedMood(userId), latestMood);
         }
       }
     } catch (e) {
       print('Error updating from backend: $e');
     }
+  }
+
+  /// Clear mood data on logout
+  Future<void> clearMood() async {
+    print('🧹 MoodProvider: Clearing mood on logout...');
+    _currentMood = null;
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
   }
 }

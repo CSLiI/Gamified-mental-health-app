@@ -92,24 +92,23 @@ async def get_current_user(
         except (ValueError, TypeError):
             raise credentials_exception
         
-        # Check cache first to avoid DB query
-        now = datetime.utcnow()
-        if user_id in _user_cache:
-            cached_user, expiry = _user_cache[user_id]
-            if now < expiry:
-                # Cache hit - return cached user without DB query
-                return cached_user
-            else:
-                # Expired - remove from cache
-                del _user_cache[user_id]
+        # Cache disabled to ensure fresh data for energy updates
+        # if user_id in _user_cache:
+        #     cached_user, expiry = _user_cache[user_id]
+        #     if now < expiry:
+        #         # Cache hit - return cached user without DB query
+        #         return cached_user
+        #     else:
+        #         # Expired - remove from cache
+        #         del _user_cache[user_id]
         
-        # Cache miss or expired - fetch from DB
+        # Always fetch from DB to get latest energy/XP
         user = db.query(models.User).filter(models.User.id == user_id).first()
         if user is None:
             raise credentials_exception
         
         # Store in cache with TTL
-        _user_cache[user_id] = (user, now + timedelta(seconds=_cache_ttl_seconds))
+        # _user_cache[user_id] = (user, now + timedelta(seconds=_cache_ttl_seconds))
         
         return user
         

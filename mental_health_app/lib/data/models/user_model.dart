@@ -11,6 +11,7 @@ class UserModel {
   final DateTime createdAt;
   final int level;
   final int xp;
+  final int energy;
 
   UserModel({
     required this.id,
@@ -25,6 +26,7 @@ class UserModel {
     required this.createdAt,
     required this.level,
     required this.xp,
+    this.energy = 50,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class UserModel {
       createdAt: DateTime.parse(json['created_at'] as String),
       level: json['level'] as int,
       xp: json['xp'] as int,
+      energy: json['energy'] as int? ?? 50,
     );
   }
 
@@ -58,6 +61,7 @@ class UserModel {
       'created_at': createdAt.toIso8601String(),
       'level': level,
       'xp': xp,
+      'energy': energy,
     };
   }
 
@@ -74,6 +78,7 @@ class UserModel {
     DateTime? createdAt,
     int? level,
     int? xp,
+    int? energy,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -88,6 +93,7 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       level: level ?? this.level,
       xp: xp ?? this.xp,
+      energy: energy ?? this.energy,
     );
   }
 

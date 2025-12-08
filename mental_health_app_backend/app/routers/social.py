@@ -5,13 +5,14 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 
 from ..database import get_db
-from ..models import User, Friendship, Character, Interest, Todo, MoodLog, Encouragement, Message, user_interests_table
+from ..models import User, Friendship, Character, Interest, Todo, MoodLog, Encouragement, Message, user_interests_table, QuestCategoryEnum
 from ..schemas import (
     UserProfileResponse, Todo as TodoSchema, 
     EncouragementCreate, EncouragementResponse,
     MessageCreate, MessageResponse
 )
 from ..auth import get_current_user
+from ..CRUD import quests as quest_crud
 
 router = APIRouter(tags=["Social Features"])
 
@@ -338,6 +339,9 @@ async def send_encouragement(
     db.add(new_encouragement)
     db.commit()
     
+    # Update social quest progress
+    quest_crud.update_quest_progress(db, current_user.id, QuestCategoryEnum.social, 1)
+    
     return {"message": "Encouragement sent successfully"}
 
 @router.get("/encouragements/", response_model=List[EncouragementResponse])
@@ -437,6 +441,11 @@ async def get_messages(
         )
     
     # Get all messages between users
+    
+    # Auto-cleanup completed challenges/messages older than midnight
+    from ..CRUD import achievements as achievement_crud
+    achievement_crud.cleanup_old_completed_challenges(db)
+
     messages = db.query(Message).filter(
         or_(
             and_(
@@ -480,6 +489,10 @@ async def get_all_messages(
     current_user: User = Depends(get_current_user)
 ):
     """Get all messages (challenges) received"""
+    # Auto-cleanup completed challenges older than 24 hours
+    from ..CRUD import achievements as achievement_crud
+    achievement_crud.cleanup_old_completed_challenges(db)
+    
     query = db.query(Message).filter(
         Message.receiver_id == current_user.id
     )
@@ -527,12 +540,52 @@ async def update_message_completion(
             detail="You can only mark your own received challenges as completed"
         )
     
+    # Track if this is a new completion (not just updating)
+    was_not_completed = not message.is_completed
+    
     # Update completion status
     message.is_completed = is_completed
+    
+    # Set/unset completion timestamp
+    if is_completed:
+        if not message.completed_at:  # Only set if not already set
+            message.completed_at = datetime.now(timezone.utc)
+    else:
+        message.completed_at = None  # Clear if marking as incomplete
+    
+    # If marking as completed for the first time, increment counter and check achievements
+    if is_completed and was_not_completed:
+        if current_user.completed_challenges is None:
+            current_user.completed_challenges = 0
+        current_user.completed_challenges += 1
+        
+        # Check social achievements
+        from ..CRUD import achievements as achievement_crud
+        achievement_crud.check_social_achievements(db, current_user.id)
+    
     db.commit()
     
     return {
         "success": True,
         "message_id": message_id,
-        "is_completed": is_completed
+        "is_completed": is_completed,
+        "total_challenges_completed": current_user.completed_challenges
+    }
+
+@router.post("/challenges/cleanup")
+async def cleanup_completed_challenges(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Manually trigger cleanup of completed challenges older than 24 hours.
+    Returns the number of challenges deleted.
+    """
+    from ..CRUD import achievements as achievement_crud
+    deleted_count = achievement_crud.cleanup_old_completed_challenges(db)
+    
+    return {
+        "success": True,
+        "deleted_count": deleted_count,
+        "message": f"Cleaned up {deleted_count} completed challenge(s) older than 24 hours"
     }

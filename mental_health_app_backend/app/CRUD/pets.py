@@ -26,6 +26,61 @@ def get_unlockable_pets(db: Session, user_id: int) -> List[models.Pet]:
     
     return available_pets
 
+def rename_pet(db: Session, user_id: int, pet_id: int, name: str) -> Dict:
+    """Rename a user's pet"""
+    user_pet = db.query(models.UserPet).filter(
+        models.UserPet.user_id == user_id,
+        models.UserPet.pet_id == pet_id
+    ).first()
+    
+    if not user_pet:
+        return {"success": False, "message": "Pet not found"}
+        
+    user_pet.nickname = name
+    db.commit()
+    
+    return {"success": True, "message": f"Renamed to {name}!"}
+
+def calculate_pet_decay(db: Session, user_pet: models.UserPet):
+    """Calculate and apply hunger/affection decay based on time"""
+    if not user_pet.last_fed_at:
+        user_pet.last_fed_at = datetime.utcnow()
+        db.commit()
+        return
+
+    now = datetime.utcnow()
+    # Handle timezone if last_fed_at is aware
+    if user_pet.last_fed_at.tzinfo:
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+
+    elapsed = now - user_pet.last_fed_at
+    hours_passed = elapsed.total_seconds() / 3600
+    
+    if hours_passed < 0.1: # Only update if > 6 mins passed
+        return
+
+    # Decay rates
+    hunger_loss = int(hours_passed * 5) # 5 per hour
+    affection_loss = int(hours_passed * 1) # 1 per hour base
+    
+    current_hunger = user_pet.hunger or 50
+    
+    # Calculate new hunger first
+    new_hunger = max(0, current_hunger - hunger_loss)
+    
+    if new_hunger < 30:
+        affection_loss += int(hours_passed * 2) # Extra penalty if hungry
+        
+    current_affection = user_pet.affection_level
+    new_affection = max(0, current_affection - affection_loss)
+    
+    if new_hunger != current_hunger or new_affection != current_affection:
+        user_pet.hunger = new_hunger
+        user_pet.affection_level = new_affection
+        user_pet.last_fed_at = now # Update timestamp to prevent double decay
+        db.commit()
+
 def get_user_pets(db: Session, user_id: int) -> List[Dict]:
     """Get all pets unlocked by user"""
     user_pets = db.query(models.UserPet).filter(
@@ -34,14 +89,19 @@ def get_user_pets(db: Session, user_id: int) -> List[Dict]:
     
     result = []
     for up in user_pets:
+        calculate_pet_decay(db, up) # Apply decay
         result.append({
             "id": up.pet.id,
-            "name": up.pet.name,
+            "name": up.nickname or up.pet.name,
+            "original_name": up.pet.name,
             "emoji": up.pet.emoji,
             "description": up.pet.description,
             "rarity": up.pet.rarity,
+            "lottie_file": up.pet.lottie_file,
             "is_active": up.is_active,
             "affection_level": up.affection_level,
+            "hunger": up.hunger or 50,
+            "last_fed_at": up.last_fed_at,
             "unlocked_at": up.unlocked_at
         })
     
@@ -85,7 +145,8 @@ def unlock_pet(db: Session, user_id: int, pet_id: int) -> Optional[Dict]:
             "id": pet.id,
             "name": pet.name,
             "emoji": pet.emoji,
-            "description": pet.description
+            "description": pet.description,
+            "lottie_file": pet.lottie_file
         }
     }
 
@@ -116,7 +177,8 @@ def set_active_pet(db: Session, user_id: int, pet_id: int) -> Dict:
         "active_pet": {
             "id": pet.id,
             "name": pet.name,
-            "emoji": pet.emoji
+            "emoji": pet.emoji,
+            "lottie_file": pet.lottie_file
         }
     }
 
@@ -130,12 +192,17 @@ def get_active_pet(db: Session, user_id: int) -> Optional[Dict]:
     if not user_pet:
         return None
     
+    calculate_pet_decay(db, user_pet)
+    
     return {
         "id": user_pet.pet.id,
-        "name": user_pet.pet.name,
+        "name": user_pet.nickname or user_pet.pet.name,
+        "original_name": user_pet.pet.name,
         "emoji": user_pet.pet.emoji,
         "description": user_pet.pet.description,
-        "affection_level": user_pet.affection_level
+        "lottie_file": user_pet.pet.lottie_file,
+        "affection_level": user_pet.affection_level,
+        "hunger": user_pet.hunger or 50
     }
 
 def increase_pet_affection(db: Session, user_id: int, amount: int = 1):
@@ -151,3 +218,31 @@ def increase_pet_affection(db: Session, user_id: int, amount: int = 1):
         return True
     
     return False
+
+def feed_pet(db: Session, user_id: int) -> Dict:
+    """Feed the active pet"""
+    user_pet = db.query(models.UserPet).filter(
+        models.UserPet.user_id == user_id,
+        models.UserPet.is_active == True
+    ).first()
+    
+    if not user_pet:
+        return {"success": False, "message": "No active pet"}
+        
+    # Increase hunger (0-100, where 100 is full)
+    hunger_gain = 1  # Slow increase like affection
+    current_hunger = user_pet.hunger or 50
+    user_pet.hunger = min(current_hunger + hunger_gain, 100)
+    user_pet.last_fed_at = datetime.utcnow()
+    
+    # Also increase affection slightly
+    user_pet.affection_level = min(user_pet.affection_level + 1, 100)
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "Yummy! 🍖",
+        "hunger_gained": hunger_gain,
+        "new_hunger": user_pet.hunger
+    }

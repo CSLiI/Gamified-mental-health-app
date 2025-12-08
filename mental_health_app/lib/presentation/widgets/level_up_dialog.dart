@@ -74,6 +74,9 @@ class _LevelUpDialogState extends State<LevelUpDialog>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.primaryColor;
+    final secondaryColor = theme.colorScheme.secondary;
     final isMilestone = widget.milestoneXp > 0;
 
     return Dialog(
@@ -99,7 +102,7 @@ class _LevelUpDialogState extends State<LevelUpDialog>
                 constraints: const BoxConstraints(maxWidth: 400),
                 margin: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
@@ -123,7 +126,7 @@ class _LevelUpDialogState extends State<LevelUpDialog>
                             end: Alignment.bottomRight,
                             colors: isMilestone
                                 ? [Colors.amber[700]!, Colors.amber[400]!]
-                                : [AppColors.primary, AppColors.secondary],
+                                : [primaryColor, secondaryColor],
                           ),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(24),
@@ -170,8 +173,8 @@ class _LevelUpDialogState extends State<LevelUpDialog>
                                                   Colors.amber[400]!
                                                 ]
                                               : [
-                                                  AppColors.primary,
-                                                  AppColors.secondary
+                                                  primaryColor,
+                                                  secondaryColor
                                                 ],
                                         ).createShader(
                                           const Rect.fromLTWH(0, 0, 200, 70),
@@ -264,10 +267,10 @@ class _LevelUpDialogState extends State<LevelUpDialog>
                                   margin: const EdgeInsets.only(bottom: 8),
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
+                                    color: primaryColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: AppColors.primary.withOpacity(0.3),
+                                      color: primaryColor.withOpacity(0.3),
                                     ),
                                   ),
                                   child: Row(
@@ -275,8 +278,8 @@ class _LevelUpDialogState extends State<LevelUpDialog>
                                       Container(
                                         width: 8,
                                         height: 8,
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.primary,
+                                        decoration: BoxDecoration(
+                                          color: primaryColor,
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -296,7 +299,7 @@ class _LevelUpDialogState extends State<LevelUpDialog>
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary,
+                                          color: primaryColor,
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -368,7 +371,7 @@ class _LevelUpDialogState extends State<LevelUpDialog>
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: isMilestone
                                       ? Colors.amber[700]
-                                      : AppColors.primary,
+                                      : primaryColor,
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(

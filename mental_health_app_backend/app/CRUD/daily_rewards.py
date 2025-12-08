@@ -86,6 +86,11 @@ def claim_daily_reward(db: Session, user_id: int) -> Dict[str, Any]:
         user.longest_streak = status["current_streak"]
     
     db.commit()
+    
+    # Check for level up
+    from app.CRUD import level_system
+    level_system.check_level_up(db, user_id)
+    
     db.refresh(user)
     
     return {

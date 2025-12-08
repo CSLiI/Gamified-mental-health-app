@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/skeleton_loader.dart';
@@ -7,6 +8,7 @@ import '../../../data/services/cache_service.dart';
 import '../../../core/utils/image_cache_manager.dart';
 import '../../../core/widgets/keep_alive_wrapper.dart';
 import '../../../core/utils/debouncer.dart';
+import '../../../core/providers/theme_provider.dart';
 
 class SocialScreen extends StatefulWidget {
   const SocialScreen({super.key});
@@ -177,120 +179,125 @@ class _SocialScreenState extends State<SocialScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFFF8F9FE),
-              const Color(0xFFE8EAFC),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header with add friend button
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Text(
-                      'Friends',
-                      style: TextStyle(
-                        fontSize: 28,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  themeProvider.primaryColor.withValues(alpha: 0.08),
+                  themeProvider.secondaryColor.withValues(alpha: 0.08),
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header with add friend button
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Friends',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: Icon(Icons.person_add_rounded,
+                              color: AppColors.primary),
+                          onPressed: _showAddFriendDialog,
+                          iconSize: 28,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Tab Bar
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF6C5CE7),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: const Color(0xFF6B8BA8),
+                      labelStyle: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        fontSize: 14,
                       ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicatorPadding: const EdgeInsets.all(4),
+                      dividerColor: Colors.transparent,
+                      tabs: const [
+                        Tab(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            child: Text('Friends'),
+                          ),
+                        ),
+                        Tab(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            child: Text('Requests'),
+                          ),
+                        ),
+                        Tab(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            child: Text('Sent'),
+                          ),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.person_add_rounded,
-                          color: AppColors.primary),
-                      onPressed: _showAddFriendDialog,
-                      iconSize: 28,
-                    ),
-                  ],
-                ),
-              ),
-              // Tab Bar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: const Color(0xFF6C5CE7),
-                    borderRadius: BorderRadius.circular(14),
                   ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(0xFF6B8BA8),
-                  labelStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                  const SizedBox(height: 20),
+                  // Tab Views
+                  Expanded(
+                    child: _isLoading
+                        ? _buildSkeletonLoader()
+                        : TabBarView(
+                            controller: _tabController,
+                            children: [
+                              KeepAliveWrapper(child: _buildFriendsTab()),
+                              KeepAliveWrapper(child: _buildRequestsTab()),
+                              KeepAliveWrapper(child: _buildSentTab()),
+                            ],
+                          ),
                   ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  indicatorPadding: const EdgeInsets.all(4),
-                  dividerColor: Colors.transparent,
-                  tabs: const [
-                    Tab(
-                      child: Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Text('Friends'),
-                      ),
-                    ),
-                    Tab(
-                      child: Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Text('Requests'),
-                      ),
-                    ),
-                    Tab(
-                      child: Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Text('Sent'),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-              const SizedBox(height: 20),
-              // Tab Views
-              Expanded(
-                child: _isLoading
-                    ? _buildSkeletonLoader()
-                    : TabBarView(
-                        controller: _tabController,
-                        children: [
-                          KeepAliveWrapper(child: _buildFriendsTab()),
-                          KeepAliveWrapper(child: _buildRequestsTab()),
-                          KeepAliveWrapper(child: _buildSentTab()),
-                        ],
-                      ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -410,7 +417,7 @@ class _SocialScreenState extends State<SocialScreen>
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -422,7 +429,7 @@ class _SocialScreenState extends State<SocialScreen>
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ),
@@ -450,24 +457,7 @@ class _SocialScreenState extends State<SocialScreen>
     }
   }
 
-  String _getMoodEmoji(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'happy':
-        return '😊';
-      case 'calm':
-        return '😌';
-      case 'tired':
-        return '😴';
-      case 'anxious':
-        return '😰';
-      case 'sad':
-        return '😢';
-      case 'angry':
-        return '😠';
-      default:
-        return '😐';
-    }
-  }
+  // Removed _getMoodEmoji for minimalistic design
 
   Widget _buildFriendCard(Map<String, dynamic> friend) {
     final String friendName =
@@ -488,13 +478,14 @@ class _SocialScreenState extends State<SocialScreen>
         return dateB.compareTo(dateA); // Descending order (newest first)
       });
 
-    // Use most recent mood log
-    String currentMood = 'calm'; // Default to calm if no mood logs
+    // Use most recent mood log (no default - empty string if no mood)
+    String currentMood = '';
     if (sortedMoodLogs.isNotEmpty) {
-      currentMood = sortedMoodLogs.first['mood'] ?? 'calm';
+      currentMood = sortedMoodLogs.first['mood'] ?? '';
     }
 
-    final Color moodColor = _getMoodColor(currentMood);
+    final Color moodColor =
+        currentMood.isNotEmpty ? _getMoodColor(currentMood) : Colors.grey;
 
     // Get character info
     final character = profile['character'];
@@ -542,7 +533,7 @@ class _SocialScreenState extends State<SocialScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: moodColor.withValues(alpha: 0.5),
@@ -615,7 +606,7 @@ class _SocialScreenState extends State<SocialScreen>
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -629,29 +620,34 @@ class _SocialScreenState extends State<SocialScreen>
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        _getMoodEmoji(currentMood),
-                        style: const TextStyle(fontSize: 16),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: moodColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: moodColor.withOpacity(0.3),
+                        width: 1,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        currentMood.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: moodColor,
-                          letterSpacing: 0.5,
-                        ),
+                    ),
+                    child: Text(
+                      currentMood.isEmpty
+                          ? 'No mood logged'
+                          : currentMood.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: moodColor,
+                        letterSpacing: 0.5,
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -677,7 +673,7 @@ class _SocialScreenState extends State<SocialScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -719,7 +715,7 @@ class _SocialScreenState extends State<SocialScreen>
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -728,7 +724,7 @@ class _SocialScreenState extends State<SocialScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -778,7 +774,7 @@ class _SocialScreenState extends State<SocialScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -820,7 +816,7 @@ class _SocialScreenState extends State<SocialScreen>
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -829,7 +825,7 @@ class _SocialScreenState extends State<SocialScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -1146,7 +1142,7 @@ class _SocialScreenState extends State<SocialScreen>
           }).toList();
         }
       } catch (e) {
-        print('Error loading friend tasks: $e');
+        // print('Error loading friend tasks: $e');
         // If API endpoint doesn't exist yet, friendTasks stays empty
       }
 
@@ -1155,7 +1151,7 @@ class _SocialScreenState extends State<SocialScreen>
         'friendTasks': friendTasks,
       };
     } catch (e) {
-      print('Error loading accountability tasks: $e');
+      // print('Error loading accountability tasks: $e');
       return {
         'myTasks': [],
         'friendTasks': [],
@@ -1377,7 +1373,7 @@ class _SocialScreenState extends State<SocialScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Keep Each Other Motivated! 🔥',
+                      'Keep Each Other Motivated',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -1418,7 +1414,7 @@ class _SocialScreenState extends State<SocialScreen>
           friendStreak = await _apiService.getFriendStreak(friendUserId);
         }
       } catch (e) {
-        print('Error loading friend streak: $e');
+        // print('Error loading friend streak: $e');
         // If API endpoint doesn't exist yet, friendStreak stays empty
       }
 
@@ -1427,7 +1423,7 @@ class _SocialScreenState extends State<SocialScreen>
         'friendStreak': friendStreak,
       };
     } catch (e) {
-      print('Error loading streak data: $e');
+      // print('Error loading streak data: $e');
       return {
         'myStreak': {},
         'friendStreak': {},
@@ -1975,9 +1971,7 @@ class _SocialScreenState extends State<SocialScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Challenge created! 🎯')),
-              );
+              // SnackBar removed for cleaner UI
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -2180,20 +2174,11 @@ class _SocialScreenState extends State<SocialScreen>
         final friendId = friend['friend_id'];
         await _apiService.sendEncouragement(
           friendId,
-          'Keep up the great work! 💪',
+          'Keep up the great work!',
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Encouragement sent! 💪'),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          // SnackBar removed for cleaner UI
         }
       } catch (e) {
         debugPrint('Error sending encouragement: $e');
@@ -2289,7 +2274,7 @@ class _SocialScreenState extends State<SocialScreen>
         ),
       );
     } catch (e) {
-      print('Error viewing friend profile: $e');
+      // print('Error viewing friend profile: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2335,15 +2320,10 @@ class _SocialScreenState extends State<SocialScreen>
 
                   if (mounted) {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Message sent! 💬'),
-                        backgroundColor: AppColors.success,
-                      ),
-                    );
+                    // SnackBar removed for cleaner UI
                   }
                 } catch (e) {
-                  print('Error sending message: $e');
+                  // print('Error sending message: $e');
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

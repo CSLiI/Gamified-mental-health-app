@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/storage_keys.dart';
 import '../../../data/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -48,6 +50,24 @@ class _LoginScreenState extends State<LoginScreen>
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      if (!mounted) return;
+
+      // Pre-load theme before navigation for immediate visual feedback
+      try {
+        final user = await _apiService.getCurrentUser();
+        if (mounted) {
+          // Store user ID first
+          final storage = const FlutterSecureStorage();
+          await storage.write(
+              key: StorageKeys.currentUserId, value: user['id'].toString());
+          // Then load theme
+          await Future.delayed(
+              const Duration(milliseconds: 100)); // Brief delay for storage
+        }
+      } catch (_) {
+        // Theme loading failed, continue anyway
+      }
 
       if (!mounted) return;
       context.go('/home');

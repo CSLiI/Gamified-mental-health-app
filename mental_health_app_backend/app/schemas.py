@@ -75,6 +75,7 @@ class User(UserBase):
     created_at: datetime
     level: int
     xp: int
+    energy: int = 50
     
     # Daily check-in and streak tracking
     last_daily_claim: Optional[datetime] = None
@@ -202,6 +203,7 @@ class Todo(TodoBase):
     user_id: int
     created_at: datetime
     completed_at: Optional[datetime] = None
+    reward_claimed: bool = False
     
     class Config:
         from_attributes = True
@@ -259,11 +261,13 @@ class AchievementCategoryEnum(str, Enum):
     consistency = "consistency"
     todos = "todos"
     emotional_growth = "emotional_growth"
+    social = "social"
+    special = "special"
 
 class AchievementBase(BaseModel):
     name: str
     description: Optional[str] = None
-    category: AchievementCategoryEnum
+    category: str
     icon_url: Optional[str] = None
     xp_reward: int = 0
     requirement_count: int = 1
@@ -459,6 +463,7 @@ class UserProfileResponse(BaseModel):
     gender: Optional[str] = None
     level: int = 1
     xp: int = 0
+    energy: int = 50
     current_streak: int = 0
     longest_streak: int = 0
     character: Optional[dict] = None
@@ -506,3 +511,91 @@ class StreakFreezeUseResponse(BaseModel):
     success: bool
     message: str
     streak_protected: Optional[int] = None
+
+
+# ==================== Builtin Rewards ====================
+
+class BuiltinRewardPurchase(BaseModel):
+    reward_id: int
+    category: str  # themes, banners, frames, profile_items
+    xp_cost: int
+
+class BuiltinRewardEquip(BaseModel):
+    reward_id: int
+    category: str
+
+class BuiltinUserRewardResponse(BaseModel):
+    id: int
+    user_id: int
+    reward_id: int
+    category: str
+    purchased_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class BuiltinEquippedRewardResponse(BaseModel):
+    id: int
+    user_id: int
+    reward_id: int
+    category: str
+    equipped_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class BuiltinRewardsDataResponse(BaseModel):
+    purchased: List[BuiltinUserRewardResponse]
+    equipped: List[BuiltinEquippedRewardResponse]
+    xp_spent: int
+
+# ==================== Pet Schemas ====================
+class PetBase(BaseModel):
+    name: str
+    emoji: str
+    description: Optional[str] = None
+    unlock_level: int = 1
+    rarity: str = "common"
+    lottie_file: Optional[str] = None
+
+class PetResponse(PetBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UserPetResponse(BaseModel):
+    id: int
+    name: str
+    emoji: str
+    description: Optional[str] = None
+    rarity: str
+    lottie_file: Optional[str] = None
+    is_active: bool
+    affection_level: int
+    hunger: int
+    last_fed_at: Optional[datetime]
+    unlocked_at: datetime
+
+class PetUnlockResponse(BaseModel):
+    success: bool
+    message: str
+    pet: Optional[dict] = None
+
+class PetEquipResponse(BaseModel):
+    success: bool
+    message: str
+    active_pet: Optional[dict] = None
+
+class PetInteractResponse(BaseModel):
+    success: bool
+    message: str
+    affection_gained: int = 1
+
+class PetFeedResponse(BaseModel):
+    success: bool
+    message: str
+    hunger_gained: int = 10
+    new_hunger: int
+

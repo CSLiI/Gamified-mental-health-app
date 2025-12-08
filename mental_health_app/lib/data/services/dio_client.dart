@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/constants/storage_keys.dart';
 import '../../core/router/navigation_service.dart';
 import 'cache_service.dart';
 
@@ -68,19 +69,13 @@ class DioClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           // Add token to requests
-          final token = await _storage.read(key: 'auth_token');
+          final token = await _storage.read(key: StorageKeys.authToken);
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
-            print('🔑 Token added to request: ${token.substring(0, 20)}...');
-          } else {
-            print('⚠️ No token found in storage');
           }
-          print('📤 REQUEST: ${options.method} ${options.path}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print(
-              '📥 RESPONSE: ${response.statusCode} ${response.requestOptions.path}');
           return handler.next(response);
         },
         onError: (error, handler) async {
@@ -101,9 +96,6 @@ class DioClient {
           if ((_failureCounts[p] ?? 0) >= _failureThreshold) {
             _openUntil[p] = DateTime.now().add(_cooldown);
           }
-          print(
-              '❌ ERROR: ${error.response?.statusCode} ${error.requestOptions.path}');
-          print('   Message: ${error.message}');
 
           // Simple exponential backoff for transient errors
           final requestOptions = error.requestOptions;
@@ -125,7 +117,6 @@ class DioClient {
           // Handle 401 Unauthorized more gracefully
           if (error.response?.statusCode == 401) {
             final path = error.requestOptions.path;
-            print('🚨 401 Unauthorized on $path');
 
             // Friend endpoints may intermittently return 401 due to permissions;
             // do NOT invalidate the whole session for these.
@@ -136,15 +127,12 @@ class DioClient {
 
             if (isFriendEndpoint) {
               // Soft-fail: keep token, let UI handle a warning gracefully.
-              print('ℹ️ Friend endpoint unauthorized; keeping session intact.');
             } else {
               // For core auth endpoints, treat as session invalidation.
-              print('🔑 Core endpoint unauthorized; clearing session.');
-              await _storage.delete(key: 'auth_token');
+              await _storage.delete(key: StorageKeys.authToken);
 
               final context = NavigationService.navigatorKey.currentContext;
               if (context != null) {
-                print('🔄 Redirecting to login screen...');
                 GoRouter.of(context).go('/login');
               }
             }
@@ -216,7 +204,7 @@ class DioClient {
   }
 
   Future<Response> login(Map<String, dynamic> data) async {
-    print('🔐 Attempting login...');
+    // print('🔐 Attempting login...');
 
     final response = await _dio.post(
       ApiConstants.login,
@@ -226,27 +214,19 @@ class DioClient {
       ),
     );
 
-    print('✅ Login response received');
-    print('📦 Response data: ${response.data}');
-
     // Save token
     if (response.data['access_token'] != null) {
       final token = response.data['access_token'];
       await _storage.write(
-        key: 'auth_token',
+        key: StorageKeys.authToken,
         value: token,
       );
-      print('💾 Token saved: ${token.substring(0, 20)}...');
 
       // Verify token was saved
-      final savedToken = await _storage.read(key: 'auth_token');
-      if (savedToken != null) {
-        print('✅ Token verified in storage');
-      } else {
-        print('❌ Token NOT saved to storage!');
-      }
+      final savedToken = await _storage.read(key: StorageKeys.authToken);
+      if (savedToken == null) {}
     } else {
-      print('⚠️ No access_token in response!');
+      // Token missing - handle gracefully
     }
 
     return response;
@@ -254,7 +234,11 @@ class DioClient {
 
   Future<void> logout() async {
     // Clear auth token
-    await _storage.delete(key: 'auth_token');
+    await _storage.delete(key: StorageKeys.authToken);
+
+    // NOTE: Do NOT delete current_user_id here - ThemeProvider and other providers
+    // need it to clean up user-specific storage. UserProvider.clearUser() will
+    // delete it after all other providers have cleaned up.
 
     // Clear API Cache (Critical for data privacy between users)
     await CacheService().clearAll();
@@ -265,30 +249,19 @@ class DioClient {
 
     // Remove all keys that might contain user-specific data
     for (final key in keys) {
-      if (key.contains('selected_character_') ||
-          key.contains('last_selected_mood_') ||
-          key.contains('_user_')) {
+      if (StorageKeys.isUserSpecificKey(key)) {
         await prefs.remove(key);
-        print('🧹 Removed SharedPreferences key: $key');
       }
     }
 
-    // Also remove old non-user-specific keys for backward compatibility
-    await prefs.remove('selected_character_id');
-    await prefs.remove('selected_character_gender');
-    await prefs.remove('selected_character_number');
-    await prefs.remove('last_selected_mood');
-
-    print('🚪 Token and ALL user data deleted - logged out');
+    // Also remove all legacy keys for backward compatibility
+    for (final key in StorageKeys.getLegacyKeys()) {
+      await prefs.remove(key);
+    }
   }
 
   Future<String?> getToken() async {
-    final token = await _storage.read(key: 'auth_token');
-    if (token != null) {
-      print('🔑 Token retrieved: ${token.substring(0, 20)}...');
-    } else {
-      print('❌ No token in storage');
-    }
+    final token = await _storage.read(key: StorageKeys.authToken);
     return token;
   }
 

@@ -173,6 +173,11 @@ def open_mystery_box(db: Session, user_id: int, box_id: int) -> Optional[Dict]:
     
     db.commit()
     
+    # Check for level up if XP was awarded
+    if box.reward_type == "xp":
+        from app.CRUD import level_system
+        level_system.check_level_up(db, user_id)
+    
     return {
         "success": True,
         "box_type": box.box_type,

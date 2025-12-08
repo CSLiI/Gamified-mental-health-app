@@ -52,7 +52,7 @@ class _StatisticsTabState extends State<StatisticsTab>
       }
 
       // Fetch fresh data in background
-      print('📊 Loading statistics...');
+      // print('📊 Loading statistics...');
 
       final results = await Future.wait([
         _apiService.getCurrentUser(),
@@ -62,16 +62,16 @@ class _StatisticsTabState extends State<StatisticsTab>
       ]);
 
       final user = results[0] as Map<String, dynamic>;
-      print('✅ User data loaded: ${user.toString()}');
+      // print('✅ User data loaded: ${user.toString()}');
 
       final moods = results[1] as List<dynamic>;
-      print('✅ Mood logs loaded: ${moods.length} entries');
+      // print('✅ Mood logs loaded: ${moods.length} entries');
 
       final journals = results[2] as List<dynamic>;
-      print('✅ Journal entries loaded: ${journals.length} entries');
+      // print('✅ Journal entries loaded: ${journals.length} entries');
 
       final todos = results[3] as List<dynamic>;
-      print('✅ Todos loaded: ${todos.length} entries');
+      // print('✅ Todos loaded: ${todos.length} entries');
 
       // Filter moods by time range
       final now = DateTime.now();
@@ -105,15 +105,15 @@ class _StatisticsTabState extends State<StatisticsTab>
           _isLoading = false;
         });
 
-        print('📈 Statistics updated:');
-        print('  - Streak: $_currentStreak');
-        print('  - XP: $_totalXP');
-        print('  - Mood logs: ${_moodLogs.length}');
-        print('  - Journals: ${_journalEntries.length}');
-        print('  - Todos: ${_todos.length}');
+        // print('📈 Statistics updated:');
+        // print('  - Streak: $_currentStreak');
+        // print('  - XP: $_totalXP');
+        // print('  - Mood logs: ${_moodLogs.length}');
+        // print('  - Journals: ${_journalEntries.length}');
+        // print('  - Todos: ${_todos.length}');
       }
     } catch (e) {
-      print('❌ Error loading statistics: $e');
+      // print('❌ Error loading statistics: $e');
       if (mounted) {
         setState(() => _isLoading = false);
 
@@ -284,11 +284,7 @@ class _StatisticsTabState extends State<StatisticsTab>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withValues(alpha: 0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: color, // Solid color
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

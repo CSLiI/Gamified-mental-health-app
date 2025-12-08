@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 from app import schemas, auth, models
 from app.database import get_db
 from app.CRUD import todos as todo_crud
@@ -69,13 +70,13 @@ def update_todo(
     
     return todo_crud.update_todo(db, todo_id, todo_update)
 
-@router.post("/{todo_id}/complete", response_model=schemas.Todo)
+@router.post("/{todo_id}/complete")
 def complete_todo(
     todo_id: int,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mark a todo as completed and award XP"""
+    """Mark a todo as completed and award XP and Energy"""
     todo = todo_crud.get_todo(db, todo_id)
     if not todo or todo.user_id != current_user.id:
         raise HTTPException(
@@ -83,37 +84,91 @@ def complete_todo(
             detail="Todo not found"
         )
     
-    # Mark todo as complete
-    completed_todo = todo_crud.complete_todo(db, todo_id)
+    # Always award XP (since it's deducted on uncomplete)
+    xp_earned = 10
+    energy_earned = 0
     
-    # Award XP (10 XP per completed todo)
-    user_crud.update_user_xp(db, current_user.id, 10)
+    # Get user attached to current session
+    user = user_crud.get_user(db, current_user.id)
+    if user:
+        # Always award XP
+        user.xp += xp_earned
+        
+        # Only award Energy if not already claimed
+        if not todo.reward_claimed:
+            energy_earned = 5
+            user.energy += energy_earned
+            todo.reward_claimed = True
+            
+    # Update todo completion status
+    todo.is_completed = True
+    todo.completed_at = datetime.utcnow()
     
-    return completed_todo
+    # Single commit for XP, energy, and todo updates
+    db.commit()
+    
+    if user:
+        db.refresh(user)
+    db.refresh(todo)
+    
+    # Check for level up AFTER committing
+    from app.CRUD import level_system
+    level_system.check_level_up(db, current_user.id)
+    
+    # Convert to dict for JSON serialization
+    todo_dict = schemas.Todo.from_orm(todo).dict()
+    
+    return {
+        "success": True,
+        "message": "Todo completed!",
+        "todo": todo_dict,
+        "xp": xp_earned,
+        "energy": energy_earned,
+        "new_xp_total": user.xp if user else 0,
+        "new_energy_total": user.energy if user else 0
+    }
 
-@router.post("/{todo_id}/uncomplete", response_model=schemas.Todo)
+@router.post("/{todo_id}/uncomplete")
 def uncomplete_todo(
     todo_id: int,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mark a todo as incomplete and deduct XP"""
+    """Mark a todo as not completed (deducts XP, keeps Energy)"""
     todo = todo_crud.get_todo(db, todo_id)
-    if not todo or todo.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Todo not found"
-        )
+    if not todo:
+        raise HTTPException(status_code=404, detail="Todo not found")
+        
+    if todo.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    if not todo.is_completed:
+        return {"success": False, "message": "Todo is not completed"}
     
-    # Only deduct XP if the todo was actually completed before
-    if todo.is_completed:
-        # Deduct XP (10 XP per uncompleted todo)
-        user_crud.update_user_xp(db, current_user.id, -10)
+    # Deduct XP (to allow re-earning) but KEEP Energy (one-time reward)
+    xp_deducted = 10
+    energy_deducted = 0
     
-    # Mark todo as incomplete
-    uncompleted_todo = todo_crud.uncomplete_todo(db, todo_id)
+    user = user_crud.get_user(db, current_user.id)
+    if user:
+        user.xp = max(0, user.xp - xp_deducted)
+        # Do NOT deduct energy
     
-    return uncompleted_todo
+    todo.is_completed = False
+    todo.completed_at = None
+    
+    db.commit()
+    
+    if user:
+        db.refresh(user)
+    db.refresh(todo)
+    
+    return {
+        "success": True, 
+        "message": "Todo marked as incomplete",
+        "xp": -xp_deducted,
+        "energy": 0
+    }
 
 @router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_todo(

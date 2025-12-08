@@ -11,10 +11,10 @@ class AppColors {
   static const Color secondaryLight = Color(0xFFD4C9E8);
   static const Color secondaryDark = Color(0xFF9382BC);
 
-  // Background Colors - Sky Blue Theme (Darker/More Visible)
-  static const Color background = Color(0xFFB3E5FC); // Medium sky blue
+  // Background Colors - Soft gradient theme
+  static const Color background = Color(0xFFF8F9FA); // Very light gray
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFE1F5FE); // Light cyan
+  static const Color surfaceVariant = Color(0xFFF5F5F5); // Light gray
 
   // Text Colors
   static const Color textPrimary = Color(0xFF1A1D2E);

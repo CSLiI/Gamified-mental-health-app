@@ -45,17 +45,17 @@ class _SplashScreenState extends State<SplashScreen>
 
       if (token == null || token.isEmpty) {
         // No token, go to login
-        print('🚫 No token found, redirecting to login');
+        // print('🚫 No token found, redirecting to login');
         context.go('/login');
         return;
       }
 
-      print('🔑 Token found, validating...');
+      // print('🔑 Token found, validating...');
 
       // Try to get user data to verify token is valid
       try {
         final user = await _apiService.getCurrentUser();
-        print('✅ Token valid, user: ${user['first_name']}');
+        // print('✅ Token valid, user: ${user['first_name']}');
 
         // Token is valid, go to home
         if (mounted) {
@@ -63,14 +63,14 @@ class _SplashScreenState extends State<SplashScreen>
         }
       } catch (e) {
         // Token is invalid or expired
-        print('❌ Token invalid: $e');
+        // print('❌ Token invalid: $e');
         await _dioClient.logout(); // Clear invalid token
         if (mounted) {
           context.go('/login');
         }
       }
     } catch (e) {
-      print('❌ Auth check error: $e');
+      // print('❌ Auth check error: $e');
       if (mounted) {
         context.go('/login');
       }

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../data/services/api_service.dart';
+import '../constants/storage_keys.dart';
 
 /// Singleton provider for current user data to prevent redundant API calls.
 ///
@@ -8,6 +10,7 @@ import '../../data/services/api_service.dart';
 /// this provider to access userId rather than calling getCurrentUser() directly.
 class UserProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   Map<String, dynamic>? _user;
   bool _isLoading = false;
@@ -30,7 +33,15 @@ class UserProvider extends ChangeNotifier {
 
     try {
       _user = await _apiService.getCurrentUser();
-      print('✅ UserProvider: Loaded user ${_user?['id']}');
+      print('✅ UserProvider: Loaded user ${_user?['id']} - Energy: ${_user?['energy']}');
+
+      // Store user ID for user-specific storage
+      if (_user?['id'] != null) {
+        await _secureStorage.write(
+          key: StorageKeys.currentUserId,
+          value: _user!['id'].toString(),
+        );
+      }
     } catch (e) {
       _error = e.toString();
       print('❌ UserProvider: Error loading user: $e');
@@ -40,15 +51,24 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  /// Refresh user data (force fetch from API)
+  /// Refresh user data (force fetch from API, bypass cache)
   Future<void> refreshUser() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _user = await _apiService.getCurrentUser();
-      print('✅ UserProvider: Refreshed user ${_user?['id']}');
+      // Use getFreshUserData to bypass cache and get latest energy value
+      _user = await _apiService.getFreshUserData();
+      print('✅ UserProvider: Refreshed user ${_user?['id']} - Energy: ${_user?['energy']}');
+
+      // Store user ID for user-specific storage
+      if (_user?['id'] != null) {
+        await _secureStorage.write(
+          key: StorageKeys.currentUserId,
+          value: _user!['id'].toString(),
+        );
+      }
     } catch (e) {
       _error = e.toString();
       print('❌ UserProvider: Error refreshing user: $e');
@@ -58,11 +78,21 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  /// Refresh user data after an action (with delay to ensure backend commit completes)
+  /// Use this after completing tasks, quests, or pet actions
+  Future<void> refreshUserAfterAction() async {
+    // Small delay to ensure backend database commit has finished
+    await Future.delayed(const Duration(milliseconds: 200));
+    await refreshUser();
+  }
+
   /// Clear user data (on logout)
   @visibleForTesting
-  void clearUser() {
+  Future<void> clearUser() async {
     _user = null;
     _error = null;
+    // Clear stored user ID
+    await _secureStorage.delete(key: StorageKeys.currentUserId);
     notifyListeners();
   }
 }

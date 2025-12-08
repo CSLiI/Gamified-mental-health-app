@@ -40,6 +40,21 @@ class ChallengesTab extends StatelessWidget {
             msg['sender_id'] == currentUserId && msg['receiver_id'] == friendId)
         .toList();
 
+    // Sort: unread first, then by created_at descending
+    myChallenges.sort((a, b) {
+      final aRead = a['is_read'] ?? false;
+      final bRead = b['is_read'] ?? false;
+
+      if (aRead != bRead) {
+        return aRead ? 1 : -1; // Unread first
+      }
+
+      // Same read status, sort by date (newest first)
+      final aDate = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
+      final bDate = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
+      return bDate.compareTo(aDate);
+    });
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -128,6 +143,21 @@ class ChallengesTab extends StatelessWidget {
         .where((msg) =>
             msg['sender_id'] == friendId && msg['receiver_id'] == currentUserId)
         .toList();
+
+    // Sort: uncompleted first, then by created_at descending
+    receivedChallenges.sort((a, b) {
+      final aCompleted = a['is_completed'] ?? false;
+      final bCompleted = b['is_completed'] ?? false;
+
+      if (aCompleted != bCompleted) {
+        return aCompleted ? 1 : -1; // Uncompleted first
+      }
+
+      // Same completion status, sort by date (newest first)
+      final aDate = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now();
+      final bDate = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime.now();
+      return bDate.compareTo(aDate);
+    });
 
     return Container(
       padding: const EdgeInsets.all(20),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/mood_provider.dart';
 import '../../../core/providers/character_provider.dart';
+import '../../../core/providers/theme_provider.dart';
 import 'home_screen.dart';
 import '../mood/mood_screen.dart';
 import '../social/social_screen.dart';
@@ -14,28 +15,55 @@ import '../../../data/services/api_service.dart';
 import '../../../data/services/cache_service.dart';
 
 class HomeNavigation extends StatefulWidget {
-  const HomeNavigation({super.key});
+  final int initialIndex;
+  final int initialTabIndex;
+  
+  const HomeNavigation({
+    super.key, 
+    this.initialIndex = 0,
+    this.initialTabIndex = 0,
+  });
 
   @override
   State<HomeNavigation> createState() => _HomeNavigationState();
 }
 
 class _HomeNavigationState extends State<HomeNavigation> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   final Debouncer _tabDebouncer = Debouncer(milliseconds: 250);
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
     // Load initial data - UserProvider first to avoid redundant API calls
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Load user first (single API call, cached)
       await context.read<UserProvider>().loadUser();
+
+      // Load theme with EXPLICIT user ID to prevent cross-account leakage
+      final userProvider = context.read<UserProvider>();
+      if (userProvider.user != null) {
+        await context
+            .read<ThemeProvider>()
+            .refreshTheme(userProvider.user!['id'] as int);
+      }
+
       // Then load mood and character (they use cached userId)
       context.read<MoodProvider>().loadMood();
       context.read<CharacterProvider>().loadCharacter();
       _prefetchCritical();
     });
+  }
+
+  @override
+  void didUpdateWidget(HomeNavigation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialIndex != oldWidget.initialIndex) {
+      setState(() {
+        _currentIndex = widget.initialIndex;
+      });
+    }
   }
 
   void _onTabSelected(int index) {
@@ -48,7 +76,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
   }
 
   void _onMoodSelected(String mood) async {
-    print('🎭 NAVIGATION: Mood selected: "$mood"');
+    // print('🎭 NAVIGATION: Mood selected: "$mood"');
     await context.read<MoodProvider>().updateMood(mood);
 
     // Switch to Home tab to show the change
@@ -91,121 +119,182 @@ class _HomeNavigationState extends State<HomeNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<MoodProvider, CharacterProvider>(
-      builder: (context, moodProvider, characterProvider, child) {
-        final screens = [
-          HomeScreen(onNavigate: _onTabSelected),
-          const SocialScreen(),
-          const ProgressScreen(),
-          MoodScreen(
-            characterId: characterProvider.characterId,
-            characterGender: characterProvider.characterGender,
-            characterNumber: characterProvider.characterNumber,
-            onMoodSelected: _onMoodSelected,
-          ),
-          const ProfileScreen(),
-        ];
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
 
-        final currentMoodColor = moodProvider.getMoodColor();
-        final currentMoodColorLight =
-            Color.lerp(currentMoodColor, Colors.white, 0.7)!
-                .withValues(alpha: 0.9);
-        final currentMoodColorDark =
-            Color.lerp(currentMoodColor, Colors.white, 0.5)!
-                .withValues(alpha: 0.9);
+        // If not on home tab, go back to home instead of exiting
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+          return;
+        }
 
-        return Scaffold(
-          body: Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF8F9FE),
-                  Color(0xFFE8EAFC),
-                ],
+        // If on home tab, show exit confirmation
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Exit Echo?',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C3E50),
               ),
             ),
-            child: IndexedStack(
-              index: _currentIndex,
-              children: screens,
+            content: const Text(
+              'Are you sure you want to exit the app?',
+              style: TextStyle(color: Color(0xFF6B7280)),
             ),
-          ),
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  currentMoodColorLight,
-                  currentMoodColorDark,
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: currentMoodColor.withValues(alpha: 0.2),
-                  blurRadius: 15,
-                  offset: const Offset(0, -3),
-                ),
-              ],
-              border: Border(
-                top: BorderSide(
-                  color: currentMoodColor.withValues(alpha: 0.3),
-                  width: 2,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  'Stay',
+                  style: TextStyle(color: Colors.grey[600]),
                 ),
               ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6B9080),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Exit',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldExit == true) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Consumer3<MoodProvider, CharacterProvider, ThemeProvider>(
+        builder: (context, moodProvider, characterProvider, themeProvider, child) {
+          final screens = [
+            HomeScreen(onNavigate: _onTabSelected),
+            const SocialScreen(),
+            ProgressScreen(initialIndex: widget.initialTabIndex), // Pass tab index
+            MoodScreen(
+              characterId: characterProvider.characterId,
+              characterGender: characterProvider.characterGender,
+              characterNumber: characterProvider.characterNumber,
+              onMoodSelected: _onMoodSelected,
             ),
-            child: SafeArea(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildNavItem(
-                      icon: Icons.home_outlined,
-                      activeIcon: Icons.home,
-                      label: 'Home',
-                      index: 0,
-                      moodColor: currentMoodColor,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.people_outline,
-                      activeIcon: Icons.people,
-                      label: 'Social',
-                      index: 1,
-                      moodColor: currentMoodColor,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.emoji_events_outlined,
-                      activeIcon: Icons.emoji_events,
-                      label: 'Progress',
-                      index: 2,
-                      moodColor: currentMoodColor,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.mood_outlined,
-                      activeIcon: Icons.mood,
-                      label: 'Mood',
-                      index: 3,
-                      moodColor: currentMoodColor,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.person_outline,
-                      activeIcon: Icons.person,
-                      label: 'Profile',
-                      index: 4,
-                      moodColor: currentMoodColor,
-                    ),
+            const ProfileScreen(),
+          ];
+
+          final currentMoodColor = moodProvider.getMoodColor();
+          final currentMoodColorLight =
+              Color.lerp(currentMoodColor, Colors.white, 0.7)!
+                  .withValues(alpha: 0.9);
+          final currentMoodColorDark =
+              Color.lerp(currentMoodColor, Colors.white, 0.5)!
+                  .withValues(alpha: 0.9);
+
+          return Scaffold(
+            body: Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    themeProvider.palette.background,
+                    themeProvider.palette.background,
                   ],
                 ),
               ),
+              child: IndexedStack(
+                index: _currentIndex,
+                children: screens,
+              ),
             ),
-          ),
-        );
-      },
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    currentMoodColorLight,
+                    currentMoodColorDark,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: currentMoodColor.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
+                border: Border(
+                  top: BorderSide(
+                    color: currentMoodColor.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(
+                        icon: Icons.home_outlined,
+                        activeIcon: Icons.home,
+                        label: 'Home',
+                        index: 0,
+                        moodColor: currentMoodColor,
+                      ),
+                      _buildNavItem(
+                        icon: Icons.people_outline,
+                        activeIcon: Icons.people,
+                        label: 'Social',
+                        index: 1,
+                        moodColor: currentMoodColor,
+                      ),
+                      _buildNavItem(
+                        icon: Icons.emoji_events_outlined,
+                        activeIcon: Icons.emoji_events,
+                        label: 'Progress',
+                        index: 2,
+                        moodColor: currentMoodColor,
+                      ),
+                      _buildNavItem(
+                        icon: Icons.mood_outlined,
+                        activeIcon: Icons.mood,
+                        label: 'Mood',
+                        index: 3,
+                        moodColor: currentMoodColor,
+                      ),
+                      _buildNavItem(
+                        icon: Icons.person_outline,
+                        activeIcon: Icons.person,
+                        label: 'Profile',
+                        index: 4,
+                        moodColor: currentMoodColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

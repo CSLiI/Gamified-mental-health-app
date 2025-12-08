@@ -6,28 +6,35 @@ import os
 import time
 import logging
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file, forcing override so a stale shell env (e.g. sqlite URL) cannot mask Supabase settings
+load_dotenv(override=True)
 
 # Get DATABASE_URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Basic diagnostics (printed once at import) to help trace connection issues
+_raw_url = DATABASE_URL or "<missing>"
+print(f"[DB INIT] Effective DATABASE_URL loaded: { _raw_url[:80] + ('...' if len(_raw_url) > 80 else '') }")
+if DATABASE_URL and DATABASE_URL.startswith("sqlite"):
+    print("[DB INIT][WARN] Using sqlite URL; .env override may have failed or you intentionally set local dev.")
+
 if DATABASE_URL is None:
     raise ValueError("DATABASE_URL not found in environment variables. Check your .env file.")
+
+# Add SSL and timeout parameters to URL if not already present
+if DATABASE_URL and "?" not in DATABASE_URL:
+    DATABASE_URL += "?sslmode=require&connect_timeout=10"
+elif DATABASE_URL and "sslmode" not in DATABASE_URL:
+    DATABASE_URL += "&sslmode=require&connect_timeout=10"
 
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,            # Test connections before using
     pool_recycle=300,              # Recycle connections every 5 minutes
-    pool_size=8,                   # Increased from 5 to handle initial burst
-    max_overflow=3,                # Modest overflow for peak load
-    pool_timeout=15,               # Wait at most 15s for a connection from pool
-    pool_use_lifo=True,            # Return most recently used connections first
-    connect_args={
-        "options": "-c statement_timeout=30000",   # 30s statement timeout
-        "sslmode": "require",                       # Supabase requires SSL
-        "connect_timeout": 10                        # 10s TCP connect timeout
-    }
+    pool_size=5,                   # Increased pool for concurrent requests
+    max_overflow=10,               # Total max = 15 connections (allow bursts)
+    pool_timeout=30,               # Wait up to 30s for a connection from pool
+    pool_use_lifo=True             # Return most recently used connections first
 )
 SessionLocal = sessionmaker(
     autocommit=False,

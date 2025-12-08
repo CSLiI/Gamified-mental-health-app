@@ -10,6 +10,7 @@ import '../../presentation/screens/social/friend_profile_screen.dart';
 import '../../presentation/screens/social/notifications_screen.dart';
 import '../../presentation/screens/journal/journal_screen.dart';
 import '../../presentation/screens/todos/todo_screen.dart';
+import '../../presentation/screens/pets/pet_care_screen.dart';
 
 final appRouter = GoRouter(
   navigatorKey: NavigationService.navigatorKey,
@@ -35,7 +36,15 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const HomeNavigation(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final initialIndex = extra?['initialIndex'] as int? ?? 0;
+        final initialTabIndex = extra?['initialTabIndex'] as int? ?? 0;
+        return HomeNavigation(
+          initialIndex: initialIndex,
+          initialTabIndex: initialTabIndex,
+        );
+      },
     ),
     GoRoute(
       path: '/social',
@@ -63,6 +72,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/pet-care',
+      builder: (context, state) => const PetCareScreen(),
     ),
   ],
 );

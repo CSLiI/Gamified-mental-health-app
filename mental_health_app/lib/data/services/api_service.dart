@@ -44,17 +44,17 @@ class ApiService {
     required String password,
   }) async {
     try {
-      print('🔐 ApiService: Starting login process...');
+      // print('🔐 ApiService: Starting login process...');
 
       final response = await _dioClient.login({
         'username': email,
         'password': password,
       });
 
-      print('✅ ApiService: Login successful');
+      // print('✅ ApiService: Login successful');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      print('❌ ApiService: Login failed - ${e.message}');
+      // print('❌ ApiService: Login failed - ${e.message}');
       throw _handleError(e);
     }
   }
@@ -70,6 +70,18 @@ class ApiService {
         maxAge: CacheService.mediumCache,
       );
       return json as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Get fresh user data bypassing cache - use for XP/level critical displays
+  Future<Map<String, dynamic>> getFreshUserData() async {
+    try {
+      final response = await _dioClient.get(ApiConstants.me);
+      // Also update the cache with fresh data
+      await CacheService().set(CacheKeys.userProfile, response.data);
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -422,7 +434,7 @@ class ApiService {
 
   Future<List<dynamic>> getUserRewards() async {
     try {
-      final response = await _dioClient.get('${ApiConstants.rewards}/me');
+      final response = await _dioClient.get(ApiConstants.myRewards);
       return response.data as List<dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -431,8 +443,7 @@ class ApiService {
 
   Future<List<dynamic>> getEquippedRewards() async {
     try {
-      final response =
-          await _dioClient.get('${ApiConstants.rewards}/me/equipped');
+      final response = await _dioClient.get(ApiConstants.equippedRewards);
       return response.data as List<dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -441,7 +452,15 @@ class ApiService {
 
   Future<void> equipReward(int rewardId) async {
     try {
-      await _dioClient.post('${ApiConstants.rewards}/$rewardId/equip');
+      await _dioClient.post('${ApiConstants.equipReward}/$rewardId');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> unequipReward(int rewardId) async {
+    try {
+      await _dioClient.delete('${ApiConstants.equipReward}/$rewardId');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -804,9 +823,13 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> generateDailyQuests() async {
+  Future<Map<String, dynamic>> generateDailyQuests(
+      {bool forceRefresh = false}) async {
     try {
-      final response = await _dioClient.post(ApiConstants.questsDailyGenerate);
+      final response = await _dioClient.post(
+        ApiConstants.questsDailyGenerate,
+        queryParameters: {'force_refresh': forceRefresh},
+      );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -835,6 +858,32 @@ class ApiService {
     }
   }
 
+  /// Manually complete a quest (for activities done outside the app)
+  Future<Map<String, dynamic>> completeQuest(int questId) async {
+    try {
+      final response = await _dioClient.post(
+        '${ApiConstants.questsBase}/$questId/complete',
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// Increment quest progress by amount (for multi-step quests)
+  Future<Map<String, dynamic>> incrementQuestProgress(int questId,
+      {int amount = 1}) async {
+    try {
+      final response = await _dioClient.post(
+        '${ApiConstants.questsBase}/$questId/increment',
+        queryParameters: {'amount': amount},
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ==================== Level System ====================
   Future<Map<String, dynamic>> checkLevelUp() async {
     try {
@@ -854,62 +903,7 @@ class ApiService {
     }
   }
 
-  // ==================== Pet System ====================
-  Future<Map<String, dynamic>> getAllPets() async {
-    try {
-      final response = await _dioClient.get(ApiConstants.petsAll);
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
 
-  Future<Map<String, dynamic>> getUnlockablePets() async {
-    try {
-      final response = await _dioClient.get(ApiConstants.petsUnlockable);
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> getMyPets() async {
-    try {
-      final response = await _dioClient.get(ApiConstants.petsMy);
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> unlockPet(int petId) async {
-    try {
-      final response =
-          await _dioClient.post('${ApiConstants.petsUnlock}/$petId');
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> setActivePet(int petId) async {
-    try {
-      final response =
-          await _dioClient.post('${ApiConstants.petsActive}/$petId');
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  Future<Map<String, dynamic>> getActivePet() async {
-    try {
-      final response = await _dioClient.get(ApiConstants.petsActive);
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
 
   // ==================== Mystery Boxes ====================
   Future<Map<String, dynamic>> getUnopenedBoxes() async {
@@ -955,6 +949,139 @@ class ApiService {
     try {
       final response =
           await _dioClient.get('${ApiConstants.rewardsByTier}/$tier');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+  // ==================== Builtin Rewards ====================
+  Future<Map<String, dynamic>> getBuiltinRewardsData() async {
+    try {
+      final response = await _dioClient.get('/builtin-rewards/me/data');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> purchaseBuiltinReward(
+      int rewardId, String category, int xpCost) async {
+    try {
+      final response = await _dioClient.post(
+        '/builtin-rewards/me/purchase',
+        data: {
+          'reward_id': rewardId,
+          'category': category,
+          'xp_cost': xpCost,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> equipBuiltinReward(
+      int rewardId, String category) async {
+    try {
+      final response = await _dioClient.post(
+        '/builtin-rewards/me/equip',
+        data: {
+          'reward_id': rewardId,
+          'category': category,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> unequipBuiltinReward(int rewardId) async {
+    try {
+      await _dioClient.delete('/builtin-rewards/me/unequip/$rewardId');
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> syncBuiltinRewards(
+      List<dynamic> purchased, List<dynamic> equipped, int xpSpent) async {
+    try {
+      await _dioClient.post(
+        '/builtin-rewards/me/sync',
+        data: {
+          'purchased': purchased,
+          'equipped': equipped,
+          'xp_spent': xpSpent,
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+  // ==================== Pets ====================
+
+  Future<List<dynamic>> getPetCatalog() async {
+    try {
+      final response = await _dioClient.get('${ApiConstants.baseUrl}/pets/catalog');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getMyPets() async {
+    try {
+      final response = await _dioClient.get('${ApiConstants.baseUrl}/pets/my-pets');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> unlockPet(int petId) async {
+    try {
+      final response = await _dioClient.post('${ApiConstants.baseUrl}/pets/unlock/$petId');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> equipPet(int petId) async {
+    try {
+      final response = await _dioClient.post('${ApiConstants.baseUrl}/pets/equip/$petId');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> interactWithPet() async {
+    try {
+      final response = await _dioClient.post('${ApiConstants.baseUrl}/pets/interact');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> feedPet() async {
+    try {
+      final response = await _dioClient.post('${ApiConstants.baseUrl}/pets/feed');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> renamePet(int petId, String name) async {
+    try {
+      final response = await _dioClient.put(
+        '${ApiConstants.baseUrl}/pets/$petId/rename',
+        queryParameters: {'name': name},
+      );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);

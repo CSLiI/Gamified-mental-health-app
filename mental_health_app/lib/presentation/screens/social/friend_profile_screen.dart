@@ -43,7 +43,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadFriendData();
+    // Fast load: show cached immediately, then background refresh
+    _loadCachedFirst();
   }
 
   @override
@@ -52,16 +53,17 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     super.dispose();
   }
 
-  Future<void> _loadFriendData() async {
-    setState(() => _isLoading = true);
-    try {
-      // Check cache first
-      final cacheKey = 'friend_profile_${widget.friendId}';
-      final cachedData = await CacheService().get<Map<String, dynamic>>(
-        cacheKey,
-        maxAge: CacheService.shortCache,
-      );
+  /// Display cached data instantly without blocking, then refresh in background
+  void _loadCachedFirst() {
+    final cacheKey = 'friend_profile_${widget.friendId}';
 
+    // Non-blocking cache read for instant display
+    CacheService()
+        .get<Map<String, dynamic>>(
+      cacheKey,
+      maxAge: const Duration(minutes: 5),
+    )
+        .then((cachedData) {
       if (cachedData != null && mounted) {
         setState(() {
           _currentUserId = cachedData['currentUserId'];
@@ -73,24 +75,33 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           _isLoading = false;
         });
       }
+    });
 
-      // Get current user first to properly filter messages
+    // Background refresh
+    _loadFriendData();
+  }
+
+  Future<void> _loadFriendData() async {
+    try {
+      final cacheKey = 'friend_profile_${widget.friendId}';
+
+      // Get current user ID
       final currentUser = await _apiService.getCurrentUser();
       final currentUserId = currentUser['id'];
 
-      // Fetch all friend data in parallel
+      // Fetch all data in parallel for speed
       final results = await Future.wait([
         _apiService.getFriendProfile(widget.friendId),
         _apiService.getFriendCharacterMoodState(widget.friendId),
-        _apiService.getFriendTodos(widget.friendId, periodType: 'daily'),
         _apiService.getFriendMoodLogs(widget.friendId),
+        _apiService.getFriendTodos(widget.friendId, periodType: 'daily'),
         _apiService.getMessages(widget.friendId),
       ]);
 
       final profile = results[0] as Map<String, dynamic>;
       final characterState = results[1] as Map<String, dynamic>;
-      final todos = results[2] as List<dynamic>;
-      final moodLogs = results[3] as List<dynamic>;
+      final moodLogs = results[2] as List<dynamic>;
+      final todos = results[3] as List<dynamic>;
       final messages = results[4] as List<dynamic>;
 
       // Update cache
@@ -103,13 +114,14 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         'messages': messages,
       });
 
+      // Update UI with fresh data
       if (mounted) {
         setState(() {
           _currentUserId = currentUserId;
           _friendProfile = profile;
           _friendCharacterState = characterState;
-          _friendTodos = todos;
           _friendMoodLogs = moodLogs;
+          _friendTodos = todos;
           _friendMessages = messages;
           _isLoading = false;
         });
@@ -176,28 +188,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     }
   }
 
-  String _getMoodEmoji(String mood) {
-    switch (mood.toLowerCase()) {
-      case 'happy':
-      case 'thriving':
-        return '😊';
-      case 'calm':
-      case 'content':
-        return '😌';
-      case 'tired':
-        return '😴'; // Sleepy emoji for tired
-      case 'anxious':
-      case 'struggling':
-        return '😰';
-      case 'sad':
-        return '😢';
-      case 'angry':
-      case 'needs_support':
-        return '😠';
-      default:
-        return '😐';
-    }
-  }
+  // Removed _getMoodEmoji for minimalistic design
 
   // Get the most recent mood log entry
   String _getCurrentMoodDisplay() {
@@ -345,103 +336,137 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.favorite, color: AppColors.success),
-            ),
-            const SizedBox(width: 10),
-            const Text('Send Encouragement'),
-          ],
-        ),
-        content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        alignment: Alignment.center,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Send a supportive message to ${widget.friendName}',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  maxLines: 3,
-                  maxLength: 200,
-                  decoration: InputDecoration(
-                    hintText: 'You got this! Keep going! 💪',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.favorite,
+                            color: AppColors.success),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Send Encouragement',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(dialogContext),
+                        child: Icon(Icons.close, color: Colors.grey[400]),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    'Send a supportive message to ${widget.friendName}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    maxLines: 3,
+                    maxLength: 200,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'You got this! Keep going!',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (controller.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Please enter a message')),
+                              );
+                              return;
+                            }
+
+                            final message = controller.text.trim();
+                            Navigator.pop(dialogContext);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Encouragement sent to ${widget.friendName}'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+
+                            _actionDebouncer.run(() async {
+                              try {
+                                await _apiService.sendEncouragement(
+                                  widget.friendId,
+                                  message,
+                                );
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Failed to send: $e'),
+                                      backgroundColor: AppColors.error,
+                                    ),
+                                  );
+                                }
+                              }
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.success,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('Send',
+                              style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a message')),
-                );
-                return;
-              }
-
-              final message = controller.text.trim();
-              Navigator.pop(context); // Close dialog immediately
-
-              // Show optimistic success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content:
-                      Text('Encouragement sent to ${widget.friendName}! 💚'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-
-              _actionDebouncer.run(() async {
-                try {
-                  await _apiService.sendEncouragement(
-                    widget.friendId,
-                    message,
-                  );
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to send: $e'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                }
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Send', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
@@ -451,112 +476,168 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF9500),
-                borderRadius: BorderRadius.circular(10),
+      barrierDismissible: true,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        alignment: Alignment.center,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: const Icon(Icons.emoji_events, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            const Text('Challenge Friend'),
-          ],
-        ),
-        content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
+            ],
+          ),
           child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Challenge ${widget.friendName} to complete a goal!',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  maxLines: 2,
-                  maxLength: 100,
-                  decoration: InputDecoration(
-                    hintText: 'e.g., Meditate for 10 minutes today',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF9500),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child:
+                            const Icon(Icons.emoji_events, color: Colors.white),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Challenge Friend',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2C3E50),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(dialogContext),
+                        child: Icon(Icons.close, color: Colors.grey[400]),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    'Challenge ${widget.friendName} to complete a goal!',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    maxLines: 2,
+                    maxLength: 100,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Meditate for 10 minutes today',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFFF9500), width: 2),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF8F9FA),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: Text('Cancel',
+                            style: TextStyle(color: Colors.grey[600])),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (controller.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Please enter a challenge')),
+                            );
+                            return;
+                          }
+
+                          final challengeText = controller.text.trim();
+                          Navigator.pop(dialogContext);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'Challenge sent to ${widget.friendName}'),
+                              backgroundColor: AppColors.warning,
+                            ),
+                          );
+
+                          _actionDebouncer.run(() async {
+                            try {
+                              await _apiService.sendMessage(
+                                widget.friendId,
+                                'Challenge: $challengeText',
+                              );
+
+                              final newMessages = await _apiService
+                                  .getMessages(widget.friendId);
+                              if (mounted) {
+                                setState(() {
+                                  _friendMessages = newMessages;
+                                });
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to send: $e'),
+                                    backgroundColor: AppColors.error,
+                                  ),
+                                );
+                              }
+                            }
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.warning,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Send Challenge',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a challenge')),
-                );
-                return;
-              }
-
-              final challengeText = controller.text.trim();
-              Navigator.pop(context); // Close immediately
-
-              // Show optimistic success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Challenge sent to ${widget.friendName}! 🎯'),
-                  backgroundColor: AppColors.warning,
-                ),
-              );
-
-              _actionDebouncer.run(() async {
-                try {
-                  await _apiService.sendMessage(
-                    widget.friendId,
-                    '🏆 Challenge: $challengeText',
-                  );
-
-                  // Silent refresh of messages to show the new challenge
-                  final newMessages =
-                      await _apiService.getMessages(widget.friendId);
-                  if (mounted) {
-                    setState(() {
-                      _friendMessages = newMessages;
-                    });
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to send: $e'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                }
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warning,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Send Challenge',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
@@ -903,37 +984,28 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 width: 2,
               ),
             ),
-            child: Row(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  _getMoodEmoji(currentMood),
-                  style: const TextStyle(fontSize: 24),
+                const Text(
+                  'Current Mood',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Current Mood',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      _getCurrentMoodDisplay(),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _getCurrentMoodColor(),
-                        letterSpacing: 1,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                const SizedBox(height: 6),
+                Text(
+                  _getCurrentMoodDisplay(),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: _getCurrentMoodColor(),
+                    letterSpacing: 1,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -1211,7 +1283,27 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                         padding: const EdgeInsets.only(bottom: 8),
                         itemCount: _friendTodos.length,
                         itemBuilder: (context, index) {
-                          return _buildTodoItemLarge(_friendTodos[index]);
+                          // Sort todos: uncompleted first, then by created_at descending
+                          final sortedTodos = List<dynamic>.from(_friendTodos);
+                          sortedTodos.sort((a, b) {
+                            final aCompleted = a['is_completed'] ?? false;
+                            final bCompleted = b['is_completed'] ?? false;
+
+                            if (aCompleted != bCompleted) {
+                              return aCompleted ? 1 : -1; // Uncompleted first
+                            }
+
+                            // Same completion status, sort by date (newest first)
+                            final aDate =
+                                DateTime.tryParse(a['created_at'] ?? '') ??
+                                    DateTime.now();
+                            final bDate =
+                                DateTime.tryParse(b['created_at'] ?? '') ??
+                                    DateTime.now();
+                            return bDate.compareTo(aDate);
+                          });
+
+                          return _buildTodoItemLarge(sortedTodos[index]);
                         },
                       ),
                     ),
@@ -1290,7 +1382,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         SnackBar(
           content: Text(
             isCompleted
-                ? 'Challenge marked as completed! 🎉'
+                ? 'Challenge marked as completed'
                 : 'Challenge marked as incomplete',
           ),
           backgroundColor: isCompleted ? AppColors.success : Colors.grey[700],

@@ -62,6 +62,10 @@ def check_comeback_reward(db: Session, user_id: int) -> Optional[Dict]:
     
     db.commit()
     
+    # Check for level up
+    from app.CRUD import level_system
+    level_system.check_level_up(db, user_id)
+    
     return {
         "has_reward": True,
         "days_away": days_away,

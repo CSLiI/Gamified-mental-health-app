@@ -94,16 +94,16 @@ class _JournalScreenState extends State<JournalScreen> {
 
       setState(() => _dailyPrompt = prompt);
     } catch (e) {
-      print('Error loading prompt: $e');
+      // Error handled silently
     }
   }
 
   Future<void> _saveJournal() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please write something'),
-          backgroundColor: AppColors.warning,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           duration: Duration(seconds: 2),
         ),
       );
@@ -160,7 +160,7 @@ class _JournalScreenState extends State<JournalScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to save journal: ${e.toString()}'),
-          backgroundColor: AppColors.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 2),
         ),
       );
@@ -191,7 +191,7 @@ class _JournalScreenState extends State<JournalScreen> {
         );
       }
     } catch (e) {
-      print('Error checking level up: $e');
+      // Handle error silently
     }
   }
 
@@ -746,7 +746,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: AppColors.error),
+                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                         onPressed: () {
                           Navigator.pop(context);
                           _deleteJournal(journal['id']);
@@ -825,7 +825,7 @@ class _JournalScreenState extends State<JournalScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
             child: const Text('Delete'),
           ),
@@ -842,7 +842,7 @@ class _JournalScreenState extends State<JournalScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to delete: ${e.toString()}'),
-            backgroundColor: AppColors.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 2),
           ),
         );

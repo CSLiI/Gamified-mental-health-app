@@ -18,7 +18,8 @@ from app.routers import (
     level_routes,
     pet_routes,
     mystery_box_routes,
-    comeback_routes
+    comeback_routes,
+    builtin_rewards_routes
 )
 from app.database import engine
 from app import models
@@ -62,6 +63,7 @@ app.include_router(level_routes.router)
 app.include_router(pet_routes.router)
 app.include_router(mystery_box_routes.router)
 app.include_router(comeback_routes.router)
+app.include_router(builtin_rewards_routes.router)
 
 @app.get("/")
 def read_root():

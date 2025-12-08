@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 import random
 
-def generate_daily_quests(db: Session, user_id: int) -> List[models.Todo]:
+def generate_daily_quests(db: Session, user_id: int, force_refresh: bool = False) -> List[models.Todo]:
     """Generate 3-5 daily quests for a user"""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
@@ -12,15 +12,40 @@ def generate_daily_quests(db: Session, user_id: int) -> List[models.Todo]:
     
     # Check if user already has quests for today
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    existing_quests = db.query(models.Todo).filter(
+    
+    # Clean up any leftover daily quests from previous days (fixes overlapping issue)
+    db.query(models.Todo).filter(
+        models.Todo.user_id == user_id,
+        models.Todo.is_quest == True,
+        models.Todo.quest_type == "daily",
+        models.Todo.created_at < today_start
+    ).delete(synchronize_session=False)
+
+    if force_refresh:
+        # Delete only INCOMPLETE daily quests for today (reset/reroll)
+        # AND only if reward hasn't been claimed (Locked Slot Rule)
+        db.query(models.Todo).filter(
+            models.Todo.user_id == user_id,
+            models.Todo.is_quest == True,
+            models.Todo.quest_type == "daily",
+            models.Todo.created_at >= today_start,
+            models.Todo.is_completed == False,
+            models.Todo.reward_claimed == False  # PROTECT claimed quests
+        ).delete(synchronize_session=False)
+        db.commit()
+    
+    existing_quests_objs = db.query(models.Todo).filter(
         models.Todo.user_id == user_id,
         models.Todo.is_quest == True,
         models.Todo.quest_type == "daily",
         models.Todo.created_at >= today_start
-    ).count()
+    ).all()
     
-    if existing_quests > 0:
-        return []  # Already generated today's quests
+    existing_quests_count = len(existing_quests_objs)
+    
+    # If not forcing refresh and we have quests, return empty (already done)
+    if not force_refresh and existing_quests_count > 0:
+        return []
     
     # Quest templates
     quest_templates = [
@@ -157,13 +182,27 @@ def generate_daily_quests(db: Session, user_id: int) -> List[models.Todo]:
         }
     ]
     
-    # Randomly select 3-4 quests
-    num_quests = random.randint(3, 4)
-    selected_quests = random.sample(quest_templates, min(num_quests, len(quest_templates)))
+    # Determine how many to generate
+    target_num_quests = random.randint(3, 4)
+    num_to_generate = max(0, target_num_quests - existing_quests_count)
+    
+    if num_to_generate == 0 and existing_quests_count < 3:
+        # Ensure at least 3 total if we have few completed ones
+        num_to_generate = 3 - existing_quests_count
+
+    if num_to_generate <= 0:
+        return []
+
+    # Filter out existing tasks to avoid duplicates
+    existing_tasks = {q.task_text for q in existing_quests_objs}
+    available_templates = [t for t in quest_templates if t["task"] not in existing_tasks]
+    
+    selected_quests = random.sample(available_templates, min(num_to_generate, len(available_templates)))
     
     # Create quest todos
     created_quests = []
-    expires_at = datetime.utcnow() + timedelta(hours=24)
+    # Expire at exactly midnight of the next day
+    expires_at = (today_start + timedelta(days=1))
     
     for quest in selected_quests:
         new_quest = models.Todo(
@@ -193,6 +232,15 @@ def generate_weekly_quests(db: Session, user_id: int) -> List[models.Todo]:
     # Check if user already has weekly quests
     week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())
     week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Clean up any leftover weekly quests from previous weeks
+    db.query(models.Todo).filter(
+        models.Todo.user_id == user_id,
+        models.Todo.is_quest == True,
+        models.Todo.quest_type == "weekly",
+        models.Todo.created_at < week_start
+    ).delete(synchronize_session=False)
+    
     existing_quests = db.query(models.Todo).filter(
         models.Todo.user_id == user_id,
         models.Todo.is_quest == True,
@@ -293,6 +341,7 @@ def generate_weekly_quests(db: Session, user_id: int) -> List[models.Todo]:
     selected_quests = random.sample(quest_templates, min(num_quests, len(quest_templates)))
     
     created_quests = []
+    # Expire at exactly midnight of the next Monday
     expires_at = week_start + timedelta(days=7)
     
     for quest in selected_quests:
@@ -326,24 +375,77 @@ def update_quest_progress(db: Session, user_id: int, category: models.QuestCateg
     
     completed_quests = []
     for quest in active_quests:
+        # SKIP manual quests for 'general' category updates
+        # This prevents "Go for a walk" (general) from being auto-completed when checking a todo
+        if category == models.QuestCategoryEnum.general:
+            task_lower = quest.task_text.lower()
+            manual_keywords = [
+                "walk", "workout", "exercise", "read", "meditate", "breathing",
+                "water", "social media", "call", "meet", "draw", "doodle",
+                "create", "self-care", "grateful", "sleep"
+            ]
+            if any(k in task_lower for k in manual_keywords):
+                continue
+
         quest.progress_current = min(quest.progress_current + increment, quest.progress_total)
         
         if quest.progress_current >= quest.progress_total:
             quest.is_completed = True
             quest.completed_at = datetime.utcnow()
             
-            # Award XP
+            # Award XP and Energy
             user = db.query(models.User).filter(models.User.id == user_id).first()
             if user:
                 user.xp += quest.xp_reward
+                
+                # Calculate energy reward based on difficulty
+                energy_reward = 10  # default for medium
+                if quest.difficulty:
+                    if quest.difficulty.value == 'easy':
+                        energy_reward = 5
+                    elif quest.difficulty.value == 'medium':
+                        energy_reward = 10
+                    elif quest.difficulty.value == 'hard':
+                        energy_reward = 15
+                
+                # Only award Energy if not already claimed
+                if not quest.reward_claimed:
+                    user.energy += energy_reward
+                    quest.reward_claimed = True
             
             completed_quests.append(quest)
     
     db.commit()
+    
+    # Check for level up if any quests were completed
+    if completed_quests:
+        from app.CRUD import level_system
+        level_system.check_level_up(db, user_id)
+        
     return completed_quests
 
 def get_active_quests(db: Session, user_id: int) -> dict:
     """Get all active quests for a user"""
+    # Enforce strict cleanup on view as well (migrates old logic to new logic on the fly)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    db.query(models.Todo).filter(
+        models.Todo.user_id == user_id,
+        models.Todo.is_quest == True,
+        models.Todo.quest_type == "daily",
+        models.Todo.created_at < today_start
+    ).delete(synchronize_session=False)
+
+    week_start = datetime.utcnow() - timedelta(days=datetime.utcnow().weekday())
+    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    db.query(models.Todo).filter(
+        models.Todo.user_id == user_id,
+        models.Todo.is_quest == True,
+        models.Todo.quest_type == "weekly",
+        models.Todo.created_at < week_start
+    ).delete(synchronize_session=False)
+    
+    db.commit()
+
     daily_quests = db.query(models.Todo).filter(
         models.Todo.user_id == user_id,
         models.Todo.is_quest == True,

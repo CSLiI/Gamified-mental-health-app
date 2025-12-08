@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'core/providers/user_provider.dart';
 import 'core/providers/mood_provider.dart';
 import 'core/providers/character_provider.dart';
+import 'core/providers/theme_provider.dart';
+import 'core/providers/pet_provider.dart';
 import 'core/router/app_router.dart';
 import 'data/services/cache_service.dart';
 import 'core/utils/image_cache_manager.dart';
@@ -11,13 +15,21 @@ void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Set preferred orientations to portrait only for stability
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   // Initialize centralized cache service (for all API responses)
   await CacheService().initialize();
 
   runApp(
     MultiProvider(
       providers: [
-        // UserProvider first - provides cached user data to other providers
+        // ThemeProvider first - provides theme data to all screens
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        // UserProvider second - provides cached user data to other providers
         ChangeNotifierProvider(create: (_) => UserProvider()),
         // Inject UserProvider into other providers to eliminate redundant API calls
         ChangeNotifierProxyProvider<UserProvider, MoodProvider>(
@@ -30,6 +42,7 @@ void main() async {
           update: (_, userProvider, characterProvider) =>
               characterProvider ?? CharacterProvider(userProvider),
         ),
+        ChangeNotifierProvider(create: (_) => PetProvider()),
       ],
       child: const MyApp(),
     ),
@@ -44,59 +57,73 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Preload character GIFs on app start (all screens will be faster)
-    ImageCacheManager().preloadCharacterAssets(context);
-  }
+
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Echo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5CACEE),
-        ),
-        useMaterial3: true,
-        // Apply Nunito font globally - perfect for gamified mental health app
-        fontFamily: 'Nunito',
-        textTheme: const TextTheme(
-          displayLarge:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.bold),
-          displayMedium:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.bold),
-          displaySmall:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.bold),
-          headlineLarge:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.bold),
-          headlineMedium:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-          headlineSmall:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-          titleLarge:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-          titleMedium:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-          titleSmall:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w500),
-          bodyLarge:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.normal),
-          bodyMedium:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.normal),
-          bodySmall:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.normal),
-          labelLarge:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-          labelMedium:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w500),
-          labelSmall:
-              TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w500),
-        ),
-      ),
-      routerConfig: appRouter,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final palette = themeProvider.palette;
+        final fontFamily = themeProvider.fontFamily;
+        
+        // Create text theme using GoogleFonts
+        final textTheme = GoogleFonts.getFont(
+          fontFamily,
+          textStyle: TextStyle(color: palette.textPrimary),
+        );
+
+        final isDark = palette.background.computeLuminance() < 0.5;
+        final brightness = isDark ? Brightness.dark : Brightness.light;
+        final tertiary = palette.accent;
+        final onTertiary = tertiary.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+
+        final onPrimary = palette.primary.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+
+        return MaterialApp.router(
+          title: 'Echo',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme(
+              brightness: brightness,
+              primary: palette.primary,
+              onPrimary: onPrimary,
+              secondary: palette.secondary,
+              onSecondary: Colors.white,
+              tertiary: tertiary,
+              onTertiary: onTertiary,
+              tertiaryContainer: tertiary.withOpacity(0.8),
+              onTertiaryContainer: onTertiary,
+              error: const Color(0xFFE53E3E),
+              onError: Colors.white,
+              background: palette.background,
+              onBackground: palette.textPrimary,
+              surface: palette.surface,
+              onSurface: palette.textPrimary,
+            ),
+            scaffoldBackgroundColor: palette.background,
+            cardColor: palette.surface,
+            textTheme: TextTheme(
+              displayLarge: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 32),
+              displayMedium: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 28),
+              displaySmall: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 24),
+              headlineLarge: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 22),
+              headlineMedium: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 20),
+              headlineSmall: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+              titleLarge: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 16),
+              titleMedium: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 14),
+              titleSmall: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 12),
+              bodyLarge: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 16),
+              bodyMedium: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 14),
+              bodySmall: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 12),
+              labelLarge: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 14),
+              labelMedium: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 12),
+              labelSmall: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 10),
+            ),
+          ),
+          routerConfig: appRouter,
+        );
+      },
     );
   }
 }

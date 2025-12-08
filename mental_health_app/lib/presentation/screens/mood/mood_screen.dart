@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/widgets/skeleton_loader.dart';
@@ -7,6 +8,7 @@ import '../../../data/services/cache_service.dart';
 import '../../../core/utils/image_cache_manager.dart';
 import '../../widgets/level_up_dialog.dart';
 import '../../../core/utils/debouncer.dart';
+import '../../../core/providers/theme_provider.dart';
 
 class MoodScreen extends StatefulWidget {
   final int characterId;
@@ -57,7 +59,6 @@ class _MoodScreenState extends State<MoodScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Reload character when dependencies change (e.g., after account switch)
-    print('🔄 MOOD: Dependencies changed, reloading character...');
     _loadCharacterDetails();
     _loadData();
   }
@@ -65,13 +66,10 @@ class _MoodScreenState extends State<MoodScreen>
   Future<void> _loadCharacterDetails() async {
     try {
       // Load from API first (source of truth)
-      print('🔍 MOOD: Loading character from API...');
       final currentCharacter = await _apiService.getCurrentCharacter();
 
       if (currentCharacter['character'] != null) {
         final character = currentCharacter['character'];
-        print(
-            '✅ MOOD: Character found - Gender: ${character['gender']}, Number: ${character['number']}');
 
         if (mounted) {
           setState(() {
@@ -91,10 +89,9 @@ class _MoodScreenState extends State<MoodScreen>
             'selected_character_gender_$userId', _characterGender);
         await prefs.setInt(
             'selected_character_number_$userId', _characterNumber);
-        print('💾 MOOD: Character cached for user $userId');
       }
     } catch (e) {
-      print('❌ MOOD: Error loading from API: $e');
+      // print('❌ MOOD: Error loading from API: $e');
       // Fallback to user-specific SharedPreferences
       try {
         final user = await _apiService.getCurrentUser();
@@ -110,10 +107,7 @@ class _MoodScreenState extends State<MoodScreen>
             _characterLoaded = true;
           });
         }
-        print('📦 MOOD: Loaded character from cache for user $userId');
-      } catch (e2) {
-        print('❌ MOOD: Error loading from cache: $e2');
-      }
+      } catch (e2) {}
     }
   }
 
@@ -266,7 +260,7 @@ class _MoodScreenState extends State<MoodScreen>
         setState(() => _moodStats = stats);
       }
     } catch (e) {
-      print('Error loading stats: $e');
+      // Error handled silently
     }
   }
 
@@ -278,146 +272,152 @@ class _MoodScreenState extends State<MoodScreen>
     final String moodLabel = moodData['label'] as String;
     final String? gifPath = moodData['gifPath'] as String?;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: SingleChildScrollView(
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.85,
-            constraints: BoxConstraints(
-              maxWidth: 400,
-              maxHeight: MediaQuery.of(context).size.height * 0.7,
-            ),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Centered Mood Header with GIF
-                Center(
-                  child: Column(
-                    children: [
-                      // Use character GIF if available, else fallback to icon
-                      if (gifPath != null && _characterLoaded)
-                        Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            color: moodColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: moodColor, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: moodColor.withValues(alpha: 0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(17),
-                            child: ImageCacheManager().buildCachedImage(
-                              assetPath: gifPath,
-                              fit: BoxFit.cover,
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: SingleChildScrollView(
+            child: Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxWidth: 400),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Centered Mood Header with GIF
+                  Center(
+                    child: Column(
+                      children: [
+                        // Use character GIF if available, else fallback to icon
+                        if (gifPath != null && _characterLoaded)
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: moodColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: moodColor, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: moodColor.withValues(alpha: 0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ),
-                        )
-                      else
-                        Icon(moodData['icon'], color: moodColor, size: 80),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(17),
+                              child: ImageCacheManager().buildCachedImage(
+                                assetPath: gifPath,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                        else
+                          Icon(moodData['icon'], color: moodColor, size: 60),
 
-                      const SizedBox(height: 8),
-                      Text(
-                        moodLabel,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: moodColor,
+                        const SizedBox(height: 8),
+                        Text(
+                          moodLabel,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: moodColor,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Add a note (Optional):',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF0A4B80),
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Text field with fixed height
+                  Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: moodColor,
+                        width: 2.5,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[50],
+                    ),
+                    child: TextField(
+                      controller: _noteController,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      decoration: const InputDecoration(
+                        hintText: "I'm feeling...",
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(12),
+                        filled: false,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF0A4B80),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Action Buttons - Always visible
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: moodColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _logMood(mood);
+                        },
+                        child: const Text('Save'),
                       ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 20),
-
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Add a note (Optional):',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF0A4B80),
-                    ),
-                    textAlign: TextAlign.left,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Fixed-height text field that doesn't expand
-                Container(
-                  height: 120, // Fixed height for text field
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: moodColor,
-                      width: 2.5,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[50],
-                  ),
-                  child: TextField(
-                    controller: _noteController,
-                    maxLines: null, // Allow multiple lines
-                    expands: true, // Fill the available space
-                    textAlignVertical: TextAlignVertical.top,
-                    decoration: const InputDecoration(
-                      hintText: "I'm feeling...",
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(12),
-                      filled: false,
-                    ),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF0A4B80),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Action Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: moodColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                      ),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _logMood(mood);
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -439,7 +439,6 @@ class _MoodScreenState extends State<MoodScreen>
       // Notify the HomeScreen about the selected mood
       if (widget.onMoodSelected != null) {
         widget.onMoodSelected!(mood);
-        print('🎭 MOOD SCREEN: Callback triggered with mood: $mood');
       }
 
       // Check for achievements silently
@@ -493,96 +492,113 @@ class _MoodScreenState extends State<MoodScreen>
         );
       }
     } catch (e) {
-      print('Error checking level up: $e');
+      // Error handled silently
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          // Header
-          const Padding(
-            padding: EdgeInsets.all(24.0),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                themeProvider.primaryColor.withValues(alpha: 0.08),
+                themeProvider.secondaryColor.withValues(alpha: 0.08),
+                Theme.of(context).scaffoldBackgroundColor,
+              ],
+            ),
+          ),
+          child: SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'How are you feeling?',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0A4B80), // Dark blue for contrast
+                // Header
+                Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'How are you feeling?',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface, // Dark blue for contrast
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Track your emotions and see patterns',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).colorScheme.onSurface, // Dark blue for contrast
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Track your emotions and see patterns',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF0A4B80), // Dark blue for contrast
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          // Tab Bar
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 204),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: const Color(0xFF6C5CE7),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              labelColor: Colors.white,
-              unselectedLabelColor: const Color(0xFF6B8BA8),
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicatorPadding: const EdgeInsets.all(4),
-              dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(
-                  child: Text(
-                    'Log Mood',
+                // Tab Bar
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor.withValues(alpha: 204),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      color: const Color(0xFF6C5CE7),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: const Color(0xFF6B8BA8),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicatorPadding: const EdgeInsets.all(4),
+                    dividerColor: Colors.transparent,
+                    tabs: const [
+                      Tab(
+                        child: Text(
+                          'Log Mood',
+                        ),
+                      ),
+                      Tab(
+                        child: Text(
+                          'History',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Tab(
-                  child: Text(
-                    'History',
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          // Tab Views
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildLogMoodTab(),
-                _buildHistoryTab(),
+                // Tab Views
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildLogMoodTab(),
+                      _buildHistoryTab(),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

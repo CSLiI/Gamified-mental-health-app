@@ -53,15 +53,15 @@ def update_user_xp(db: Session, user_id: int, xp_gained: int):
     if not user:
         return None
     
+    # Add XP (cumulative system)
     user.xp += xp_gained
-    
-    # Simple level up logic (100 XP per level)
-    xp_per_level = 100
-    while user.xp >= xp_per_level:
-        user.level += 1
-        user.xp -= xp_per_level
-    
     db.commit()
+    
+    # Check for level up using centralized logic
+    # Import inside function to avoid circular imports if any
+    from app.CRUD import level_system
+    level_system.check_level_up(db, user_id)
+    
     db.refresh(user)
     return user
 

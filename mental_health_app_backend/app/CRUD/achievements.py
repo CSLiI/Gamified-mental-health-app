@@ -190,11 +190,64 @@ def calculate_user_streak(db: Session, user_id: int):
     
     return streak
 
+def check_social_achievements(db: Session, user_id: int):
+    """Check and award social challenge achievements"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return []
+    
+    total_challenges = user.completed_challenges or 0
+    
+    achievements_to_check = [
+        (14, 1),    # First Challenge (achievement ID will be 14 after seeding)
+        (15, 10),   # Team Player
+        (16, 50),   # Challenge Champion
+    ]
+    
+    awarded = []
+    for achievement_id, requirement in achievements_to_check:
+        if total_challenges >= requirement:
+            result = award_achievement(db, user_id, achievement_id)
+            if result:
+                awarded.append(result)
+    
+    return awarded
+
 def check_all_achievements(db: Session, user_id: int):
     """Check all achievement criteria for a user"""
     results = {
         "mood_tracking": check_mood_tracking_achievements(db, user_id),
         "journaling": check_journaling_achievements(db, user_id),
-        "consistency": check_consistency_achievements(db, user_id)
+        "consistency": check_consistency_achievements(db, user_id),
+        "social": check_social_achievements(db, user_id)
     }
     return results
+
+def cleanup_old_completed_challenges(db: Session) -> int:
+    """Delete completed challenges older than midnight today. Returns number deleted."""
+    # OLD: cutoff_time = datetime.utcnow() - timedelta(hours=24)
+    # NEW: Cleanup anything completed before today started (Midnight UTC)
+    cutoff_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Find completed messages (challenges) completed before today
+    old_challenges = db.query(models.Message).filter(
+        models.Message.is_completed == True,
+        models.Message.completed_at.isnot(None),
+        models.Message.completed_at < cutoff_time
+    ).all()
+    
+    # Also find legacy completed challenges without completed_at timestamp
+    # (these are old challenges completed before we added the timestamp)
+    legacy_challenges = db.query(models.Message).filter(
+        models.Message.is_completed == True,
+        models.Message.completed_at.is_(None)
+    ).all()
+    
+    count = len(old_challenges) + len(legacy_challenges)
+    
+    # Delete them all
+    for challenge in old_challenges + legacy_challenges:
+        db.delete(challenge)
+    
+    db.commit()
+    return count

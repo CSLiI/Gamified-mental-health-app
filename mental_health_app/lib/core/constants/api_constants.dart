@@ -4,10 +4,11 @@ class ApiConstants {
   // ⚠️ IMPORTANT: Change this based on your testing device
 
   // FOR ANDROID EMULATOR (default):
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  // FOR ANDROID EMULATOR (default):
+  // static const String baseUrl = 'http://10.0.2.2:8000';
 
   // FOR PHYSICAL DEVICE: Uncomment and use your computer's IP
-  // static const String baseUrl = 'http://YOUR_IP_HERE:8000';
+  static const String baseUrl = 'http://192.168.68.108:8000';
   // FOR iOS SIMULATOR (uncomment this and comment above):
   // static const String baseUrl = 'http://localhost:8000';
 
@@ -95,6 +96,7 @@ class ApiConstants {
   static const String useStreakFreeze = '/daily/streak-freeze/use';
 
   // Quest Endpoints
+  static const String questsBase = '/quests';
   static const String questsActive = '/quests/active';
   static const String questsDailyGenerate = '/quests/daily/generate';
   static const String questsWeeklyGenerate = '/quests/weekly/generate';

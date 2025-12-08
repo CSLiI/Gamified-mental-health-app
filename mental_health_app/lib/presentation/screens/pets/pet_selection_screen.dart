@@ -28,26 +28,26 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
 
     try {
       final results = await Future.wait([
-        _apiService.getAllPets(),
+        _apiService.getPetCatalog(),
         _apiService.getMyPets(),
-        _apiService.getActivePet(),
-        _apiService.getUnlockablePets(),
+        _apiService.getFreshUserData(), // For user level
       ]);
 
-      final allPetsResponse = results[0];
-      final myPetsResponse = results[1];
-      final activePetResponse = results[2];
-      final unlockableResponse = results[3];
+      final allPetsResponse = results[0] as List<dynamic>;
+      final myPetsResponse = results[1] as List<dynamic>;
+      final userResponse = results[2] as Map<String, dynamic>;
 
       setState(() {
-        _allPets =
-            List<Map<String, dynamic>>.from(allPetsResponse['pets'] ?? []);
-        _myPets = List<Map<String, dynamic>>.from(myPetsResponse['pets'] ?? []);
-        _userLevel = unlockableResponse['user_level'] ?? 1;
+        _allPets = List<Map<String, dynamic>>.from(allPetsResponse);
+        _myPets = List<Map<String, dynamic>>.from(myPetsResponse);
+        _userLevel = userResponse['level'] ?? 1;
 
-        if (activePetResponse['has_active_pet'] == true) {
-          _activePet = activePetResponse['pet'];
-        }
+        // Find active pet from myPets
+        final activePet = _myPets.firstWhere(
+          (p) => p['is_active'] == true,
+          orElse: () => <String, dynamic>{},
+        );
+        _activePet = activePet.isNotEmpty ? activePet : null;
 
         _isLoading = false;
       });
@@ -101,7 +101,7 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
 
   Future<void> _setActivePet(int petId) async {
     try {
-      final result = await _apiService.setActivePet(petId);
+      final result = await _apiService.equipPet(petId);
 
       if (result['success'] == true) {
         if (mounted) {

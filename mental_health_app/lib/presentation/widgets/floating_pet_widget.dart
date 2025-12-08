@@ -51,16 +51,21 @@ class _FloatingPetWidgetState extends State<FloatingPetWidget>
 
   Future<void> _loadActivePet() async {
     try {
-      final response = await _apiService.getActivePet();
+      final myPets = await _apiService.getMyPets();
 
       setState(() {
-        if (response['has_active_pet'] == true) {
-          _activePet = response['pet'];
+        final activePet = myPets.firstWhere(
+          (p) => p['is_active'] == true,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (activePet.isNotEmpty) {
+          _activePet = activePet as Map<String, dynamic>;
         }
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading active pet: $e');
+      // print('Error loading active pet: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -225,16 +230,21 @@ class _FloatingPetFollowerState extends State<FloatingPetFollower>
 
   Future<void> _loadActivePet() async {
     try {
-      final response = await _apiService.getActivePet();
+      final myPets = await _apiService.getMyPets();
 
       setState(() {
-        if (response['has_active_pet'] == true) {
-          _activePet = response['pet'];
+        final activePet = myPets.firstWhere(
+          (p) => p['is_active'] == true,
+          orElse: () => <String, dynamic>{},
+        );
+
+        if (activePet.isNotEmpty) {
+          _activePet = activePet as Map<String, dynamic>;
         }
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading active pet: $e');
+      // print('Error loading active pet: $e');
       setState(() => _isLoading = false);
     }
   }
