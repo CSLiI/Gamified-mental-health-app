@@ -23,6 +23,18 @@ class PeriodTypeEnum(str, Enum):
     monthly = "monthly"
     yearly = "yearly"
 
+class QuestDifficultyEnum(str, Enum):
+    easy = "easy"
+    medium = "medium"
+    hard = "hard"
+
+class QuestCategoryEnum(str, Enum):
+    mood = "mood"
+    journal = "journal"
+    social = "social"
+    streak = "streak"
+    general = "general"
+
 # ==================== Users ====================
 class UserBase(BaseModel):
     first_name: str
