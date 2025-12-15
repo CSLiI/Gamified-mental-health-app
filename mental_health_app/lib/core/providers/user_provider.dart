@@ -45,6 +45,15 @@ class UserProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       print('❌ UserProvider: Error loading user: $e');
+      _user = null; // Ensure user is null on error
+      
+      // Only rethrow authentication errors (401), not network/other errors
+      if (e.toString().contains('Not authenticated') || 
+          e.toString().contains('401') ||
+          e.toString().contains('Could not validate credentials')) {
+        rethrow; // Let SplashScreen handle auth failures
+      }
+      // For other errors, just set error state without crashing
     } finally {
       _isLoading = false;
       notifyListeners();

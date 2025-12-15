@@ -85,6 +85,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Call getLevelProgress first to sync level in DB
       final levelProgress = await _apiService.getLevelProgress();
 
+      // Force check achievements to ensure stats are up to date
+      try {
+        await _apiService.checkAchievements();
+      } catch (e) {
+        print('Error checking achievements: $e');
+      }
+
       final results = await Future.wait([
         _apiService.getFreshUserData(), // Get fresh user data with synced level
         _apiService.getMyAchievements(),
@@ -566,10 +573,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Expanded(
                 child: _buildStatCard(
                   icon: Icons.emoji_events_rounded,
-                  value: _achievements
-                      .where((a) => a['is_claimed'] == true)
-                      .length
-                      .toString(),
+                  value: _achievements.length.toString(),
                   label: 'Achievements',
                   color: const Color(0xFFFFB347),
                   gradient: const LinearGradient(

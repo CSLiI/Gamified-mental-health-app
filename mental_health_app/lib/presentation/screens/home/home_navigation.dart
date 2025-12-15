@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/user_provider.dart';
@@ -39,20 +40,28 @@ class _HomeNavigationState extends State<HomeNavigation> {
     // Load initial data - UserProvider first to avoid redundant API calls
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Load user first (single API call, cached)
-      await context.read<UserProvider>().loadUser();
+      try {
+        await context.read<UserProvider>().loadUser();
 
-      // Load theme with EXPLICIT user ID to prevent cross-account leakage
-      final userProvider = context.read<UserProvider>();
-      if (userProvider.user != null) {
-        await context
-            .read<ThemeProvider>()
-            .refreshTheme(userProvider.user!['id'] as int);
+        // Load theme with EXPLICIT user ID to prevent cross-account leakage
+        final userProvider = context.read<UserProvider>();
+        if (userProvider.user != null) {
+          await context
+              .read<ThemeProvider>()
+              .refreshTheme(userProvider.user!['id'] as int);
+        }
+
+        // Then load mood and character (they use cached userId)
+        context.read<MoodProvider>().loadMood();
+        context.read<CharacterProvider>().loadCharacter();
+        _prefetchCritical();
+      } catch (e) {
+        // Authentication failed - redirect to login
+        print('❌ HomeNavigation: Auth failed, redirecting to login: $e');
+        if (mounted) {
+          context.go('/login');
+        }
       }
-
-      // Then load mood and character (they use cached userId)
-      context.read<MoodProvider>().loadMood();
-      context.read<CharacterProvider>().loadCharacter();
-      _prefetchCritical();
     });
   }
 

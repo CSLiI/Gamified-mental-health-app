@@ -87,8 +87,7 @@ class _TodoListScreenState extends State<TodoListScreen>
               final aCompleted = a['is_completed'] ?? false;
               final bCompleted = b['is_completed'] ?? false;
               if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
-              return DateTime.parse(b['created_at'])
-                  .compareTo(DateTime.parse(a['created_at']));
+              return (b['id'] as int).compareTo(a['id'] as int);
             });
         });
       }
@@ -164,8 +163,7 @@ class _TodoListScreenState extends State<TodoListScreen>
               final aCompleted = a['is_completed'] ?? false;
               final bCompleted = b['is_completed'] ?? false;
               if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
-              return DateTime.parse(b['created_at'])
-                  .compareTo(DateTime.parse(a['created_at']));
+              return (b['id'] as int).compareTo(a['id'] as int);
             });
         });
       }
@@ -189,8 +187,7 @@ class _TodoListScreenState extends State<TodoListScreen>
               final aCompleted = a['is_completed'] ?? false;
               final bCompleted = b['is_completed'] ?? false;
               if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
-              return DateTime.parse(b['created_at'])
-                  .compareTo(DateTime.parse(a['created_at']));
+              return (b['id'] as int).compareTo(a['id'] as int);
             });
         });
       }
@@ -347,15 +344,22 @@ class _TodoListScreenState extends State<TodoListScreen>
     setState(() => _isLoading = true);
 
     try {
-      // Create datetime at noon local time for the selected day
-      final selectedDateTime = DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        12,
-        0,
-        0,
-      );
+      // Use current time if selected date is today, otherwise use noon
+      final now = DateTime.now();
+      final isToday = selectedDate.year == now.year &&
+          selectedDate.month == now.month &&
+          selectedDate.day == now.day;
+
+      final selectedDateTime = isToday
+          ? now
+          : DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day,
+              12,
+              0,
+              0,
+            );
 
       await _apiService.createTodo({
         'task_text': _taskController.text.trim(),
@@ -432,45 +436,18 @@ class _TodoListScreenState extends State<TodoListScreen>
           // SnackBar removed for cleaner UI
         }
       }
-      // Delay the re-sorting to allow user to see the checkmark animation
-      // and then animate the move
+      // Delay the re-sorting to allow user to see the checkmark animation, then move it
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
 
-        final todoIndex = _todos.indexWhere((t) => t['id'] == todoId);
-        if (todoIndex == -1) return;
-
-        final todo = _todos[todoIndex];
-
-        // 1. Remove from UI
-        _listKey.currentState?.removeItem(
-          todoIndex + 1, // +1 for header
-          (context, animation) => _buildTodoItem(todo, animation),
-          duration: const Duration(milliseconds: 500),
-        );
-
-        // 2. Update Data and Insert into UI
-        // We wait a tiny bit to let the removal start, or just do it immediately.
-        // Doing it immediately is fine for AnimatedList.
         setState(() {
-          _todos.removeAt(todoIndex);
-          
-          // Re-insert and Re-sort
-          _todos.add(todo);
           _todos.sort((a, b) {
             final aCompleted = a['is_completed'] ?? false;
             final bCompleted = b['is_completed'] ?? false;
             if (aCompleted != bCompleted) return aCompleted ? 1 : -1;
-            return DateTime.parse(b['created_at'])
-                .compareTo(DateTime.parse(a['created_at']));
+            return (b['id'] as int).compareTo(a['id'] as int);
           });
         });
-
-        final newIndex = _todos.indexWhere((t) => t['id'] == todoId);
-        _listKey.currentState?.insertItem(
-          newIndex + 1, // +1 for header
-          duration: const Duration(milliseconds: 500),
-        );
       });
     } catch (e) {
       if (mounted) {
@@ -568,6 +545,9 @@ class _TodoListScreenState extends State<TodoListScreen>
         await _loadQuests();
 
         if (mounted) {
+          // Refresh user data to update energy if reroll cost energy
+          await Provider.of<UserProvider>(context, listen: false).refreshUser();
+          
           // SnackBar removed for cleaner UI
         }
       } catch (e) {
@@ -751,6 +731,9 @@ class _TodoListScreenState extends State<TodoListScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Listen to UserProvider for energy updates
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return Container(
@@ -862,45 +845,41 @@ class _TodoListScreenState extends State<TodoListScreen>
     return RefreshIndicator(
       onRefresh: _loadData,
       color: Theme.of(context).colorScheme.primary,
-      child: AnimatedList(
-        key: _listKey,
+      child: ListView.builder(
         padding: const EdgeInsets.all(20),
-        initialItemCount: sortedTasks.length + 1,
-        itemBuilder: (context, index, animation) {
+        itemCount: sortedTasks.length + 1,
+        itemBuilder: (context, index) {
           if (index == 0) {
             // Stats header
             final completed =
                 sortedTasks.where((t) => t['is_completed'] == true).length;
             final total = sortedTasks.length;
-            return SizeTransition(
-              sizeFactor: animation,
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).shadowColor.withOpacity(0.05),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem(
-                        'Total', total.toString(), Icons.list_alt_rounded),
-                    Container(width: 1, height: 40, color: Theme.of(context).dividerColor),
-                    _buildStatItem('Done', completed.toString(),
-                        Icons.check_circle_outline_rounded),
-                    Container(width: 1, height: 40, color: Theme.of(context).dividerColor),
-                    _buildStatItem('Left', (total - completed).toString(),
-                        Icons.hourglass_empty_rounded),
-                  ],
-                ),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).shadowColor.withOpacity(0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatItem(
+                      'Total', total.toString(), Icons.list_alt_rounded),
+                  Container(width: 1, height: 40, color: Theme.of(context).dividerColor),
+                  _buildStatItem('Done', completed.toString(),
+                      Icons.check_circle_outline_rounded),
+                  Container(width: 1, height: 40, color: Theme.of(context).dividerColor),
+                  _buildStatItem('Left', (total - completed).toString(),
+                      Icons.hourglass_empty_rounded),
+                ],
               ),
             );
           }
@@ -909,19 +888,17 @@ class _TodoListScreenState extends State<TodoListScreen>
           if (index - 1 >= sortedTasks.length) return const SizedBox.shrink();
 
           final todo = sortedTasks[index - 1];
-          return _buildTodoItem(todo, animation);
+          return _buildTodoItem(todo);
         },
       ),
     );
   }
 
-  Widget _buildTodoItem(dynamic todo, Animation<double> animation) {
+  Widget _buildTodoItem(dynamic todo) {
     final isCompleted = todo['is_completed'] ?? false;
     final createdAt = DateTime.parse(todo['created_at']).toLocal();
 
-    return SizeTransition(
-      sizeFactor: animation,
-      child: Dismissible(
+    return Dismissible(
         key: Key('todo_${todo['id']}'),
         background: Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -1117,8 +1094,7 @@ class _TodoListScreenState extends State<TodoListScreen>
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildStatItem(String label, String value, IconData icon) {

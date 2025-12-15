@@ -205,6 +205,11 @@ class Todo(TodoBase):
     completed_at: Optional[datetime] = None
     reward_claimed: bool = False
     
+    # Quest fields to allow filtering on frontend
+    is_quest: bool = False
+    category: Optional[QuestCategoryEnum] = None
+    difficulty: Optional[QuestDifficultyEnum] = None
+    
     class Config:
         from_attributes = True
 

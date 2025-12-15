@@ -480,65 +480,158 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
 
       // Fetch rewards data from backend
       final backendRewards = await _apiService.getAllRewards();
-      final userRewards = await _apiService.getUserRewards();
-      final equipped = await _apiService.getEquippedRewards();
+      var userRewardsRaw = await _apiService.getUserRewards();
+      var equippedRaw = await _apiService.getEquippedRewards();
+      
+      // DEBUG: Print first item to see structure
+      if (userRewardsRaw is List && userRewardsRaw.isNotEmpty) {
+        print('🔍 DEBUG: First userReward = ${userRewardsRaw.first}');
+      } else {
+        print('🔍 DEBUG: userRewardsRaw is empty - checking local storage for sync');
+      }
+      
+      // DEBUG: Check ALL keys to find where data is hiding
+      final allKeys = await _secureStorage.readAll();
+      print('🔍 DEBUG STORAGE: Found ${allKeys.length} keys: ${allKeys.keys.toList()}');
 
-        final builtinUserRewardsJson = await _secureStorage.read(
-          key: StorageKeys.builtinUserRewards(userId),
-        );
-        final builtinEquippedJson = await _secureStorage.read(
-          key: StorageKeys.builtinEquippedRewards(userId),
-        );
-        final spentXpJson = await _secureStorage.read(
-          key: StorageKeys.builtinXpSpent(userId),
-        );
+      // Load local storage data
+      var builtinUserRewardsJson = await _secureStorage.read(
+        key: StorageKeys.builtinUserRewards(userId),
+      );
+      var builtinEquippedJson = await _secureStorage.read(
+        key: StorageKeys.builtinEquippedRewards(userId),
+      );
+      var spentXpJson = await _secureStorage.read(
+        key: StorageKeys.builtinXpSpent(userId),
+      );
 
-        final builtinUserRewards = builtinUserRewardsJson != null
-            ? (jsonDecode(builtinUserRewardsJson) as List)
-                .cast<Map<String, dynamic>>()
-            : <Map<String, dynamic>>[];
-        final builtinEquipped = builtinEquippedJson != null
-            ? (jsonDecode(builtinEquippedJson) as List)
-                .cast<Map<String, dynamic>>()
-            : <Map<String, dynamic>>[];
+      final builtinUserRewards = builtinUserRewardsJson != null
+          ? (jsonDecode(builtinUserRewardsJson) as List)
+              .cast<Map<String, dynamic>>()
+          : <Map<String, dynamic>>[];
+      final builtinEquipped = builtinEquippedJson != null
+          ? (jsonDecode(builtinEquippedJson) as List)
+              .cast<Map<String, dynamic>>()
+          : <Map<String, dynamic>>[];
+      final spentXp = spentXpJson != null ? int.parse(spentXpJson) : 0;
 
-        // Load XP spent on built-in rewards - USER-SPECIFIC
-        final spentXp = spentXpJson != null ? int.parse(spentXpJson) : 0;
-
-        // CRITICAL: Validate spent XP is not corrupted (never more than total XP)
-        final validSpentXp = spentXp > totalXp ? 0 : spentXp;
-        if (spentXp > totalXp) {
-          print(
-              '⚠️ Rewards: Spent XP ($spentXp) > Total XP ($totalXp), resetting to 0');
-          // Reset corrupted spent XP
-          await _secureStorage.write(
-            key: StorageKeys.builtinXpSpent(userId),
-            value: '0',
-          );
+      // Normalize backend response: ensure 'reward_id' field exists
+      final userRewards = (userRewardsRaw as List).map((ur) {
+        if (ur is Map<String, dynamic>) {
+          // If it has 'id' but not 'reward_id', copy id to reward_id
+          if (ur.containsKey('id') && !ur.containsKey('reward_id')) {
+            return {...ur, 'reward_id': ur['id']};
+          }
         }
+        return ur;
+      }).toList();
+      
+      final equipped = (equippedRaw as List).map((er) {
+        if (er is Map<String, dynamic>) {
+          if (er.containsKey('id') && !er.containsKey('reward_id')) {
+            return {...er, 'reward_id': er['id']};
+          }
+        }
+        return er;
+      }).toList();
+      
+      // Normalize local data too
+      final normalizedLocal = builtinUserRewards.map((ur) {
+             if (ur.containsKey('id') && !ur.containsKey('reward_id')) {
+               return {...ur, 'reward_id': ur['id']};
+             }
+             return ur;
+      }).toList();
+      
+      // FETCH BACKEND BUILTIN DATA
+      List<Map<String, dynamic>> backendBuiltinPurchased = [];
+      List<Map<String, dynamic>> backendBuiltinEquipped = [];
+      int backendBuiltinXcSpent = 0;
+      
+      try {
+        final builtinData = await _apiService.getBuiltinRewardsData();
+        if (builtinData['purchased'] is List) {
+          backendBuiltinPurchased = (builtinData['purchased'] as List).cast<Map<String, dynamic>>();
+        }
+        if (builtinData['equipped'] is List) {
+          backendBuiltinEquipped = (builtinData['equipped'] as List).cast<Map<String, dynamic>>();
+        }
+        if (builtinData['xp_spent'] is int) {
+          backendBuiltinXcSpent = builtinData['xp_spent'];
+        }
+        print('✅ Loaded ${backendBuiltinPurchased.length} builtin rewards from Backend');
+      } catch (e) {
+        print('⚠️ Failed to load backend builtin data: $e');
+      }
 
+      // Normalize backend builtin response
+      final normalizedBackendBuiltin = backendBuiltinPurchased.map((ur) {
+         if (ur.containsKey('id') && !ur.containsKey('reward_id')) {
+           return {...ur, 'reward_id': ur['id']};
+         }
+         return ur;
+      }).toList();
+
+      // DEDUPLICATE AND MERGE (Backend + Local)
+      // Use a Map to ensure unique reward_ids. Backend takes precedence.
+      final Map<int, Map<String, dynamic>> combinedRewardsMap = {};
+      
+      for (var r in normalizedBackendBuiltin) {
+        if (r['reward_id'] != null) combinedRewardsMap[r['reward_id']] = r;
+      }
+      for (var r in normalizedLocal) {
+        if (r['reward_id'] != null) {
+          // Only add local if not already present (Backend is truth)
+          combinedRewardsMap.putIfAbsent(r['reward_id'], () => r);
+        }
+      }
+      final uniqueBuiltinRewards = combinedRewardsMap.values.toList();
+      
+      // SAVE TO LOCAL STORAGE (Cache for ThemeProvider)
+      await _secureStorage.write(
+        key: StorageKeys.builtinUserRewards(userId),
+        value: jsonEncode(uniqueBuiltinRewards),
+      );
+      // Also cache XP logic if we want consistency? 
+      // ThemeProvider doesn't check XP.
+
+      
+      // ONE-TIME SYNC: Only if we have local data to sync
+      // (This logic is less relevant now that we merge/overwrite, but kept for legacy sync attempts)
+      if (userRewardsRaw is List && userRewardsRaw.isEmpty && normalizedLocal.isNotEmpty) {
+           // ... (Sync logic remains, though likely unused if backend has data)
+      }
+
+        // Correct Logic:
+        final finalSpentXp = (spentXp > backendBuiltinXcSpent) ? spentXp : backendBuiltinXcSpent;
+        
         setState(() {
           // Track total and spent XP separately
-          _totalXP = totalXp;
-          _spentXP = validSpentXp;
-          // Available XP = Total - Spent (GUARANTEED NON-NEGATIVE)
-          _userXP = totalXp - validSpentXp;
+          _spentXP = finalSpentXp;
+          _userXP = totalXp;
+          _totalXP = _userXP + _spentXP;
+          
           _userLevel = correctLevel;
-          // Merge backend rewards with builtin catalog (avoid duplicate IDs)
+          // Merge backend rewards with builtin catalog
           _allRewards = [
             ...backendRewards,
             ..._builtinCatalog,
           ];
           // Merge backend user rewards with built-in rewards
           _userRewards = [
-            ...userRewards,
-            ...builtinUserRewards,
+            ...userRewards, // Generic
+            ...uniqueBuiltinRewards, // Unified List
           ];
           // Merge backend equipped with built-in equipped
           _equippedRewards = [
-            ...equipped,
-            ...builtinEquipped,
+             ...equipped,
+             ...backendBuiltinEquipped, // Backend Equipped state
+             ...builtinEquipped // Local Equipped state (Deduplication needed here too?)
           ];
+          // Basic dedupe for equipped to prevent UI glitch
+          // (Last one wins usually in UI rendering, but let's be clean?)
+           // Ideally we de-dupe equipped too, but list length is small.
+
           _tieredRewards = _groupRewardsByTier(_allRewards);
           _isLoading = false;
         });

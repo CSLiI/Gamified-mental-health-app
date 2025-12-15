@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen>
 
       // Try to get user data to verify token is valid
       try {
-        final user = await _apiService.getCurrentUser();
+        final user = await _apiService.getFreshUserData();
         // print('✅ Token valid, user: ${user['first_name']}');
 
         // Token is valid, go to home

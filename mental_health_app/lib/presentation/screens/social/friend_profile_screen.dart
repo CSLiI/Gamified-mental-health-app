@@ -69,7 +69,21 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           _currentUserId = cachedData['currentUserId'];
           _friendProfile = cachedData['profile'];
           _friendCharacterState = cachedData['characterState'];
-          _friendTodos = cachedData['todos'] ?? [];
+          
+          // Filter cached todos too (Today Only, No Quests)
+          final cachedTodos = cachedData['todos'] ?? [];
+          final now = DateTime.now();
+          _friendTodos = (cachedTodos as List).where((t) {
+             // Exclude Quests
+             final isQuest = (t['is_quest'] == true) || (t['category'] != null) || (t['difficulty'] != null);
+             if (isQuest) return false;
+             if (t['task_text'] == null) return false;
+
+             // Date Filter
+             final created = DateTime.parse(t['created_at']).toLocal();
+             return created.year == now.year && created.month == now.month && created.day == now.day;
+          }).toList();
+          
           _friendMoodLogs = cachedData['moodLogs'] ?? [];
           _friendMessages = cachedData['messages'] ?? [];
           _isLoading = false;
@@ -94,15 +108,28 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         _apiService.getFriendProfile(widget.friendId),
         _apiService.getFriendCharacterMoodState(widget.friendId),
         _apiService.getFriendMoodLogs(widget.friendId),
-        _apiService.getFriendTodos(widget.friendId, periodType: 'daily'),
+        _apiService.getFriendTodos(widget.friendId), // Fetch ALL, we filter manually
         _apiService.getMessages(widget.friendId),
       ]);
 
       final profile = results[0] as Map<String, dynamic>;
       final characterState = results[1] as Map<String, dynamic>;
       final moodLogs = results[2] as List<dynamic>;
-      final todos = results[3] as List<dynamic>;
+      var todos = results[3] as List<dynamic>;
       final messages = results[4] as List<dynamic>;
+
+      // FILTER: Only show Manual Todos created TODAY. Exclude Quests.
+      final now = DateTime.now();
+      todos = todos.where((t) {
+        // Exclude Quests
+        final isQuest = (t['is_quest'] == true) || (t['category'] != null) || (t['difficulty'] != null);
+        if (isQuest) return false;
+        if (t['task_text'] == null) return false;
+        
+        // Date Filter
+        final created = DateTime.parse(t['created_at']).toLocal();
+        return created.year == now.year && created.month == now.month && created.day == now.day;
+      }).toList();
 
       // Update cache
       await CacheService().set(cacheKey, {
@@ -726,7 +753,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                                     indicatorPadding: const EdgeInsets.all(4),
                                     dividerColor: Colors.transparent,
                                     tabs: const [
-                                      Tab(text: 'Goals'),
+                                      Tab(text: 'Tasks'),
                                       Tab(text: 'Challenges'),
                                     ],
                                   ),
@@ -1235,7 +1262,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${widget.friendName}\'s Goal Today',
+                              '${widget.friendName}\'s Tasks Today',
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -1267,7 +1294,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                       ),
                       child: const Center(
                         child: Text(
-                          'No goals set for today',
+                          'No tasks set for today',
                           style: TextStyle(
                             color: Colors.grey,
                             fontSize: 16,
@@ -1293,14 +1320,8 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                               return aCompleted ? 1 : -1; // Uncompleted first
                             }
 
-                            // Same completion status, sort by date (newest first)
-                            final aDate =
-                                DateTime.tryParse(a['created_at'] ?? '') ??
-                                    DateTime.now();
-                            final bDate =
-                                DateTime.tryParse(b['created_at'] ?? '') ??
-                                    DateTime.now();
-                            return bDate.compareTo(aDate);
+                            // Same completion status, sort by ID (newest first)
+                            return (b['id'] as int).compareTo(a['id'] as int);
                           });
 
                           return _buildTodoItemLarge(sortedTodos[index]);
