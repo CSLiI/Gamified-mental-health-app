@@ -4,6 +4,8 @@ import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/auth/onboarding_screen.dart';
+import '../../presentation/screens/auth/forgot_password_screen.dart';
+import '../../presentation/screens/auth/reset_password_screen.dart';
 import '../../presentation/screens/home/home_navigation.dart';
 import '../../presentation/screens/social/social_screen.dart';
 import '../../presentation/screens/social/friend_profile_screen.dart';
@@ -27,6 +29,17 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) {
+        final token = state.uri.queryParameters['token'] ?? '';
+        return ResetPasswordScreen(token: token);
+      },
     ),
     GoRoute(
       path: '/onboarding',

@@ -73,6 +73,36 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await _dioClient.post(
+        '${ApiConstants.auth}/forgot-password',
+        data: {'email': email},
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _dioClient.post(
+        '${ApiConstants.auth}/reset-password',
+        data: {
+          'token': token,
+          'new_password': newPassword,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ==================== User ====================
 
   Future<Map<String, dynamic>> getCurrentUser() async {

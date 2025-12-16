@@ -46,6 +46,10 @@ class _LoginScreenState extends State<LoginScreen>
     
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
+      
+      // Sign out first to force account picker to show
+      await googleSignIn.signOut();
+      
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -66,23 +70,51 @@ class _LoginScreenState extends State<LoginScreen>
       
       if (!mounted) return;
 
-      // Same post-login logic as standard login
+      // Save auth data and check if user needs onboarding
       try {
           final storage = const FlutterSecureStorage();
-          await storage.write(
-              key: StorageKeys.currentUserId, value: user['id'].toString());
-          // Save auth token if backend returns it (assumed handled in DioClient/ApiService, but usually need to save it here too if returned)
-          if (user.containsKey('token')) {
-             await storage.write(key: StorageKeys.authToken, value: user['token']);
+          
+          // Save the access token (backend returns 'access_token', not 'token')
+          if (user.containsKey('access_token')) {
+             await storage.write(key: StorageKeys.authToken, value: user['access_token']);
           }
           
-          await _apiService.getCurrentUser(); // Refresh user data cache
-      } catch (_) {
-        // Continue anyway
+          // Save user ID
+          if (user.containsKey('user_id')) {
+            await storage.write(
+                key: StorageKeys.currentUserId, value: user['user_id'].toString());
+          }
+          
+          // Fetch user profile to check if onboarding is complete
+          final userProfile = await _apiService.getCurrentUser();
+          
+          if (!mounted) return;
+          
+          // Check if user has completed onboarding
+          // date_of_birth is only set during onboarding, not from Google
+          final dateOfBirth = userProfile['date_of_birth'];
+          final hasCompletedOnboarding = dateOfBirth != null && 
+                                         dateOfBirth.toString().trim().isNotEmpty &&
+                                         dateOfBirth.toString() != 'null';
+          
+          if (hasCompletedOnboarding) {
+            // Existing user with complete profile - go to home
+            context.go('/home');
+          } else {
+            // New user or incomplete profile - go to onboarding
+            context.go('/onboarding', extra: {
+              'email': user['email'] ?? '',
+              'password': 'google_oauth',
+            });
+          }
+      } catch (e) {
+        // If anything fails, assume new user and go to onboarding
+        if (!mounted) return;
+        context.go('/onboarding', extra: {
+          'email': user['email'] ?? '',
+          'password': 'google_oauth',
+        });
       }
-
-      if (!mounted) return;
-      context.go('/home');
       
     } catch (e) {
       if (!mounted) return;
@@ -345,7 +377,23 @@ class _LoginScreenState extends State<LoginScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    
+                    // Forgot Password Link
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => context.push('/forgot-password'),
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color: Color(0xFF6C5CE7),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 10),
                     // Login button
                     Container(
                       decoration: BoxDecoration(

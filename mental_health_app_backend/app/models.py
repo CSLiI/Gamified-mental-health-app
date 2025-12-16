@@ -49,6 +49,11 @@ class User(Base):
     password_hash = Column(Text)
     auth_provider = Column(String(50), default='email')
     provider_id = Column(Text)
+    
+    # Password reset
+    reset_token = Column(String(255), unique=True, nullable=True)
+    reset_token_expires = Column(DateTime(timezone=True), nullable=True)
+    
     date_of_birth = Column(Date) 
     gender = Column(SQLEnum(GenderEnum))
     created_at = Column(DateTime(timezone=True), server_default=func.now())

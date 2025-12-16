@@ -50,6 +50,10 @@ class _RegisterScreenState extends State<RegisterScreen>
     
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
+      
+      // Sign out first to force account picker to show
+      await googleSignIn.signOut();
+      
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -70,22 +74,51 @@ class _RegisterScreenState extends State<RegisterScreen>
       
       if (!mounted) return;
 
-      // Same post-login logic as standard login
+      // Save auth data and check if user needs onboarding
       try {
           final storage = const FlutterSecureStorage();
-          await storage.write(
-              key: StorageKeys.currentUserId, value: user['id'].toString());
-          if (user.containsKey('token')) {
-             await storage.write(key: StorageKeys.authToken, value: user['token']);
+          
+          // Save the access token (backend returns 'access_token', not 'token')
+          if (user.containsKey('access_token')) {
+             await storage.write(key: StorageKeys.authToken, value: user['access_token']);
           }
           
-          await _apiService.getCurrentUser(); // Refresh user data cache
-      } catch (_) {
-        // Continue anyway
+          // Save user ID
+          if (user.containsKey('user_id')) {
+            await storage.write(
+                key: StorageKeys.currentUserId, value: user['user_id'].toString());
+          }
+          
+          // Fetch user profile to check if onboarding is complete
+          final userProfile = await _apiService.getCurrentUser();
+          
+          if (!mounted) return;
+          
+          // Check if user has completed onboarding
+          // date_of_birth is only set during onboarding, not from Google
+          final dateOfBirth = userProfile['date_of_birth'];
+          final hasCompletedOnboarding = dateOfBirth != null && 
+                                         dateOfBirth.toString().trim().isNotEmpty &&
+                                         dateOfBirth.toString() != 'null';
+          
+          if (hasCompletedOnboarding) {
+            // Existing user with complete profile - go to home
+            context.go('/home');
+          } else {
+            // New user or incomplete profile - go to onboarding
+            context.go('/onboarding', extra: {
+              'email': user['email'] ?? '',
+              'password': 'google_oauth',
+            });
+          }
+      } catch (e) {
+        // If anything fails, assume new user and go to onboarding
+        if (!mounted) return;
+        context.go('/onboarding', extra: {
+          'email': user['email'] ?? '',
+          'password': 'google_oauth',
+        });
       }
-
-      if (!mounted) return;
-      context.go('/home');
       
     } catch (e) {
       if (!mounted) return;
@@ -297,8 +330,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your email';
                               }
-                              if (!value.contains('@')) {
-                                return 'Please enter a valid email';
+                              // Comprehensive email validation regex
+                              final emailRegex = RegExp(
+                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                              );
+                              if (!emailRegex.hasMatch(value)) {
+                                return 'Please enter a valid email address';
                               }
                               return null;
                             },

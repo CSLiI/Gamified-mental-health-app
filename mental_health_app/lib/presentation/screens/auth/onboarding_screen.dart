@@ -159,21 +159,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // First, create the account with complete data
-      await _apiService.register(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        email: _email!,
-        password: _password!,
-        dateOfBirth: _selectedDate!.toIso8601String().split('T')[0],
-        gender: 'other', // Can be updated later in profile
-      );
+      final isGoogleUser = _password == 'google_oauth';
+      
+      if (!isGoogleUser) {
+        // Regular user - create account with complete data
+        await _apiService.register(
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          email: _email!,
+          password: _password!,
+          dateOfBirth: _selectedDate!.toIso8601String().split('T')[0],
+          gender: 'other', // Can be updated later in profile
+        );
 
-      // Auto-login after successful registration
-      await _apiService.login(
-        email: _email!,
-        password: _password!,
-      );
+        // Auto-login after successful registration
+        await _apiService.login(
+          email: _email!,
+          password: _password!,
+        );
+      } else {
+        // Google user - already logged in, just update profile
+        await _apiService.updateProfile({
+          'first_name': _firstNameController.text.trim(),
+          'last_name': _lastNameController.text.trim(),
+          'date_of_birth': _selectedDate!.toIso8601String().split('T')[0],
+          'gender': 'other',
+        });
+      }
 
       // Find the selected character option
       final selectedCharacter = _characterOptions.firstWhere(
