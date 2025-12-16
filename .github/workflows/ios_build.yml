@@ -39,7 +39,7 @@ jobs:
           ls -R payload
 
       - name: Archive Production Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-build
           path: payload/Runner.app
