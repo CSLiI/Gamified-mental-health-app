@@ -289,44 +289,154 @@ class _SocialScreenState extends State<SocialScreen>
     );
   }
 
+  Future<void> _sendFriendRequest(String email) async {
+    try {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close dialog
+      
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sending friend request...')),
+      );
+
+      await _apiService.sendFriendRequest(email);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Friend request sent successfully!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      
+      // Refresh sent requests
+      _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception:', '').trim()),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  void _showAddFriendDialog() {
+    final emailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Friend'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter your friend\'s email address to send them a request.'),
+            SizedBox(height: 16.h),
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: 'Email Address',
+                hintText: 'friend@example.com',
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              keyboardType: TextInputType.emailAddress,
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (emailController.text.isNotEmpty) {
+                _sendFriendRequest(emailController.text.trim());
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            child: const Text('Send Request'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      ),
+    );
+  }
+
   Widget _buildHeader(ThemeProvider themeProvider) {
     return Padding(
       padding: EdgeInsets.all(20.0.w),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: themeProvider.primaryColor,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(
-              Icons.people_alt_rounded,
-              color: Colors.white,
-              size: 28.sp,
-            ),
-          ),
-          SizedBox(width: 16.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(
-                'Social Hub',
-                style: TextStyle(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
                   color: themeProvider.primaryColor,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(
+                  Icons.people_alt_rounded,
+                  color: Colors.white,
+                  size: 28.sp,
                 ),
               ),
-              Text(
-                'Connect with friends',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  fontWeight: FontWeight.w500,
-                ),
+              SizedBox(width: 16.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Social Hub',
+                    style: TextStyle(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.bold,
+                      color: themeProvider.primaryColor,
+                    ),
+                  ),
+                  Text(
+                    'Connect with friends',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ],
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: themeProvider.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: IconButton(
+              onPressed: _showAddFriendDialog,
+              icon: Icon(
+                Icons.person_add_rounded,
+                color: themeProvider.primaryColor,
+                size: 24.sp,
+              ),
+              tooltip: 'Add Friend',
+            ),
           ),
         ],
       ),
@@ -972,97 +1082,7 @@ class _SocialScreenState extends State<SocialScreen>
     );
   }
 
-  void _showAddFriendDialog() {
-    final searchController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Text(
-          'Add Friend',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 300.w, // Fixed width to prevent horizontal expansion
-              child: TextField(
-                controller: searchController,
-                maxLines: 2, // Allow wrapping to avoid horizontal scroll
-                minLines: 2, // Fixed height (static)
-                keyboardType: TextInputType.emailAddress,
-                style: TextStyle(fontSize: 18.sp), // Slightly larger text
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(
-                      vertical: 20.h, horizontal: 20.w), // Bigger tap area
-                  labelText: 'Email Address',
-                  hintText: 'Enter friend\'s email',
-                  prefixIcon:
-                      Icon(Icons.email_rounded, color: AppColors.primary),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                    borderSide: BorderSide(color: AppColors.primary),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                    borderSide:
-                        BorderSide(color: AppColors.primary, width: 2.w),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
 
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-              ),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _sendFriendRequest(searchController.text);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
-              child: const Text(
-                'Send Request',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // Task Accountability Tab - Share and see each other's daily tasks
   Widget _buildTaskAccountabilityTab(
@@ -2159,21 +2179,7 @@ class _SocialScreenState extends State<SocialScreen>
     );
   }
 
-  Future<void> _sendFriendRequest(String query) async {
-    _actionDebouncer.run(() async {
-      try {
-        await _apiService.sendFriendRequest(query);
-        if (mounted) {
-          _loadData();
-        }
-      } catch (e) {
-        debugPrint('Error sending friend request: $e');
-        if (mounted) {
-          _loadData();
-        }
-      }
-    });
-  }
+
 
   Future<void> _acceptFriendRequest(int requestId) async {
     _actionDebouncer.run(() async {

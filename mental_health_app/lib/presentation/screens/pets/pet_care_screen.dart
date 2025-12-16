@@ -149,6 +149,12 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
               child: Column(
                 children: [
                   const Spacer(),
+                  // Speech Bubble
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 8.h),
+                    child: _buildSpeechBubble(_getPetMoodMessage(activePet)),
+                  ),
+                  
                   // Pet Animation
                   Expanded(
                     flex: 3,
@@ -177,11 +183,7 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
                                   style: const TextStyle(fontSize: 200),
                                 ),
                         ),
-                        Positioned(
-                          top: 20,
-                          left: 60,
-                          child: _buildSpeechBubble(_getPetMoodMessage(activePet)),
-                        ),
+
                       ],
                     ),
                   ),
@@ -232,14 +234,13 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
                     child: Text(
                       'Level ${activePet['level'] ?? 1}',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14.sp,
                       ),
                     ),
                   ),
                   
+                  SizedBox(height: 16.h),
                   const Spacer(),
+                  SizedBox(height: 16.h),
                   
                   // Interaction Panel
                   Container(

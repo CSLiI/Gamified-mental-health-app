@@ -11,6 +11,7 @@ import '../../../core/widgets/skeleton_loader.dart';
 import '../../../data/services/cache_service.dart';
 import '../../widgets/level_up_dialog.dart';
 import '../../../core/utils/image_cache_manager.dart';
+
 import '../../../core/utils/debouncer.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -275,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(height: 24.h),
                           _buildQuickActions(),
                           SizedBox(height: 24.h),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -739,15 +741,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-                  ],
-                ),
-              ),
-              ],
-            ),
-        );
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
       },
     );
   }
+
 
   Widget _buildQuickActions() {
     return Column(
