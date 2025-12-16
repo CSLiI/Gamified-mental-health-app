@@ -30,11 +30,14 @@ jobs:
 
       - run: flutter build ios --release --no-codesign
 
-      - name: List Build Directory (Debug)
-        run: ls -R mental_health_app/build/ios
+      - name: Prepare Artifact
+        run: |
+          mkdir -p ../payload
+          find . -name "Runner.app" -type d -exec cp -R {} ../payload/ \;
+          ls -R ../payload
 
       - name: Archive Production Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ios-build
-          path: mental_health_app/build/ios/iphoneos/
+          path: payload/Runner.app
