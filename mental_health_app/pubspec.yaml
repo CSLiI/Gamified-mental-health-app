@@ -67,6 +67,7 @@ flutter:
 
   # Add your assets here
   assets:
+    - assets/images/
     - assets/images/Boy_Gif_33FPS/
     - assets/images/Girl_Gif_33FPS/
     - assets/animations/

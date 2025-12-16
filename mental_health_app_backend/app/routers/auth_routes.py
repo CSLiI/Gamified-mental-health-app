@@ -72,8 +72,15 @@ def google_login(request: dict, db: Session = Depends(get_db)):
     
     try:
         # Verify the Google ID token
+        token = request.get('idToken') or request.get('id_token')
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing idToken or id_token"
+            )
+            
         idinfo = id_token.verify_oauth2_token(
-            request['idToken'],
+            token,
             google_requests.Request(),
             None  # We'll skip audience verification for now
         )

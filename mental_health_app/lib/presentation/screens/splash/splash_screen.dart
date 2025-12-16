@@ -117,10 +117,13 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.favorite_rounded,
-                      size: 60,
-                      color: Colors.white,
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/app_logo.png',
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   );
                 },

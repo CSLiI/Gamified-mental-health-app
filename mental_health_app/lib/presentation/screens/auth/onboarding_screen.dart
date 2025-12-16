@@ -369,10 +369,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 )
               ],
             ),
-            child: const Icon(
-              Icons.favorite_rounded,
-              size: 80,
-              color: Colors.white,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 100,
+                height: 100,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           const SizedBox(height: 32),
@@ -390,7 +394,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
             child: const Text(
-              'Welcome to Your\nWellness Journey',
+              'Welcome to Echo',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -782,9 +786,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildFeatureCard(
-                    Icons.psychology_rounded,
-                    'Character Companion',
-                    'Grow together with your companion',
+                    Icons.lock_person_rounded,
+                    'Private & Secure',
+                    'Your journal entries are private',
+                    const Color(0xFF4CAF50),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildFeatureCard(
+                    Icons.pets_rounded,
+                    'Pet Companion',
+                    'Grow a magical pet as you improve',
                     const Color(0xFFFF8A65),
                   ),
                 ],

@@ -239,11 +239,14 @@ class _LoginScreenState extends State<LoginScreen>
                             )
                           ],
                         ),
-                        child: const Icon(
-                          Icons.favorite_rounded,
-                          size: 50,
-                          color: Colors.white,
-                        ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/app_logo.png',
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                       ),
                     ),
                     const SizedBox(height: 30),
