@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import secrets
 from app import schemas, auth, models
 from app.database import get_db
@@ -164,60 +164,75 @@ def reset_password(
     db: Session = Depends(get_db)
 ):
     """Reset password with verification code"""
-    code = request.get('token')  # This is the 6-character code from user
-    new_password = request.get('new_password')
+    try:
+        code = request.get('token')  # This is the 6-character code from user
+        new_password = request.get('new_password')
+        
+        print(f"DEBUG: Received code: {code}")
+        print(f"DEBUG: Received new_password: {'***' if new_password else None}")
+        
+        if not code or not new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Verification code and new password are required"
+            )
+        
+        # Convert code to uppercase to match what we sent in email
+        code = str(code).upper().strip()
+        print(f"DEBUG: Normalized code: {code}")
+        
+        # Get all users with reset tokens to debug
+        all_users_with_tokens = db.query(models.User).filter(
+            models.User.reset_token.isnot(None)
+        ).all()
+        
+        print(f"DEBUG: Found {len(all_users_with_tokens)} users with reset tokens")
+        for u in all_users_with_tokens:
+            token_preview = u.reset_token[:min(10, len(u.reset_token))] if u.reset_token else "None"
+            print(f"DEBUG: User {u.email} has token: {token_preview}... (expires: {u.reset_token_expires})")
+        
+        # Find user where reset_token starts with the code
+        user = None
+        for u in all_users_with_tokens:
+            if u.reset_token:
+                token_upper = str(u.reset_token).upper()
+                if token_upper.startswith(code):
+                    user = u
+                    print(f"DEBUG: Found matching user: {user.email}")
+                    break
+        
+        if not user:
+            print(f"DEBUG: No user found with token starting with: {code}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired verification code"
+            )
+        
+        # Check if token expired
+        if user.reset_token_expires < datetime.now(timezone.utc):
+            print(f"DEBUG: Token expired for user {user.email}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Verification code has expired"
+            )
+        
+        # Hash new password
+        hashed_password = auth.get_password_hash(new_password)
+        user.password_hash = hashed_password
+        user.reset_token = None
+        user.reset_token_expires = None
+        db.commit()
+        
+        print(f"DEBUG: Password reset successful for user {user.email}")
+        return {"message": "Password reset successfully"}
     
-    print(f"DEBUG: Received code: {code}")
-    print(f"DEBUG: Received new_password: {'***' if new_password else None}")
-    
-    if not code or not new_password:
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"ERROR: Unexpected error in reset_password: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Verification code and new password are required"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
         )
-    
-    # Convert code to uppercase to match what we sent in email
-    code = code.upper().strip()
-    print(f"DEBUG: Normalized code: {code}")
-    
-    # Get all users with reset tokens to debug
-    all_users_with_tokens = db.query(models.User).filter(
-        models.User.reset_token.isnot(None)
-    ).all()
-    
-    print(f"DEBUG: Found {len(all_users_with_tokens)} users with reset tokens")
-    for u in all_users_with_tokens:
-        print(f"DEBUG: User {u.email} has token: {u.reset_token[:10]}... (expires: {u.reset_token_expires})")
-    
-    # Find user where reset_token starts with the code
-    user = None
-    for u in all_users_with_tokens:
-        if u.reset_token and u.reset_token.upper().startswith(code):
-            user = u
-            print(f"DEBUG: Found matching user: {user.email}")
-            break
-    
-    if not user:
-        print(f"DEBUG: No user found with token starting with: {code}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification code"
-        )
-    
-    # Check if token expired
-    if user.reset_token_expires < datetime.utcnow():
-        print(f"DEBUG: Token expired for user {user.email}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Verification code has expired"
-        )
-    
-    # Hash new password
-    hashed_password = auth.get_password_hash(new_password)
-    user.password_hash = hashed_password
-    user.reset_token = None
-    user.reset_token_expires = None
-    db.commit()
-    
-    print(f"DEBUG: Password reset successful for user {user.email}")
-    return {"message": "Password reset successfully"}
