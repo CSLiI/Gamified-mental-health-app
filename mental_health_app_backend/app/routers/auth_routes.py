@@ -167,6 +167,9 @@ def reset_password(
     code = request.get('token')  # This is the 6-character code from user
     new_password = request.get('new_password')
     
+    print(f"DEBUG: Received code: {code}")
+    print(f"DEBUG: Received new_password: {'***' if new_password else None}")
+    
     if not code or not new_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -174,14 +177,28 @@ def reset_password(
         )
     
     # Convert code to uppercase to match what we sent in email
-    code = code.upper()
+    code = code.upper().strip()
+    print(f"DEBUG: Normalized code: {code}")
     
-    # Find user where reset_token starts with the code (first 6 chars)
-    user = db.query(models.User).filter(
-        models.User.reset_token.like(f"{code}%")
-    ).first()
+    # Get all users with reset tokens to debug
+    all_users_with_tokens = db.query(models.User).filter(
+        models.User.reset_token.isnot(None)
+    ).all()
+    
+    print(f"DEBUG: Found {len(all_users_with_tokens)} users with reset tokens")
+    for u in all_users_with_tokens:
+        print(f"DEBUG: User {u.email} has token: {u.reset_token[:10]}... (expires: {u.reset_token_expires})")
+    
+    # Find user where reset_token starts with the code
+    user = None
+    for u in all_users_with_tokens:
+        if u.reset_token and u.reset_token.upper().startswith(code):
+            user = u
+            print(f"DEBUG: Found matching user: {user.email}")
+            break
     
     if not user:
+        print(f"DEBUG: No user found with token starting with: {code}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired verification code"
@@ -189,6 +206,7 @@ def reset_password(
     
     # Check if token expired
     if user.reset_token_expires < datetime.utcnow():
+        print(f"DEBUG: Token expired for user {user.email}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Verification code has expired"
@@ -201,4 +219,5 @@ def reset_password(
     user.reset_token_expires = None
     db.commit()
     
+    print(f"DEBUG: Password reset successful for user {user.email}")
     return {"message": "Password reset successfully"}
