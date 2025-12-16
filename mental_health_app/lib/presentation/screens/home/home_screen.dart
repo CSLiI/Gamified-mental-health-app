@@ -13,6 +13,7 @@ import '../../widgets/level_up_dialog.dart';
 import '../../../core/utils/image_cache_manager.dart';
 import '../../../core/utils/debouncer.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -244,8 +245,8 @@ class _HomeScreenState extends State<HomeScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                themeProvider.primaryColor.withValues(alpha: 0.08),
-                themeProvider.secondaryColor.withValues(alpha: 0.08),
+                themeProvider.primaryColor.withOpacity(0.08),
+                themeProvider.secondaryColor.withOpacity(0.08),
                 Theme.of(context).scaffoldBackgroundColor,
               ],
             ),
@@ -264,16 +265,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: Colors.white,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(24.0),
+                      padding: EdgeInsets.all(24.0.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHeader(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24.h),
                           _buildCharacterCard(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24.h),
                           _buildQuickActions(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: 24.h),
                         ],
                       ),
                     ),
@@ -286,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeSkeleton() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.all(24.0.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -297,32 +298,32 @@ class _HomeScreenState extends State<HomeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SkeletonLoader.text(width: 150, height: 20),
-                  const SizedBox(height: 8),
-                  SkeletonLoader.text(width: 180, height: 32),
+                  SkeletonLoader.text(width: 150.w, height: 20.h),
+                  SizedBox(height: 8.h),
+                  SkeletonLoader.text(width: 180.w, height: 32.h),
                 ],
               ),
-              SkeletonLoader.character(size: 50),
+              SkeletonLoader.character(size: 50.sp),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
           // Character card skeleton
-          SkeletonLoader.card(height: 400),
-          const SizedBox(height: 24),
+          SkeletonLoader.card(height: 400.h),
+          SizedBox(height: 24.h),
           // Quick actions skeleton
           Row(
             children: [
-              Expanded(child: SkeletonLoader.card(height: 100)),
-              const SizedBox(width: 16),
-              Expanded(child: SkeletonLoader.card(height: 100)),
+              Expanded(child: SkeletonLoader.card(height: 100.h)),
+              SizedBox(width: 16.w),
+              Expanded(child: SkeletonLoader.card(height: 100.h)),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Row(
             children: [
-              Expanded(child: SkeletonLoader.card(height: 100)),
-              const SizedBox(width: 16),
-              Expanded(child: SkeletonLoader.card(height: 100)),
+              Expanded(child: SkeletonLoader.card(height: 100.h)),
+              SizedBox(width: 16.w),
+              Expanded(child: SkeletonLoader.card(height: 100.h)),
             ],
           ),
         ],
@@ -352,16 +353,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     '$greeting,',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     firstName,
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 32.sp,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -371,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             IconButton(
               icon: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [AppColors.primary, AppColors.secondary],
@@ -379,30 +380,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8.r,
+                      offset: Offset(0, 2.h),
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.notifications,
                   color: Colors.white,
-                  size: 24,
+                  size: 24.sp,
                 ),
               ),
               onPressed: () => context.go('/notifications'),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         Consumer<MoodProvider>(
           builder: (context, moodProvider, child) {
             final currentMood = moodProvider.currentMood;
             return Text(
               _getMoodMessage(currentMood),
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
@@ -419,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
           (context, moodProvider, characterProvider, themeProvider, child) {
         // Wait for character to load to prevent default GIF from showing
         if (characterProvider.isLoading) {
-          return SkeletonLoader.card(height: 400);
+          return SkeletonLoader.card(height: 400.h);
         }
 
         final mood = moodProvider.currentMood;
@@ -496,42 +497,42 @@ class _HomeScreenState extends State<HomeScreen> {
                 gradient: LinearGradient(
                   colors: [
                     Color.lerp(moodColor, Colors.white, 0.6)!
-                        .withValues(alpha: 0.95),
+                        .withOpacity(0.95),
                     Color.lerp(moodColor, Colors.white, 0.4)!
-                        .withValues(alpha: 0.95),
+                        .withOpacity(0.95),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(cardRadius),
+                borderRadius: BorderRadius.circular(cardRadius.r),
                 boxShadow: [
                   BoxShadow(
-                    color: bannerColor1.withValues(alpha: 0.3),
-                    blurRadius: 25,
-                    offset: const Offset(0, 10),
-                    spreadRadius: 5,
+                    color: bannerColor1.withOpacity(0.3),
+                    blurRadius: 25.r,
+                    offset: Offset(0, 10.h),
+                    spreadRadius: 5.r,
                   ),
                   BoxShadow(
-                    color: moodColor.withValues(alpha: 0.1),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+                    color: moodColor.withOpacity(0.1),
+                    blurRadius: 15.r,
+                    offset: Offset(0, 5.h),
                   ),
                 ],
               )
             : BoxDecoration(
                 color: Color.lerp(moodColor, Colors.white, 0.8)!, // Solid pastel color
-                borderRadius: BorderRadius.circular(cardRadius), // Even rounder
+                borderRadius: BorderRadius.circular(cardRadius.r), // Even rounder
                 boxShadow: [
                   BoxShadow(
                     color: moodColor.withOpacity(0.15), // Very gentle shadow
-                    blurRadius: 25,
-                    offset: const Offset(0, 10),
+                    blurRadius: 25.r,
+                    offset: Offset(0, 10.h),
                     spreadRadius: 0,
                   ),
                   BoxShadow(
                     color: Colors.white.withOpacity(0.5),
-                    blurRadius: 10,
-                    offset: const Offset(-2, -2),
+                    blurRadius: 10.r,
+                    offset: Offset(-2, -2.h),
                     spreadRadius: 0,
                   ),
                 ],
@@ -540,10 +541,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return Container(
           decoration: backgroundDecoration,
           foregroundDecoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(cardRadius),
+            borderRadius: BorderRadius.circular(cardRadius.r),
             border: hasBanner && bannerColor1 != null
-                ? Border.all(color: bannerColor1, width: 3)
-                : Border.all(color: Colors.white.withOpacity(0.8), width: 2),
+                ? Border.all(color: bannerColor1, width: 3.w)
+                : Border.all(color: Colors.white.withOpacity(0.8), width: 2.w),
           ),
           clipBehavior: Clip.hardEdge,
           child: Column(
@@ -551,20 +552,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (bannerGradient != null)
                   Container(
                     width: double.infinity,
-                    height: 50,
+                    height: 50.h,
                     decoration: BoxDecoration(
                       gradient: bannerGradient,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                          blurRadius: 4.r,
+                          offset: Offset(0, 2.h),
                         ),
                       ],
                     ),
                   ),
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24.w),
                   child: Column(
                     children: [
                       Row(
@@ -576,40 +577,40 @@ class _HomeScreenState extends State<HomeScreen> {
                             bannerGradient != null &&
                             bannerColor1 != null
                         ? BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20.r),
                             gradient: bannerGradient,
                             boxShadow: [
                               BoxShadow(
-                                color: bannerColor1.withValues(alpha: 0.4),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                                spreadRadius: 2,
+                                color: bannerColor1.withOpacity(0.4),
+                                blurRadius: 15.r,
+                                offset: Offset(0, 5.h),
+                                spreadRadius: 2.r,
                               ),
                             ],
                           )
                         : null,
                     padding: hasBanner && bannerGradient != null
-                        ? const EdgeInsets.all(4)
+                        ? EdgeInsets.all(4.w)
                         : null,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(hasBanner ? 16 : 15),
+                      borderRadius: BorderRadius.circular(hasBanner ? 16.r : 15.r),
                       child: Container(
-                        width: 120,
-                        height: 120,
+                        width: 120.w,
+                        height: 120.w,
                         decoration: BoxDecoration(
                           color: Colors.transparent, // Removed grey background
                           border: hasBanner
                               ? Border.all(
                                   color: Colors.white,
-                                  width: 3,
+                                  width: 3.w,
                                 )
                               : null,
                           borderRadius:
-                              BorderRadius.circular(hasBanner ? 16 : 15),
+                              BorderRadius.circular(hasBanner ? 16.r : 15.r),
                         ),
                         child: ClipRRect(
                           borderRadius:
-                              BorderRadius.circular(hasBanner ? 13 : 15),
+                              BorderRadius.circular(hasBanner ? 13.r : 15.r),
                           child: ImageCacheManager().buildCachedImage(
                             assetPath: _getCharacterGifPath(
                               mood ?? 'calm',
@@ -622,7 +623,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,20 +634,20 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(
                               firstName,
                               style: TextStyle(
-                                fontSize: 22,
+                                fontSize: 22.sp,
                                 fontWeight: FontWeight.w700,
                                 color: Color.lerp(moodColor, Colors.black, 0.8),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        SizedBox(height: 10.h),
                         Container(
                           width: double.infinity,
-                          height: 40,
+                          height: 40.h,
                           decoration: BoxDecoration(
-                            color: moodColor.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(12),
+                            color: moodColor.withOpacity(0.35),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -657,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     'Level $level',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.bold,
                                       color: Color.lerp(
                                           moodColor, Colors.black, 0.15),
@@ -669,24 +670,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8.h),
                         Text(
                           '$xpInCurrentLevel / $xpForNextLevel XP',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             color: Color.lerp(moodColor, Colors.black, 0.6),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6.h),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                           child: LinearProgressIndicator(
                             value: xpProgress.clamp(0.0, 1.0),
-                            minHeight: 8,
+                            minHeight: 8.h,
                             backgroundColor:
                                 Color.lerp(moodColor, Colors.white, 0.7)!
-                                    .withValues(alpha: 0.5),
+                                    .withOpacity(0.5),
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(moodColor),
                           ),
@@ -696,7 +697,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -708,7 +709,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             mood != null ? 'Mood: $mood' : 'Mood: ---',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
                               color: Color.lerp(moodColor, Colors.black, 0.7),
                             ),
@@ -718,22 +719,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         '${moodScore.toStringAsFixed(0)}%',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
                           color: Color.lerp(moodColor, Colors.black, 0.8),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.r),
                     child: LinearProgressIndicator(
                       value: moodScore / 100,
                       backgroundColor: Color.lerp(moodColor, Colors.white, 0.7)!
-                          .withValues(alpha: 0.5),
+                          .withOpacity(0.5),
                       valueColor: AlwaysStoppedAnimation<Color>(moodColor),
-                      minHeight: 12,
+                      minHeight: 12.h,
                     ),
                   ),
                 ],
@@ -754,26 +755,26 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           children: [
-            Icon(Icons.bolt, size: 24, color: Theme.of(context).colorScheme.onSurface),
-            SizedBox(width: 8),
+            Icon(Icons.bolt, size: 24.sp, color: Theme.of(context).colorScheme.onSurface),
+            SizedBox(width: 8.w),
             Text(
               'Quick Actions',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 22.sp,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          crossAxisSpacing: 16.w,
+          mainAxisSpacing: 16.h,
+          childAspectRatio: 1.0,
           children: [
             _buildActionCard(
               icon: Icons.mood_rounded,
@@ -811,28 +812,28 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color color,
     required int index,
   }) {
-    final Color darkerColor = Color.lerp(color, Colors.black, 0.15) ?? color;
+    final Color darkerColor = Color.lerp(color, Colors.black, 0.6) ?? color;
     final isPetCard = label == 'My Companion';
 
     return Container(
       decoration: BoxDecoration(
         color: color, // Solid color
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.r),
         border: Border.all(
           color: Colors.white.withOpacity(0.4),
-          width: 1.5,
+          width: 1.5.w,
         ),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.25), // Softer shadow
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-            spreadRadius: 1,
+            blurRadius: 12.r,
+            offset: Offset(0, 6.h),
+            spreadRadius: 1.r,
           ),
           BoxShadow(
             color: Colors.white.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(-2, -2),
+            blurRadius: 8.r,
+            offset: Offset(-2, -2.h),
             spreadRadius: 0,
           ),
         ],
@@ -859,37 +860,41 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           },
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20.w),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: isPetCard ? EdgeInsets.zero : const EdgeInsets.all(12),
-                  decoration: isPetCard
-                      ? null
-                      : BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : darkerColor,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                  child: Icon(icon,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? darkerColor
-                          : Colors.white,
-                      size: isPetCard ? 56 : 32),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.white
                         : darkerColor,
+                    borderRadius: BorderRadius.circular(16.r),
                   ),
-                  textAlign: TextAlign.center,
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? darkerColor
+                        : Colors.white,
+                    size: 32.sp,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : darkerColor,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -938,4 +943,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

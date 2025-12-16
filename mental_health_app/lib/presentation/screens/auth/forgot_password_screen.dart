@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -162,10 +163,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           child: SingleChildScrollView(
             physics: const ClampingScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.0.w),
               child: Column(
                 children: [
-                  const SizedBox(height: 40),
+                   SizedBox(height: 40.h),
 
                   // Back button
                   Align(
@@ -182,7 +183,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   FadeTransition(
                     opacity: _animController,
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(24.w),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
@@ -190,15 +191,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 5,
+                            color: Color(0xFF6C5CE7).withOpacity(0.3),
+                            blurRadius: 20.r,
+                            spreadRadius: 5.r,
                           )
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.lock_reset_rounded,
-                        size: 60,
+                        size: 60.sp,
                         color: Colors.white,
                       ),
                     ),
@@ -217,8 +218,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                     )),
                     child: Text(
                       _codeSent ? 'Enter Verification Code' : 'Forgot Password?',
-                      style: const TextStyle(
-                        fontSize: 32,
+                      style: TextStyle(
+                        fontSize: 32.sp,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF6C5CE7),
                       ),
@@ -233,26 +234,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                         ? 'Check your email for the 6-digit code'
                         : 'Enter your email to receive a verification code',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: 40),
+                  SizedBox(height: 40.h),
 
                   // Form
                   Container(
-                    padding: const EdgeInsets.all(28),
+                    padding: EdgeInsets.all(28.w),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(24.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Color(0xFF6C5CE7).withValues(alpha: 0.1),
-                          blurRadius: 30,
-                          offset: const Offset(0, 10),
+                          color: Color(0xFF6C5CE7).withOpacity(0.1),
+                          blurRadius: 30.r,
+                          offset: Offset(0, 10.h),
                         ),
                       ],
                     ),
@@ -310,12 +311,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
                                 ),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(16.r),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Color(0xFF6C5CE7).withValues(alpha: 0.4),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
+                                    color: Color(0xFF6C5CE7).withOpacity(0.4),
+                                    blurRadius: 12.r,
+                                    offset: Offset(0, 6.h),
                                   ),
                                 ],
                               ),
@@ -325,25 +326,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                   backgroundColor: Colors.transparent,
                                   foregroundColor: Colors.white,
                                   shadowColor: Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  minimumSize: const Size(double.infinity, 50),
+                                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                                  minimumSize: Size(double.infinity, 50.h),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(16.r),
                                   ),
                                 ),
                                 child: _isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
+                                    ? SizedBox(
+                                        height: 20.h,
+                                        width: 20.h,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
+                                    : Text(
                                         'Send Code',
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 16.sp,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: 0.5,
                                         ),
@@ -499,12 +500,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
                                 ),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(16.r),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Color(0xFF6C5CE7).withValues(alpha: 0.4),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
+                                    color: Color(0xFF6C5CE7).withOpacity(0.4),
+                                    blurRadius: 12.r,
+                                    offset: Offset(0, 6.h),
                                   ),
                                 ],
                               ),
@@ -514,25 +515,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                   backgroundColor: Colors.transparent,
                                   foregroundColor: Colors.white,
                                   shadowColor: Colors.transparent,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  minimumSize: const Size(double.infinity, 50),
+                                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                                  minimumSize: Size(double.infinity, 50.h),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(16.r),
                                   ),
                                 ),
                                 child: _isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
+                                    ? SizedBox(
+                                        height: 20.h,
+                                        width: 20.h,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
+                                    : Text(
                                         'Reset Password',
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 16.sp,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: 0.5,
                                         ),
@@ -540,7 +541,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                               ),
                             ),
 
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16.h),
 
                             // Resend code
                             TextButton(
@@ -552,11 +553,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                   _confirmPasswordController.clear();
                                 });
                               },
-                              child: const Text(
+                              child: Text(
                                 'Didn\'t receive code? Send again',
                                 style: TextStyle(
                                   color: Color(0xFF6C5CE7),
                                   fontWeight: FontWeight.w600,
+                                  fontSize: 14.sp,
                                 ),
                               ),
                             ),
@@ -570,13 +572,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
                   // Remember password?
                   if (!_codeSent)
+                  // Remember password?
+                  if (!_codeSent)
                     TextButton(
                       onPressed: () => context.pop(),
-                      child: const Text(
+                      child: Text(
                         'Remember your password? Sign in',
                         style: TextStyle(
                           color: Color(0xFF6C5CE7),
                           fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
                         ),
                       ),
                     ),

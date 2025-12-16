@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/pet_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class PetCareScreen extends StatefulWidget {
   const PetCareScreen({super.key});
@@ -94,21 +95,22 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
           Consumer<UserProvider>(
             builder: (context, userProvider, _) {
               return Container(
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: EdgeInsets.only(right: 16.w),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.bolt_rounded, color: Colors.yellow, size: 20),
-                    const SizedBox(width: 4),
+                    Icon(Icons.bolt_rounded, color: Colors.yellow, size: 20.sp),
+                    SizedBox(width: 4.w),
                     Text(
                       '${userProvider.user?['energy'] ?? 0}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ],
@@ -191,47 +193,48 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
                     children: [
                       Text(
                         activePet['name'] ?? 'Pet',
-                        style: const TextStyle(
-                          fontSize: 32,
+                        style: TextStyle(
+                          fontSize: 32.sp,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           shadows: [
                             Shadow(
-                              blurRadius: 10,
+                              blurRadius: 10.r,
                               color: Colors.black26,
-                              offset: Offset(0, 4),
+                              offset: Offset(0, 4.h),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 20),
+                          icon: Icon(Icons.edit_rounded, color: Colors.white, size: 20.sp),
                           onPressed: () => _showRenameDialog(context, activePet),
                           tooltip: 'Rename Pet',
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                          constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.w),
                           padding: EdgeInsets.zero,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.r),
                     ),
                     child: Text(
                       'Level ${activePet['level'] ?? 1}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ),
@@ -240,16 +243,16 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
                   
                   // Interaction Panel
                   Container(
-                    margin: const EdgeInsets.all(24),
-                    padding: const EdgeInsets.all(24),
+                    margin: EdgeInsets.all(24.w),
+                    padding: EdgeInsets.all(24.w),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(32),
+                      borderRadius: BorderRadius.circular(32.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          blurRadius: 20.r,
+                          offset: Offset(0, 10.h),
                         ),
                       ],
                     ),
@@ -318,25 +321,25 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.pets, size: 80, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
+            Icon(Icons.pets, size: 80.sp, color: Colors.grey.shade400),
+            SizedBox(height: 16.h),
             Text(
               'No Companion Selected',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 24.sp,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey.shade600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               'Go to Rewards to adopt a pet!',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 color: Colors.grey.shade500,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             ElevatedButton(
               onPressed: () => context.go('/home', extra: {
                 'initialIndex': 2,
@@ -345,9 +348,9 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 16.h),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
               ),
               child: const Text('Go to Rewards'),
@@ -370,13 +373,14 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 8),
+            Icon(icon, size: 16.sp, color: color),
+            SizedBox(width: 8.w),
             Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.grey.shade700,
+                fontSize: 14.sp,
               ),
             ),
             const Spacer(),
@@ -385,18 +389,19 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: color,
+                fontSize: 14.sp,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(10.r),
           child: LinearProgressIndicator(
             value: value,
             backgroundColor: color.withOpacity(0.1),
             valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 10,
+            minHeight: 10.h,
           ),
         ),
       ],
@@ -508,48 +513,49 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
     
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(20.r),
       child: Opacity(
         opacity: isDisabled ? 0.5 : 1.0,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20.r),
             border: Border.all(color: color.withOpacity(0.2)),
           ),
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
                       color: color.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                      blurRadius: 8.r,
+                      offset: Offset(0, 4.h),
                     ),
                   ],
                 ),
                 child: isDisabled && (label.contains('...')) 
                   ? SizedBox(
-                      width: 24,
-                      height: 24,
+                      width: 24.w,
+                      height: 24.w,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2,
+                        strokeWidth: 2.w,
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Icon(icon, color: Colors.white, size: 24),
+                  : Icon(icon, color: Colors.white, size: 24.sp),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Text(
                 label,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: color,
+                  fontSize: 14.sp,
                 ),
               ),
             ],
@@ -577,7 +583,7 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
                 labelText: 'Pet Name',
                 hintText: 'Enter a new name',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
                 filled: true,
                 fillColor: Colors.grey[50],
@@ -588,7 +594,7 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
             ),
           ],
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -615,7 +621,7 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
             ),
             child: const Text('Save'),
@@ -645,15 +651,15 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
 
   Widget _buildSpeechBubble(String message) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            blurRadius: 8.r,
+            offset: Offset(0, 4.h),
           ),
         ],
       ),
@@ -662,8 +668,8 @@ class _PetCareScreenState extends State<PetCareScreen> with SingleTickerProvider
         children: [
           Text(
             message,
-            style: const TextStyle(
-              fontSize: 16,
+            style: TextStyle(
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),

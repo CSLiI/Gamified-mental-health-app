@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/storage_keys.dart';
 import '../../../data/services/api_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -206,7 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     MediaQuery.of(context).padding.bottom,
               ),
               padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+                  EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 40.0.h),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -227,9 +228,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                     Hero(
                       tag: 'gameLogo',
                       child: Container(
-                        height: 100,
-                        width: 100,
-                        margin: const EdgeInsets.symmetric(horizontal: 120),
+                        height: 100.h,
+                        width: 100.h,
+                        margin: EdgeInsets.symmetric(horizontal: 120.w),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: const LinearGradient(
@@ -237,15 +238,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFF6C5CE7).withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              spreadRadius: 5,
+                              color: Color(0xFF6C5CE7).withOpacity(0.3),
+                              blurRadius: 20.r,
+                              spreadRadius: 5.r,
                             )
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.person_add_rounded,
-                          size: 50,
+                          size: 50.sp,
                           color: Colors.white,
                         ),
                       ),
@@ -264,7 +265,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       child: Text(
                         'Create Account',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 32.sp,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF6C5CE7),
                         ),
@@ -275,7 +276,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     Text(
                       'Begin your wellness journey',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -290,7 +291,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withValues(alpha: 0.1),
+                            color: Color(0xFF6C5CE7).withOpacity(0.1),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -456,7 +457,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withValues(alpha: 0.4),
+                            color: Color(0xFF6C5CE7).withOpacity(0.4),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -468,24 +469,24 @@ class _RegisterScreenState extends State<RegisterScreen>
                           backgroundColor: Colors.transparent,
                           foregroundColor: Colors.white,
                           shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: _isLoading
-                            ? const SizedBox(
-                                height: 24,
-                                width: 24,
+                            ? SizedBox(
+                                height: 24.h,
+                                width: 24.h,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 3,
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'CREATE ACCOUNT',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
                                 ),
@@ -497,12 +498,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                            color: Colors.grey.withOpacity(0.2),
+                            blurRadius: 10.r,
+                            offset: Offset(0, 4.h),
                           ),
                         ],
                         border: Border.all(color: Colors.grey[200]!),
@@ -510,9 +511,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                       child: TextButton(
                         onPressed: _isLoading ? null : _handleGoogleSignIn,
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: Row(
@@ -520,16 +521,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                           children: [
                              Image.network(
                                'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png',
-                               height: 24,
-                               width: 24,
+                               height: 24.h,
+                               width: 24.h,
                                errorBuilder: (context, error, stackTrace) => 
                                    const Icon(Icons.login, color: Colors.blue),
                              ),
-                            const SizedBox(width: 12),
-                            const Text(
+                            SizedBox(width: 12.w),
+                            Text(
                               'Sign up with Google',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
                               ),
@@ -538,7 +539,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
 
                     // Sign in link
                     Row(
@@ -549,15 +550,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
+                            fontSize: 14.sp,
                           ),
                         ),
                         TextButton(
                           onPressed: () => context.go('/login'),
-                          child: const Text(
+                          child: Text(
                             'Sign In',
                             style: TextStyle(
                               color: Color(0xFF6C5CE7),
                               fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
                             ),
                           ),
                         ),

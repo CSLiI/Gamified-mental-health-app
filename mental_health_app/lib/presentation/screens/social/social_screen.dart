@@ -9,6 +9,7 @@ import '../../../core/utils/image_cache_manager.dart';
 import '../../../core/widgets/keep_alive_wrapper.dart';
 import '../../../core/utils/debouncer.dart';
 import '../../../core/providers/theme_provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SocialScreen extends StatefulWidget {
   const SocialScreen({super.key});
@@ -195,8 +196,8 @@ class _SocialScreenState extends State<SocialScreen>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  themeProvider.primaryColor.withValues(alpha: 0.08),
-                  themeProvider.secondaryColor.withValues(alpha: 0.08),
+                  themeProvider.primaryColor.withOpacity(0.08),
+                  themeProvider.secondaryColor.withOpacity(0.08),
                   Theme.of(context).scaffoldBackgroundColor,
                 ],
               ),
@@ -204,82 +205,62 @@ class _SocialScreenState extends State<SocialScreen>
             child: SafeArea(
               child: Column(
                 children: [
-                  // Header with add friend button
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Friends',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          icon: Icon(Icons.person_add_rounded,
-                              color: AppColors.primary),
-                          onPressed: _showAddFriendDialog,
-                          iconSize: 28,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Tab Bar
+                  _buildHeader(themeProvider),
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    margin: EdgeInsets.symmetric(horizontal: 20.w),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10.r,
+                          offset: Offset(0, 2.h),
                         ),
                       ],
                     ),
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
-                        color: const Color(0xFF6C5CE7),
-                        borderRadius: BorderRadius.circular(14),
+                        color: themeProvider.primaryColor,
+                        borderRadius: BorderRadius.circular(14.r),
                       ),
                       labelColor: Colors.white,
-                      unselectedLabelColor: const Color(0xFF6B8BA8),
-                      labelStyle: const TextStyle(
+                      unselectedLabelColor: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
+                      labelStyle: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 13.sp,
                       ),
-                      unselectedLabelStyle: const TextStyle(
+                      unselectedLabelStyle: TextStyle(
                         fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                        fontSize: 13.sp,
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
-                      indicatorPadding: const EdgeInsets.all(4),
+                      indicatorPadding: EdgeInsets.all(4.w),
                       dividerColor: Colors.transparent,
-                      tabs: const [
+                      tabs: [
                         Tab(
                           child: Padding(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            child: Text('Friends'),
+                                horizontal: 4.w, vertical: 12.h),
+                            child: const Text('Friends'),
                           ),
                         ),
                         Tab(
                           child: Padding(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            child: Text('Requests'),
+                                horizontal: 4.w, vertical: 12.h),
+                            child: const Text('Requests'),
                           ),
                         ),
                         Tab(
                           child: Padding(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            child: Text('Sent'),
+                                horizontal: 4.w, vertical: 12.h),
+                            child: const Text('Sent'),
                           ),
                         ),
                       ],
@@ -308,6 +289,50 @@ class _SocialScreenState extends State<SocialScreen>
     );
   }
 
+  Widget _buildHeader(ThemeProvider themeProvider) {
+    return Padding(
+      padding: EdgeInsets.all(20.0.w),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: themeProvider.primaryColor,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Icon(
+              Icons.people_alt_rounded,
+              color: Colors.white,
+              size: 28.sp,
+            ),
+          ),
+          SizedBox(width: 16.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Social Hub',
+                style: TextStyle(
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  color: themeProvider.primaryColor,
+                ),
+              ),
+              Text(
+                'Connect with friends',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFriendsTab() {
     if (_friends.isEmpty) {
       return _buildEmptyState(
@@ -319,13 +344,90 @@ class _SocialScreenState extends State<SocialScreen>
 
     return RefreshIndicator(
       onRefresh: () => _loadData(forceRefresh: true),
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        itemCount: _friends.length,
-        itemBuilder: (context, index) {
-          final friend = _friends[index];
-          return _buildFriendCard(friend);
-        },
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Hero Card (Like Progress Screen)
+            Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(28.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.4),
+                    blurRadius: 20.r,
+                    offset: Offset(0, 10.h),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.favorite_rounded,
+                      color: Colors.white,
+                      size: 32.sp,
+                    ),
+                  ),
+                  SizedBox(width: 20.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your Community',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          '${_friends.length} Friends Active',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Text(
+              'Friends List',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _friends.length,
+              itemBuilder: (context, index) {
+                final friend = _friends[index];
+                return _buildFriendCard(friend);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -342,7 +444,7 @@ class _SocialScreenState extends State<SocialScreen>
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
         itemCount: _friendRequests.length,
         itemBuilder: (context, index) {
           final request = _friendRequests[index];
@@ -364,7 +466,7 @@ class _SocialScreenState extends State<SocialScreen>
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
         itemCount: _sentRequests.length,
         itemBuilder: (context, index) {
           final request = _sentRequests[index];
@@ -377,13 +479,13 @@ class _SocialScreenState extends State<SocialScreen>
   // ✨ Professional skeleton loader (like Instagram/Facebook)
   Widget _buildSkeletonLoader() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       itemCount: 5,
       itemBuilder: (context, index) {
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.only(bottom: 16.h),
           child: SkeletonLoader.card(
-            height: 140,
+            height: 140.h,
             width: double.infinity,
           ),
         );
@@ -401,40 +503,40 @@ class _SocialScreenState extends State<SocialScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 100,
-            height: 100,
+            width: 100.w,
+            height: 100.w,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.secondary.withValues(alpha: 0.2),
-                  AppColors.primary.withValues(alpha: 0.2),
+                  AppColors.secondary.withOpacity(0.2),
+                  AppColors.primary.withOpacity(0.2),
                 ],
               ),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
-              size: 50,
+              size: 50.sp,
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
           Text(
             title,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 20.sp,
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: EdgeInsets.symmetric(horizontal: 32.w),
             child: Text(
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -538,20 +640,21 @@ class _SocialScreenState extends State<SocialScreen>
         await _loadData(forceRefresh: true);
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.only(bottom: 16.h),
+        padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: moodColor.withValues(alpha: 0.5),
-            width: 3,
-          ),
+          borderRadius: BorderRadius.circular(24.r), // More rounded like Progress
           boxShadow: [
             BoxShadow(
-              color: moodColor.withValues(alpha: 0.2),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
+              color: moodColor.withOpacity(0.15),
+              blurRadius: 15.r,
+              offset: Offset(0, 5.h),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5.r,
+              offset: Offset(0, 2.h),
             ),
           ],
         ),
@@ -560,21 +663,21 @@ class _SocialScreenState extends State<SocialScreen>
             // Character mood GIF (square) - using cached data
             if (character != null)
               Container(
-                width: 64,
-                height: 64,
+                width: 64.w,
+                height: 64.w,
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 2,
+                    color: AppColors.primary.withOpacity(0.3),
+                    width: 2.w,
                   ),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(14.r),
                   child: moodState.isEmpty
                       ? Icon(Icons.person,
-                          size: 32, color: AppColors.textSecondary)
+                          size: 32.sp, color: AppColors.textSecondary)
                       : ImageCacheManager().buildCachedImage(
                           assetPath:
                               'assets/images/${genderPrefix}_Gif_33FPS/$moodState$genderPrefix$characterNumber.gif',
@@ -585,26 +688,26 @@ class _SocialScreenState extends State<SocialScreen>
             else
               // Fallback to gradient with initial
               Container(
-                width: 64,
-                height: 64,
+                width: 64.w,
+                height: 64.w,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [AppColors.primary, AppColors.secondary],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Center(
                   child: Text(
                     firstLetter,
-                    style: const TextStyle(
-                      fontSize: 24,
+                    style: TextStyle(
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
                 ),
               ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,37 +715,40 @@ class _SocialScreenState extends State<SocialScreen>
                   Text(
                     friendName.isEmpty ? 'Unknown' : friendName,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Row(
                     children: [
                       Icon(Icons.star_rounded,
-                          size: 16, color: AppColors.gameYellow),
-                      const SizedBox(width: 4),
+                          size: 16.sp, color: AppColors.gameYellow),
+                      SizedBox(width: 4.w),
                       Text(
                         'Level ${friend['friend_level'] ?? 1}',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w500,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                     decoration: BoxDecoration(
                       color: moodColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(
                         color: moodColor.withOpacity(0.3),
-                        width: 1,
+                        width: 1.w,
                       ),
                     ),
                     child: Text(
@@ -650,7 +756,7 @@ class _SocialScreenState extends State<SocialScreen>
                           ? 'No mood logged'
                           : currentMood.toUpperCase(),
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w600,
                         color: moodColor,
                         letterSpacing: 0.5,
@@ -678,24 +784,24 @@ class _SocialScreenState extends State<SocialScreen>
         senderName.isNotEmpty ? senderName[0].toUpperCase() : '?';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15.r,
+            offset: Offset(0, 4.h),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 56.w,
+            height: 56.w,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.primary, AppColors.secondary],
@@ -705,15 +811,15 @@ class _SocialScreenState extends State<SocialScreen>
             child: Center(
               child: Text(
                 firstLetter,
-                style: const TextStyle(
-                  fontSize: 24,
+                style: TextStyle(
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -721,18 +827,21 @@ class _SocialScreenState extends State<SocialScreen>
                 Text(
                   senderName.isEmpty ? 'Unknown' : senderName,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   'Wants to connect',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
                   ),
                 ),
               ],
@@ -742,26 +851,26 @@ class _SocialScreenState extends State<SocialScreen>
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.stateThriving.withValues(alpha: 0.2),
+                  color: AppColors.stateThriving.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   icon:
                       Icon(Icons.check_rounded, color: AppColors.stateThriving),
                   onPressed: () => _acceptFriendRequest(request['id']),
-                  iconSize: 24,
+                  iconSize: 24.sp,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.2),
+                  color: AppColors.error.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   icon: Icon(Icons.close_rounded, color: AppColors.error),
                   onPressed: () => _rejectFriendRequest(request['id']),
-                  iconSize: 24,
+                  iconSize: 24.sp,
                 ),
               ),
             ],
@@ -786,7 +895,7 @@ class _SocialScreenState extends State<SocialScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -841,7 +950,8 @@ class _SocialScreenState extends State<SocialScreen>
           ),
           TextButton.icon(
             onPressed: () => _cancelFriendRequest(request['id']),
-            icon: Icon(Icons.close_rounded, size: 18, color: AppColors.error),
+            icon:
+                Icon(Icons.close_rounded, size: 18.sp, color: AppColors.error),
             label: Text(
               'Cancel',
               style: TextStyle(
@@ -850,10 +960,10 @@ class _SocialScreenState extends State<SocialScreen>
               ),
             ),
             style: TextButton.styleFrom(
-              backgroundColor: AppColors.error.withValues(alpha: 0.1),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              backgroundColor: AppColors.error.withOpacity(0.1),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
               ),
             ),
           ),
@@ -868,7 +978,7 @@ class _SocialScreenState extends State<SocialScreen>
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.r),
         ),
         title: Text(
           'Add Friend',
@@ -881,31 +991,35 @@ class _SocialScreenState extends State<SocialScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 300, // Fixed width to prevent horizontal expansion
+              width: 300.w, // Fixed width to prevent horizontal expansion
               child: TextField(
                 controller: searchController,
-              maxLines: 2, // Allow wrapping to avoid horizontal scroll
-              minLines: 2, // Fixed height (static)
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(fontSize: 18), // Slightly larger text
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Bigger tap area
-                labelText: 'Email Address',
-                hintText: 'Enter friend\'s email',
-                prefixIcon: Icon(Icons.email_rounded, color: AppColors.primary),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.primary),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                maxLines: 2, // Allow wrapping to avoid horizontal scroll
+                minLines: 2, // Fixed height (static)
+                keyboardType: TextInputType.emailAddress,
+                style: TextStyle(fontSize: 18.sp), // Slightly larger text
+                decoration: InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(
+                      vertical: 20.h, horizontal: 20.w), // Bigger tap area
+                  labelText: 'Email Address',
+                  hintText: 'Enter friend\'s email',
+                  prefixIcon:
+                      Icon(Icons.email_rounded, color: AppColors.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide:
+                        BorderSide(color: AppColors.primary, width: 2.w),
+                  ),
                 ),
               ),
             ),
-            ),
           ],
         ),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -922,7 +1036,7 @@ class _SocialScreenState extends State<SocialScreen>
               gradient: LinearGradient(
                 colors: [AppColors.primary, AppColors.secondary],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
             ),
             child: ElevatedButton(
               onPressed: () {
@@ -933,7 +1047,7 @@ class _SocialScreenState extends State<SocialScreen>
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
               ),
               child: const Text(
@@ -967,7 +1081,7 @@ class _SocialScreenState extends State<SocialScreen>
 
         return ListView(
           controller: scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
           children: [
             _buildInfoCard(
               icon: Icons.task_alt,
@@ -976,29 +1090,30 @@ class _SocialScreenState extends State<SocialScreen>
                   'Share your daily tasks and keep each other motivated!',
               color: AppColors.primary,
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32.h),
 
             // Your Tasks Today
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primary.withValues(alpha: 0.2),
-                        AppColors.secondary.withValues(alpha: 0.2),
+                        AppColors.primary.withOpacity(0.2),
+                        AppColors.secondary.withOpacity(0.2),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                  child: Icon(Icons.person, color: AppColors.primary, size: 20),
+                  child: Icon(Icons.person,
+                      color: AppColors.primary, size: 20.sp),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Text(
                   'Your Tasks Today',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
@@ -1018,14 +1133,14 @@ class _SocialScreenState extends State<SocialScreen>
                         : AppColors.warning,
                   )),
 
-            const SizedBox(height: 32),
+            SizedBox(height: 32.h),
 
             // Friend's Shared Tasks
             Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 36.w,
+                  height: 36.w,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppColors.primary, AppColors.secondary],
@@ -1035,25 +1150,27 @@ class _SocialScreenState extends State<SocialScreen>
                   child: Center(
                     child: Text(
                       (friend['friend_first_name'] != null &&
-                              friend['friend_first_name'].toString().isNotEmpty)
+                              friend['friend_first_name']
+                                  .toString()
+                                  .isNotEmpty)
                           ? friend['friend_first_name']
                               .toString()[0]
                               .toUpperCase()
                           : '?',
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
                     "${friend['friend_first_name'] ?? 'Friend'}'s Tasks",
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
@@ -1075,7 +1192,7 @@ class _SocialScreenState extends State<SocialScreen>
                         : AppColors.warning,
                   )),
 
-            const SizedBox(height: 32),
+            SizedBox(height: 32.h),
 
             // Send Encouragement Button
             Container(
@@ -1083,22 +1200,22 @@ class _SocialScreenState extends State<SocialScreen>
                 gradient: LinearGradient(
                   colors: [AppColors.primary, AppColors.secondary],
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 12.r,
+                    offset: Offset(0, 6.h),
                   ),
                 ],
               ),
               child: ElevatedButton.icon(
                 onPressed: () => _sendEncouragement(friend),
-                icon: const Icon(Icons.favorite_rounded, size: 22),
-                label: const Text(
+                icon: Icon(Icons.favorite_rounded, size: 22.sp),
+                label: Text(
                   'Send Encouragement',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1106,14 +1223,14 @@ class _SocialScreenState extends State<SocialScreen>
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  padding: EdgeInsets.symmetric(vertical: 18.h),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16.r),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
           ],
         );
       },
@@ -1177,21 +1294,21 @@ class _SocialScreenState extends State<SocialScreen>
 
   Widget _buildEmptyTaskState(String message, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(24.w),
+      margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 12),
+          Icon(icon, size: 48.sp, color: Colors.grey[400]),
+          SizedBox(height: 12.h),
           Text(
             message,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 14.sp,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
@@ -1237,8 +1354,8 @@ class _SocialScreenState extends State<SocialScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primary.withValues(alpha: 0.2),
-                        AppColors.secondary.withValues(alpha: 0.2),
+                        AppColors.primary.withOpacity(0.2),
+                        AppColors.secondary.withOpacity(0.2),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -1356,18 +1473,18 @@ class _SocialScreenState extends State<SocialScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.gameYellow.withValues(alpha: 0.15),
-                      AppColors.primary.withValues(alpha: 0.1),
+                      AppColors.gameYellow.withOpacity(0.15),
+                      AppColors.primary.withOpacity(0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppColors.gameYellow.withValues(alpha: 0.4),
+                    color: AppColors.gameYellow.withOpacity(0.4),
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.gameYellow.withValues(alpha: 0.15),
+                      color: AppColors.gameYellow.withOpacity(0.15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1378,7 +1495,7 @@ class _SocialScreenState extends State<SocialScreen>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.gameYellow.withValues(alpha: 0.2),
+                        color: AppColors.gameYellow.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -1470,8 +1587,8 @@ class _SocialScreenState extends State<SocialScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.2),
-                    AppColors.secondary.withValues(alpha: 0.2),
+                    AppColors.primary.withOpacity(0.2),
+                    AppColors.secondary.withOpacity(0.2),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
@@ -1519,7 +1636,7 @@ class _SocialScreenState extends State<SocialScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
+                color: AppColors.primary.withOpacity(0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -1558,23 +1675,23 @@ class _SocialScreenState extends State<SocialScreen>
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12.r),
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Icon(icon, color: color, size: 28.sp),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1582,16 +1699,16 @@ class _SocialScreenState extends State<SocialScreen>
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   description,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 13.sp,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -1605,31 +1722,33 @@ class _SocialScreenState extends State<SocialScreen>
 
   Widget _buildTaskCard(String title, bool isCompleted, Color color) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(18.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: isCompleted ? color.withValues(alpha: 0.3) : Colors.grey[200]!,
-          width: isCompleted ? 2 : 1,
+          color: isCompleted
+              ? color.withOpacity(0.3)
+              : Colors.grey[200]!,
+          width: isCompleted ? 2.w : 1.w,
         ),
         boxShadow: [
           BoxShadow(
             color: isCompleted
-                ? color.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+                ? color.withOpacity(0.1)
+                : Colors.black.withOpacity(0.03),
+            blurRadius: 8.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6.w),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: color.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -1637,15 +1756,15 @@ class _SocialScreenState extends State<SocialScreen>
                   ? Icons.check_circle_rounded
                   : Icons.radio_button_unchecked_rounded,
               color: color,
-              size: 22,
+              size: 22.sp,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
                 color: isCompleted
                     ? AppColors.textSecondary
@@ -1665,16 +1784,16 @@ class _SocialScreenState extends State<SocialScreen>
     required List<Map<String, dynamic>> items,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12.r,
+            offset: Offset(0, 4.h),
           ),
         ],
       ),
@@ -1685,79 +1804,79 @@ class _SocialScreenState extends State<SocialScreen>
             Text(
               title,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
           ],
           ...items.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
             return Padding(
               padding: EdgeInsets.only(
-                bottom: index < items.length - 1 ? 16 : 0,
+                bottom: index < items.length - 1 ? 16.h : 0,
               ),
               child: Container(
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(14.w),
                 decoration: BoxDecoration(
-                  color: item['color'].withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
+                  color: item['color'].withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(14.r),
                   border: Border.all(
-                    color: item['color'].withValues(alpha: 0.2),
+                    color: item['color'].withOpacity(0.2),
                   ),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
-                        color: item['color'].withValues(alpha: 0.15),
+                        color: item['color'].withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.local_fire_department_rounded,
                         color: item['color'],
-                        size: 20,
+                        size: 20.sp,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: 14.w),
                     Expanded(
                       child: Text(
                         item['label'],
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 14.w,
+                        vertical: 8.h,
                       ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
                             item['color'],
-                            item['color'].withValues(alpha: 0.8),
+                            item['color'].withOpacity(0.8),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         boxShadow: [
                           BoxShadow(
-                            color: item['color'].withValues(alpha: 0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                            color: item['color'].withOpacity(0.3),
+                            blurRadius: 6.r,
+                            offset: Offset(0, 2.h),
                           ),
                         ],
                       ),
                       child: Text(
                         '${item['days']} days',
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -1781,20 +1900,20 @@ class _SocialScreenState extends State<SocialScreen>
     required Color color,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1.5,
+          color: color.withOpacity(0.2),
+          width: 1.5.w,
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: color.withOpacity(0.08),
+            blurRadius: 12.r,
+            offset: Offset(0, 4.h),
           ),
         ],
       ),
@@ -1805,23 +1924,23 @@ class _SocialScreenState extends State<SocialScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      color.withValues(alpha: 0.2),
-                      color.withValues(alpha: 0.1),
+                      color.withOpacity(0.2),
+                      color.withOpacity(0.1),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(14.r),
                 ),
                 child: Icon(
                   Icons.flag_rounded,
                   color: color,
-                  size: 24,
+                  size: 24.sp,
                 ),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1829,16 +1948,16 @@ class _SocialScreenState extends State<SocialScreen>
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 17,
+                        fontSize: 17.sp,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6.h),
                     Text(
                       description,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         color: AppColors.textSecondary,
                         height: 1.4,
                       ),
@@ -1846,17 +1965,17 @@ class _SocialScreenState extends State<SocialScreen>
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 6.h,
                 ),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
-                    color: color.withValues(alpha: 0.3),
+                    color: color.withOpacity(0.3),
                   ),
                 ),
                 child: Column(
@@ -1864,7 +1983,7 @@ class _SocialScreenState extends State<SocialScreen>
                     Text(
                       '$daysLeft',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
                         color: color,
                       ),
@@ -1872,7 +1991,7 @@ class _SocialScreenState extends State<SocialScreen>
                     Text(
                       'days',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w600,
                         color: color,
                       ),
@@ -1882,31 +2001,31 @@ class _SocialScreenState extends State<SocialScreen>
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18.h),
 
           // Progress Bar
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10.r),
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.15),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: color.withOpacity(0.15),
+                  blurRadius: 8.r,
+                  offset: Offset(0, 2.h),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10.r),
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: 10,
+                minHeight: 10.h,
                 backgroundColor: Colors.grey[200],
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10.h),
 
           // Progress Percentage
           Row(
@@ -1915,32 +2034,32 @@ class _SocialScreenState extends State<SocialScreen>
               Text(
                 '${(progress * 100).toInt()}% Complete',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 10.w,
+                  vertical: 4.h,
                 ),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.trending_up_rounded,
-                      size: 14,
+                      size: 14.sp,
                       color: color,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       'On Track',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                         color: color,
                       ),
@@ -2004,20 +2123,20 @@ class _SocialScreenState extends State<SocialScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
                 child:
                     Icon(Icons.person_remove_rounded, color: AppColors.error),
@@ -2170,47 +2289,47 @@ class _SocialScreenState extends State<SocialScreen>
               // Character image/gif
               if (profile?['character'] != null) ...[
                 Container(
-                  width: 150,
-                  height: 150,
+                  width: 150.w,
+                  height: 150.w,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppColors.primary, AppColors.secondary],
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Center(
                     child: Text(
                       profile?['character']['name'] ?? 'Character',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
               ],
               Text(
                 profile?['email'] ?? '',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               if (profile?['interests'] != null &&
                   profile!['interests'].isNotEmpty) ...[
                 const Divider(),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 const Text(
                   'Interests',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Wrap(
-                  spacing: 8,
+                  spacing: 8.w,
                   children: (profile!['interests'] as List).map((interest) {
                     return Chip(
                       label: Text(interest['name'] ?? ''),
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
                     );
                   }).toList(),
                 ),

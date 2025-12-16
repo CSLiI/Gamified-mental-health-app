@@ -16,6 +16,7 @@ import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/pet_provider.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/constants/reward_catalog.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RewardsTab extends StatefulWidget {
   const RewardsTab({super.key});
@@ -63,15 +64,15 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
 
   Widget _buildXPCard(int unlocked, int total) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.tertiary, // Solid color
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.tertiary.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            blurRadius: 15.r,
+            offset: Offset(0, 5.h),
           ),
         ],
       ),
@@ -88,42 +89,42 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                       'Available XP',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onTertiary,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.h),
                     Row(
                       children: [
                         Icon(Icons.account_balance_wallet,
-                            color: Theme.of(context).colorScheme.onTertiary, size: 24),
-                        const SizedBox(width: 8),
+                            color: Theme.of(context).colorScheme.onTertiary, size: 24.sp),
+                        SizedBox(width: 8.w),
                         Text(
                           '$_userXP',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onTertiary,
-                            fontSize: 32,
+                            fontSize: 32.sp,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4.w),
                         Text(
                           'XP',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onTertiary,
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.onTertiary.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Column(
                         children: [
@@ -135,14 +136,14 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                                   Icon(Icons.star,
                                       color:
                                           Theme.of(context).colorScheme.onTertiary.withOpacity(0.6),
-                                      size: 16),
-                                  const SizedBox(width: 6),
+                                      size: 16.sp),
+                                  SizedBox(width: 6.w),
                                   Text(
                                     'Total Earned',
                                     style: TextStyle(
                                       color:
                                           Theme.of(context).colorScheme.onTertiary.withOpacity(0.6),
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                     ),
                                   ),
                                 ],
@@ -151,13 +152,13 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                                 '$_totalXP XP',
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onTertiary,
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6.h),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -166,14 +167,14 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                                   Icon(Icons.shopping_bag,
                                       color:
                                           Theme.of(context).colorScheme.onTertiary.withOpacity(0.6),
-                                      size: 16),
-                                  const SizedBox(width: 6),
+                                      size: 16.sp),
+                                  SizedBox(width: 6.w),
                                   Text(
                                     'Spent on Rewards',
                                     style: TextStyle(
                                       color:
                                           Theme.of(context).colorScheme.onTertiary.withOpacity(0.6),
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                     ),
                                   ),
                                 ],
@@ -182,30 +183,30 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                                 '-$_spentXP XP',
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onTertiary,
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6.h),
                           Divider(
                               color: Theme.of(context).colorScheme.onTertiary.withOpacity(0.1),
-                              height: 1),
-                          const SizedBox(height: 6),
+                              height: 1.h),
+                          SizedBox(height: 6.h),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Row(
                                 children: [
                                   Icon(Icons.account_balance_wallet,
-                                      color: Theme.of(context).colorScheme.onTertiary.withOpacity(0.6), size: 16),
-                                  const SizedBox(width: 6),
+                                      color: Theme.of(context).colorScheme.onTertiary.withOpacity(0.6), size: 16.sp),
+                                  SizedBox(width: 6.w),
                                   Text(
                                     'Available',
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onTertiary.withOpacity(0.6),
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -215,7 +216,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                                 '$_userXP XP',
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.onTertiary,
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -229,7 +230,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -250,7 +251,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
           value,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onTertiary,
-            fontSize: 18,
+            fontSize: 18.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -258,7 +259,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
           label,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onTertiary.withOpacity(0.6),
-            fontSize: 12,
+            fontSize: 12.sp,
           ),
         ),
       ],
@@ -822,11 +823,11 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
 
     if (_isLoading) {
       return SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.w),
         child: Column(
           children: [
-            SkeletonLoader.card(height: 100),
-            const SizedBox(height: 24),
+            SkeletonLoader.card(height: 100.h),
+            SizedBox(height: 24.h),
             SkeletonLoader.grid(
               itemCount: 6,
               crossAxisCount: 2,
@@ -845,14 +846,14 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
       color: AppColors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildXPCard(unlockedCount, totalCount),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             _buildShopControls(),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             _buildShopGrid(),
           ],
         ),
@@ -868,11 +869,11 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
       child: Row(
         children: [
           _buildCategoryChip('themes', Icons.gradient, 'Themes'),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           _buildCategoryChip('fonts', Icons.text_fields_rounded, 'Fonts'),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           _buildCategoryChip('banners', Icons.flag_rounded, 'Banners'),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           _buildCategoryChip('companions', Icons.pets_rounded, 'Companions'),
         ],
       ),
@@ -885,18 +886,18 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
       onTap: () => setState(() => _activeCategory = id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
               color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor),
           boxShadow: selected
               ? [
                   BoxShadow(
                     color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    blurRadius: 8.r,
+                    offset: Offset(0, 2.h),
                   ),
                 ]
               : null,
@@ -904,15 +905,15 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
         child: Row(
           children: [
             Icon(icon,
-                size: 16,
+                size: 16.sp,
                 color: selected
                     ? Theme.of(context).colorScheme.onPrimary
                     : Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-            const SizedBox(width: 6),
+            SizedBox(width: 6.w),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 color: selected
                     ? Theme.of(context).colorScheme.onPrimary
@@ -943,11 +944,11 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 0.8,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: 12.w,
+        mainAxisSpacing: 12.h,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -970,21 +971,21 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
             color: isEquipped ? Theme.of(context).colorScheme.secondary : Theme.of(context).dividerColor,
-            width: isEquipped ? 2 : 1),
+            width: 2.w),
         boxShadow: [
           if (isEquipped)
             BoxShadow(
                 color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: 1),
+                blurRadius: 12.r,
+                offset: Offset(0, 4.h),
+                spreadRadius: 1.r),
           BoxShadow(
               color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
+              blurRadius: 10.r,
+              offset: Offset(0, 4.h)),
         ],
       ),
       child: Column(
@@ -1027,24 +1028,24 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
     if (isEquipped) {
       return InkWell(
         onTap: () => _unequipReward(reward['id']),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(color: Theme.of(context).colorScheme.secondary),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check, size: 14, color: Theme.of(context).colorScheme.secondary),
-              const SizedBox(width: 4),
+              Icon(Icons.check, size: 14.sp, color: Theme.of(context).colorScheme.secondary),
+              SizedBox(width: 4.w),
               Text('EQUIPPED',
                   style: TextStyle(
                       color: Theme.of(context).colorScheme.secondary,
-                      fontSize: 11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.bold)),
             ],
           ),
@@ -1055,25 +1056,25 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
     if (isUnlocked) {
       return InkWell(
         onTap: () => _equipReward(reward['id']),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: 8.h),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
               BoxShadow(
                   color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2)),
+                  blurRadius: 8.r,
+                  offset: Offset(0, 2.h)),
             ],
           ),
           child: Text('EQUIP',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimary,
-                  fontSize: 11,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.bold)),
         ),
       );
@@ -1083,19 +1084,19 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
       onTap: canAfford
           ? () => _unlockReward(reward['id'], reward['xp_cost'])
           : null,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: EdgeInsets.symmetric(vertical: 8.h),
         decoration: BoxDecoration(
           color: canAfford ? Theme.of(context).colorScheme.tertiary : Theme.of(context).disabledColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12.r),
           boxShadow: canAfford
               ? [
                   BoxShadow(
                       color: Theme.of(context).colorScheme.tertiary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2))
+                      blurRadius: 8.r,
+                      offset: Offset(0, 2.h))
                 ]
               : null,
         ),
@@ -1103,13 +1104,13 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (canAfford)
-              const Icon(Icons.lock_open, size: 12, color: Colors.white),
-            if (canAfford) const SizedBox(width: 4),
+              Icon(Icons.lock_open, size: 12.sp, color: Colors.white),
+            if (canAfford) SizedBox(width: 4.w),
             Text(
               '${reward['xp_cost']} XP',
               style: TextStyle(
                   color: canAfford ? Colors.white : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                  fontSize: 11,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.bold),
             ),
           ],
@@ -1181,17 +1182,17 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
       children: [
         // Tier header
         Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
+          margin: EdgeInsets.only(bottom: 16.h),
+          padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
             color: isUnlocked ? tierColor : Theme.of(context).disabledColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
             boxShadow: isUnlocked
                 ? [
                     BoxShadow(
-                      color: tierColor.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      color: tierColor.withOpacity(0.3),
+                      blurRadius: 10.r,
+                      offset: Offset(0, 5.h),
                     ),
                   ]
                 : null,
@@ -1199,26 +1200,26 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Icon(
                   _getTierIcon(tier),
                   color: Colors.white,
-                  size: 24,
+                  size: 24.sp,
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Tier $tier',
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -1228,18 +1229,18 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                           ? '${rewards.length} rewards available'
                           : 'Unlocks at Level $tierLevel',
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 12.sp,
+                        color: Colors.white.withOpacity(0.9),
                       ),
                     ),
                   ],
                 ),
               ),
               if (!isUnlocked)
-                const Icon(
+                Icon(
                   Icons.lock,
                   color: Colors.white,
-                  size: 24,
+                  size: 24.sp,
                 ),
             ],
           ),
@@ -1250,11 +1251,11 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 0.75,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+              crossAxisSpacing: 16.w,
+              mainAxisSpacing: 16.h,
             ),
             itemCount: rewards.length,
             itemBuilder: (context, index) {
@@ -1269,10 +1270,10 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
         else
           // Locked tier preview
           Container(
-            height: 200,
+            height: 200.h,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
             ),
             child: Stack(
               children: [
@@ -1280,11 +1281,11 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 1.5,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16.w,
+                    mainAxisSpacing: 16.h,
                   ),
                   itemCount: rewards.length > 4 ? 4 : rewards.length,
                   itemBuilder: (context, index) {
@@ -1295,12 +1296,12 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                       child: Container(
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Center(
                           child: Icon(
                             _getCategoryIcon(category),
-                            size: 40,
+                            size: 40.sp,
                             color: Colors.grey,
                           ),
                         ),
@@ -1312,24 +1313,24 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.lock,
                             color: Colors.white,
-                            size: 48,
+                            size: 48.sp,
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8.h),
                           Text(
                             'Reach Level $tierLevel to unlock',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1342,7 +1343,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
             ),
           ),
 
-        const SizedBox(height: 32),
+        SizedBox(height: 32.h),
       ],
     );
   }
@@ -1398,34 +1399,32 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
     }
   }
 
-
-
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32.w),
         child: Column(
           children: [
             Icon(
               Icons.card_giftcard,
-              size: 80,
+              size: 80.sp,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               'No Rewards Available',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               'Earn XP to unlock amazing rewards!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
@@ -1514,11 +1513,11 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             childAspectRatio: 0.75,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisSpacing: 12.w,
+            mainAxisSpacing: 12.h,
           ),
           itemCount: petProvider.catalog.length,
           itemBuilder: (context, index) {
@@ -1549,21 +1548,21 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
             color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).dividerColor,
-            width: isActive ? 2 : 1),
+            width: isActive ? 2.w : 1.w),
         boxShadow: [
           if (isActive)
             BoxShadow(
                 color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: 1),
+                blurRadius: 12.r,
+                offset: Offset(0, 4.h),
+                spreadRadius: 1.r),
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10.r,
+              offset: Offset(0, 4.h)),
         ],
       ),
       child: Column(
@@ -1582,20 +1581,20 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                   : Center(
                       child: Text(
                         pet['emoji'] ?? '🐾',
-                        style: const TextStyle(fontSize: 100), // Massive emoji size
+                        style: TextStyle(fontSize: 100.sp), // Massive emoji size
                       ),
                     ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.w),
             child: Column(
               children: [
                 Text(
                   pet['name'],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
                     color: isUnlocked
                         ? Theme.of(context).colorScheme.onSurface
@@ -1604,28 +1603,28 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 if (isActive)
                   InkWell(
                     onTap: null, // Already active
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(color: Theme.of(context).colorScheme.secondary),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check, size: 14, color: Theme.of(context).colorScheme.secondary),
-                          const SizedBox(width: 4),
+                          Icon(Icons.check, size: 14.sp, color: Theme.of(context).colorScheme.secondary),
+                          SizedBox(width: 4.w),
                           Text('COMPANION',
                               style: TextStyle(
                                   color: Theme.of(context).colorScheme.secondary,
-                                  fontSize: 11,
+                                  fontSize: 11.sp,
                                   fontWeight: FontWeight.bold)),
                         ],
                       ),
@@ -1634,51 +1633,51 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
                 else if (isUnlocked)
                   InkWell(
                     onTap: () => provider.equipPet(pet['id']),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         boxShadow: [
                           BoxShadow(
                               color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2)),
+                              blurRadius: 8.r,
+                              offset: Offset(0, 2.h)),
                         ],
                       ),
-                      child: const Text('EQUIP',
+                      child: Text('EQUIP',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
+                              fontSize: 11.sp,
                               fontWeight: FontWeight.bold)),
                     ),
                   )
                 else
                   InkWell(
                     onTap: () => provider.unlockPet(pet['id']),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.tertiary,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.lock_open,
-                              size: 12,
+                              size: 12.sp,
                               color: Theme.of(context).colorScheme.onTertiary),
-                          SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           Text(
                             'Unlock', // Add cost later
                             style: TextStyle(
                                 color: Theme.of(context).colorScheme.onTertiary,
-                                fontSize: 11,
+                                fontSize: 11.sp,
                                 fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -1707,8 +1706,8 @@ class _ThemePreview extends StatelessWidget {
             colors: [color1, color2],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight),
-        borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16.r), topRight: Radius.circular(16.r)),
       ),
       child: Stack(
         children: const [
@@ -1738,27 +1737,30 @@ class _BannerPreview extends StatelessWidget {
             colors: [color1, color2],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight),
-        borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16.r), topRight: Radius.circular(16.r)),
       ),
       child: Center(
         child: Container(
           width: double.infinity,
-          height: 32,
-          margin: const EdgeInsets.symmetric(horizontal: 24),
+          height: 32.h,
+          margin: EdgeInsets.symmetric(horizontal: 24.w),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
             border: Border.all(color: Colors.white.withOpacity(0.3)),
           ),
-          child: const Center(
-            child: Text(
-              'BANNER PREVIEW',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-                letterSpacing: 1.5,
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Banner Preview',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.sp,
+                  letterSpacing: 1.0,
+                ),
               ),
             ),
           ),
@@ -1767,7 +1769,6 @@ class _BannerPreview extends StatelessWidget {
     );
   }
 }
-
 
 class _FontPreview extends StatelessWidget {
   final String fontFamily;
@@ -1783,10 +1784,10 @@ class _FontPreview extends StatelessWidget {
     if (fontFamily.toLowerCase().contains('playfair')) googleFontName = 'Playfair Display';
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+            topLeft: Radius.circular(16.r), topRight: Radius.circular(16.r)),
       ),
       child: Center(
         child: Column(
@@ -1796,17 +1797,17 @@ class _FontPreview extends StatelessWidget {
               'Aa',
               style: GoogleFonts.getFont(
                 googleFontName,
-                fontSize: 32,
+                fontSize: 32.sp,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               'The quick brown fox',
               style: GoogleFonts.getFont(
                 googleFontName,
-                fontSize: 12,
+                fontSize: 12.sp,
                 color: AppColors.textSecondary,
               ),
             ),

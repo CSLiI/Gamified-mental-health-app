@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
@@ -146,20 +147,20 @@ class _StatisticsTabState extends State<StatisticsTab>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.w),
         child: Column(
           children: [
             Row(
               children: [
-                Expanded(child: SkeletonLoader.card(height: 100)),
-                const SizedBox(width: 16),
-                Expanded(child: SkeletonLoader.card(height: 100)),
+                Expanded(child: SkeletonLoader.card(height: 100.h)),
+                SizedBox(width: 16.w),
+                Expanded(child: SkeletonLoader.card(height: 100.h)),
               ],
             ),
-            const SizedBox(height: 24),
-            SkeletonLoader.card(height: 250),
-            const SizedBox(height: 24),
-            SkeletonLoader.card(height: 200),
+            SizedBox(height: 24.h),
+            SkeletonLoader.card(height: 250.h),
+            SizedBox(height: 24.h),
+            SkeletonLoader.card(height: 200.h),
           ],
         ),
       );
@@ -170,34 +171,34 @@ class _StatisticsTabState extends State<StatisticsTab>
       color: AppColors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildOverviewCards(),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: 24.h),
+            Text(
               'Mood Distribution',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0A4B80),
+                color: const Color(0xFF0A4B80),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: 48.h,
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 border:
-                    Border.all(color: Color(0xFF0A4B80).withValues(alpha: 0.3)),
+                    Border.all(color: const Color(0xFF0A4B80).withOpacity(0.3)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 4.r,
+                    offset: Offset(0, 2.h),
                   ),
                 ],
               ),
@@ -206,14 +207,14 @@ class _StatisticsTabState extends State<StatisticsTab>
                   value: _timeRange,
                   isExpanded: true,
                   isDense: false,
-                  menuMaxHeight: 250,
+                  menuMaxHeight: 250.h,
                   alignment: AlignmentDirectional.centerStart,
-                  style: const TextStyle(
-                      fontSize: 16,
+                  style: TextStyle(
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF0A4B80)),
-                  icon: const Icon(Icons.arrow_drop_down,
-                      color: Color(0xFF0A4B80), size: 24),
+                      color: const Color(0xFF0A4B80)),
+                  icon: Icon(Icons.arrow_drop_down,
+                      color: const Color(0xFF0A4B80), size: 24.sp),
                   items: const [
                     DropdownMenuItem(value: 'week', child: Text('This Week')),
                     DropdownMenuItem(value: 'month', child: Text('This Month')),
@@ -229,18 +230,18 @@ class _StatisticsTabState extends State<StatisticsTab>
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             _buildMoodChart(),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: 24.h),
+            Text(
               'Activity Summary',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0A4B80),
+                color: const Color(0xFF0A4B80),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             _buildActivitySummary(),
           ],
         ),
@@ -260,7 +261,7 @@ class _StatisticsTabState extends State<StatisticsTab>
             color: AppColors.error,
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16.w),
         Expanded(
           child: _buildStatCard(
             icon: Icons.star,
@@ -282,44 +283,44 @@ class _StatisticsTabState extends State<StatisticsTab>
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: color, // Solid color
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: color.withOpacity(0.3),
+            blurRadius: 15.r,
+            offset: Offset(0, 5.h),
           ),
         ],
       ),
       child: Column(
         children: [
-          Icon(icon, color: Colors.white, size: 32),
-          const SizedBox(height: 8),
+          Icon(icon, color: Colors.white, size: 32.sp),
+          SizedBox(height: 8.h),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
           Text(
             subtitle,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 12,
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 12.sp,
             ),
           ),
         ],
@@ -344,9 +345,9 @@ class _StatisticsTabState extends State<StatisticsTab>
         color: _getMoodColor(entry.key),
         value: entry.value.toDouble(),
         title: '$percentage%',
-        radius: 80,
-        titleStyle: const TextStyle(
-          fontSize: 14,
+        radius: 80.r,
+        titleStyle: TextStyle(
+          fontSize: 14.sp,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
@@ -354,54 +355,54 @@ class _StatisticsTabState extends State<StatisticsTab>
     }).toList();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
       child: Column(
         children: [
           SizedBox(
-            height: 200,
+            height: 200.h,
             child: PieChart(
               PieChartData(
                 sections: sections,
                 sectionsSpace: 2,
-                centerSpaceRadius: 40,
+                centerSpaceRadius: 40.r,
                 startDegreeOffset: -90,
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.h),
           Wrap(
-            spacing: 16,
-            runSpacing: 8,
+            spacing: 16.w,
+            runSpacing: 8.h,
             alignment: WrapAlignment.center,
             children: distribution.entries.map((entry) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 16,
-                    height: 16,
+                    width: 16.w,
+                    height: 16.w,
                     decoration: BoxDecoration(
                       color: _getMoodColor(entry.key),
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6.w),
                   Text(
                     '${_capitalizeFirstLetter(entry.key)} (${entry.value})',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF0A4B80),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: const Color(0xFF0A4B80),
                     ),
                   ),
                 ],
@@ -428,7 +429,7 @@ class _StatisticsTabState extends State<StatisticsTab>
           subtitle: 'Total entries',
           color: AppColors.primary,
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         _buildActivityCard(
           icon: Icons.auto_stories,
           title: 'Journal Entries',
@@ -436,7 +437,7 @@ class _StatisticsTabState extends State<StatisticsTab>
           subtitle: 'Total entries',
           color: const Color(0xFF9C27B0),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         _buildActivityCard(
           icon: Icons.check_circle,
           title: 'Todos Completed',
@@ -456,50 +457,50 @@ class _StatisticsTabState extends State<StatisticsTab>
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 2,
+          color: color.withOpacity(0.3),
+          width: 2.w,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12.r),
             ),
-            child: Icon(icon, color: color, size: 32),
+            child: Icon(icon, color: color, size: 32.sp),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0A4B80),
+                    color: const Color(0xFF0A4B80),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: Colors.grey[600],
                   ),
                 ),
@@ -509,7 +510,7 @@ class _StatisticsTabState extends State<StatisticsTab>
           Text(
             count.toString(),
             style: TextStyle(
-              fontSize: 32,
+              fontSize: 32.sp,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -521,15 +522,15 @@ class _StatisticsTabState extends State<StatisticsTab>
 
   Widget _buildEmptyState(String title, String subtitle) {
     return Container(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(40.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
@@ -538,24 +539,24 @@ class _StatisticsTabState extends State<StatisticsTab>
           children: [
             Icon(
               Icons.bar_chart,
-              size: 60,
+              size: 60.sp,
               color: Colors.grey[400],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               title,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[700],
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: Colors.grey[600],
               ),
             ),

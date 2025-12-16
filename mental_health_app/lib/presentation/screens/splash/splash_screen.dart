@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/dio_client.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -101,42 +102,42 @@ class _SplashScreenState extends State<SplashScreen>
                 animation: _pulseController,
                 builder: (context, child) {
                   return Container(
-                    width: 120 + (10 * _pulseController.value),
-                    height: 120 + (10 * _pulseController.value),
+                    width: 120.w + (10.w * _pulseController.value),
+                    height: 120.w + (10.w * _pulseController.value),
                     // Removed gradient background
                     child: ClipOval(
                       child: Image.asset(
                         'assets/images/app_logo.png',
-                        width: 70,
-                        height: 70,
+                        width: 70.w,
+                        height: 70.w,
                         fit: BoxFit.contain,
                       ),
                     ),
                   );
                 },
               ),
-              const SizedBox(height: 32),
-              const Text(
+              SizedBox(height: 32.h),
+              Text(
                 'Mental Wellness',
                 style: TextStyle(
-                  fontSize: 32,
+                  fontSize: 32.sp,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF6C5CE7),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Text(
                 'Your journey to better mental health',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 40),
+              SizedBox(height: 40.h),
               CircularProgressIndicator(
                 color: Color(0xFF6C5CE7),
-                strokeWidth: 3,
+                strokeWidth: 3.w,
               ),
             ],
           ),

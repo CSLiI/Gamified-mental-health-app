@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CharacterScreen extends StatelessWidget {
   const CharacterScreen({super.key});
@@ -18,32 +19,32 @@ class CharacterScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 150,
-              height: 150,
+              width: 150.w,
+              height: 150.w,
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.pets,
-                size: 80,
+                size: 80.sp,
                 color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: 24.h),
+            Text(
               'Your Character',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 24.sp,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8.h),
+            Text(
               'Character details coming soon',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 color: AppColors.textSecondary,
               ),
             ),

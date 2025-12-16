@@ -14,6 +14,7 @@ import '../profile/profile_screen.dart';
 import '../../../core/utils/debouncer.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/cache_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeNavigation extends StatefulWidget {
   final int initialIndex;
@@ -146,7 +147,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
           context: context,
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(20.r),
             ),
             title: const Text(
               'Exit Echo?',
@@ -172,7 +173,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6B9080),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: const Text(
@@ -206,10 +207,10 @@ class _HomeNavigationState extends State<HomeNavigation> {
           final currentMoodColor = moodProvider.getMoodColor();
           final currentMoodColorLight =
               Color.lerp(currentMoodColor, Colors.white, 0.7)!
-                  .withValues(alpha: 0.9);
+                  .withOpacity(0.9);
           final currentMoodColorDark =
               Color.lerp(currentMoodColor, Colors.white, 0.5)!
-                  .withValues(alpha: 0.9);
+                  .withOpacity(0.9);
 
           return Scaffold(
             body: Container(
@@ -242,22 +243,22 @@ class _HomeNavigationState extends State<HomeNavigation> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: currentMoodColor.withValues(alpha: 0.2),
-                    blurRadius: 15,
-                    offset: const Offset(0, -3),
+                    color: currentMoodColor.withOpacity(0.2),
+                    blurRadius: 15.r,
+                    offset: Offset(0, -3.h),
                   ),
                 ],
                 border: Border(
                   top: BorderSide(
-                    color: currentMoodColor.withValues(alpha: 0.3),
-                    width: 2,
+                    color: currentMoodColor.withOpacity(0.3),
+                    width: 2.w,
                   ),
                 ),
               ),
               child: SafeArea(
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -323,18 +324,18 @@ class _HomeNavigationState extends State<HomeNavigation> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8.w),
               decoration: BoxDecoration(
                 color: isActive ? moodColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(10.r),
                 border:
-                    isActive ? Border.all(color: moodColor, width: 2) : null,
+                    isActive ? Border.all(color: moodColor, width: 2.w) : null,
                 boxShadow: isActive
                     ? [
                         BoxShadow(
                           color: moodColor.withAlpha(100),
-                          blurRadius: 8,
-                          spreadRadius: 1,
+                          blurRadius: 8.r,
+                          spreadRadius: 1.r,
                         )
                       ]
                     : null,
@@ -342,15 +343,15 @@ class _HomeNavigationState extends State<HomeNavigation> {
               child: Icon(
                 isActive ? activeIcon : icon,
                 color: isActive ? Colors.white : const Color(0xFF2D3748),
-                size: 24,
+                size: 24.sp,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'Roboto',
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 color: isActive ? moodColor : const Color(0xFF2D3748),
               ),

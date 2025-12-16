@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class PetSelectionScreen extends StatefulWidget {
   const PetSelectionScreen({Key? key}) : super(key: key);
@@ -153,18 +154,18 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                 // Active pet display
                 if (_activePet != null)
                   Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
+                    margin: EdgeInsets.all(16.w),
+                    padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [AppColors.primary, AppColors.secondary],
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+                          blurRadius: 10.r,
+                          offset: Offset(0, 5.h),
                         ),
                       ],
                     ),
@@ -172,46 +173,46 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                       children: [
                         Text(
                           _activePet!['emoji'],
-                          style: const TextStyle(fontSize: 48),
+                          style: TextStyle(fontSize: 48.sp),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16.w),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Active Companion',
                                 style: TextStyle(
                                   color: Colors.white70,
-                                  fontSize: 12,
+                                  fontSize: 12.sp,
                                 ),
                               ),
                               Text(
                                 _activePet!['name'],
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 20,
+                                  fontSize: 20.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
                                 _activePet!['description'] ?? '',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white70,
-                                  fontSize: 12,
+                                  fontSize: 12.sp,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8.h),
                               Row(
                                 children: [
-                                  const Icon(Icons.favorite,
-                                      color: Colors.red, size: 16),
-                                  const SizedBox(width: 4),
+                                  Icon(Icons.favorite,
+                                      color: Colors.red, size: 16.sp),
+                                  SizedBox(width: 4.w),
                                   Text(
                                     'Affection: ${_activePet!['affection_level']}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 12.sp,
                                     ),
                                   ),
                                 ],
@@ -225,7 +226,7 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
 
                 // Stats
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Row(
                     children: [
                       Expanded(
@@ -236,7 +237,7 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                           AppColors.primary,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12.w),
                       Expanded(
                         child: _buildStatCard(
                           'Pets Owned',
@@ -253,13 +254,13 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                 // Pet grid
                 Expanded(
                   child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.w),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                        SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       childAspectRatio: 0.85,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12.w,
+                      mainAxisSpacing: 12.h,
                     ),
                     itemCount: _allPets.length,
                     itemBuilder: (context, index) {
@@ -282,20 +283,20 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                             color: isActive
                                 ? AppColors.primary.withOpacity(0.1)
                                 : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                             border: Border.all(
                               color: isActive
                                   ? AppColors.primary
                                   : isUnlocked
                                       ? rarityColor
                                       : Colors.grey[300]!,
-                              width: isActive ? 3 : 2,
+                              width: isActive ? 3.w : 2.w,
                             ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                                blurRadius: 8.r,
+                                offset: Offset(0, 2.h),
                               ),
                             ],
                           ),
@@ -307,12 +308,12 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: Colors.black.withOpacity(0.7),
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(16.r),
                                     ),
-                                    child: const Center(
+                                    child: Center(
                                       child: Icon(
                                         Icons.lock,
-                                        size: 48,
+                                        size: 48.sp,
                                         color: Colors.white,
                                       ),
                                     ),
@@ -326,54 +327,54 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                                   Text(
                                     pet['emoji'],
                                     style: TextStyle(
-                                      fontSize: 64,
+                                      fontSize: 64.sp,
                                       color: (!isUnlocked && !canUnlock)
                                           ? Colors.grey
                                           : null,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: 8.h),
 
                                   // Pet name
                                   Text(
                                     pet['name'],
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 16.sp,
                                       fontWeight: FontWeight.bold,
                                       color: (!isUnlocked && !canUnlock)
                                           ? Colors.grey
                                           : Colors.black87,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: 4.h),
 
                                   // Rarity badge
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
+                                      vertical: 4.h,
                                     ),
                                     decoration: BoxDecoration(
                                       color: rarityColor.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(8.r),
                                       border: Border.all(color: rarityColor),
                                     ),
                                     child: Text(
                                       pet['rarity'].toString().toUpperCase(),
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 10.sp,
                                         fontWeight: FontWeight.bold,
                                         color: rarityColor,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: 8.h),
 
                                   // Unlock level
                                   Text(
                                     'Unlocks at Lvl ${pet['unlock_level']}',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 11.sp,
                                       color: Colors.grey[600],
                                     ),
                                   ),
@@ -381,19 +382,19 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                                   // Status badge
                                   if (isActive)
                                     Container(
-                                      margin: const EdgeInsets.only(top: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 4,
+                                      margin: EdgeInsets.only(top: 8.h),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12.w,
+                                        vertical: 4.h,
                                       ),
                                       decoration: BoxDecoration(
                                         color: AppColors.primary,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(12.r),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'ACTIVE',
                                         style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: 10.sp,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
@@ -401,19 +402,19 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                                     )
                                   else if (isUnlocked)
                                     Container(
-                                      margin: const EdgeInsets.only(top: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 4,
+                                      margin: EdgeInsets.only(top: 8.h),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12.w,
+                                        vertical: 4.h,
                                       ),
                                       decoration: BoxDecoration(
                                         color: Colors.green,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(12.r),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'TAP TO SELECT',
                                         style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: 10.sp,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
@@ -421,19 +422,19 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                                     )
                                   else if (canUnlock)
                                     Container(
-                                      margin: const EdgeInsets.only(top: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 4,
+                                      margin: EdgeInsets.only(top: 8.h),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12.w,
+                                        vertical: 4.h,
                                       ),
                                       decoration: BoxDecoration(
                                         color: Colors.orange,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(12.r),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'TAP TO UNLOCK',
                                         style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: 10.sp,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
@@ -456,16 +457,16 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
   Widget _buildStatCard(
       String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(width: 8),
+          Icon(icon, color: color, size: 24.sp),
+          SizedBox(width: 8.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -473,14 +474,14 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     color: Colors.grey[600],
                   ),
                 ),
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),
@@ -499,8 +500,8 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Text(pet['emoji'], style: const TextStyle(fontSize: 32)),
-            const SizedBox(width: 12),
+            Text(pet['emoji'], style: TextStyle(fontSize: 32.sp)),
+            SizedBox(width: 12.w),
             Expanded(
               child: Text(pet['name']),
             ),
@@ -511,12 +512,12 @@ class _PetSelectionScreenState extends State<PetSelectionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(pet['description'] ?? ''),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               'Unlock this pet?',
               style: TextStyle(
                 color: Colors.grey[600],
-                fontSize: 14,
+                fontSize: 14.sp,
               ),
             ),
           ],

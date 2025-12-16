@@ -69,7 +69,7 @@ class _XPProgressBarState extends State<XPProgressBar> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -144,7 +144,7 @@ class _XPProgressBarState extends State<XPProgressBar> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -168,7 +168,7 @@ class _XPProgressBarState extends State<XPProgressBar> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
+                          color: AppColors.primary.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -287,7 +287,7 @@ class _XPProgressBarState extends State<XPProgressBar> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.warning.withValues(alpha: 0.4),
+                                color: AppColors.warning.withOpacity(0.4),
                                 blurRadius: 4,
                               ),
                             ],

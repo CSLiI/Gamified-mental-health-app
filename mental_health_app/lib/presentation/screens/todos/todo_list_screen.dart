@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/cache_service.dart';
@@ -242,15 +243,15 @@ class _TodoListScreenState extends State<TodoListScreen>
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: Container(
-          margin: const EdgeInsets.all(16),
+          margin: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(24.r),
           ),
           child: SingleChildScrollView(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              padding: const EdgeInsets.all(24),
+              constraints: BoxConstraints(maxWidth: 400.w),
+              padding: EdgeInsets.all(24.w),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,29 +261,29 @@ class _TodoListScreenState extends State<TodoListScreen>
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 18.sp,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 120),
+                    constraints: BoxConstraints(maxHeight: 120.h),
                     child: TextField(
                       controller: _taskController,
                       decoration: InputDecoration(
                         hintText: 'Enter task description...',
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                           borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                           borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF6B9080), width: 2),
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: BorderSide(
+                              color: const Color(0xFF6B9080), width: 2.w),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF8F9FA),
@@ -292,7 +293,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                       textInputAction: TextInputAction.done,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -304,7 +305,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                         child: Text('Cancel',
                             style: TextStyle(color: Colors.grey[600])),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12.w),
                       ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
@@ -313,10 +314,10 @@ class _TodoListScreenState extends State<TodoListScreen>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6B9080),
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 20.w, vertical: 12.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: const Text(
@@ -495,7 +496,7 @@ class _TodoListScreenState extends State<TodoListScreen>
             content: const Text(
                 'This will replace your current daily quests with new ones.\n\nQuests you have already claimed rewards for will be kept.'),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(20.r),
             ),
             actions: [
               TextButton(
@@ -509,7 +510,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
                 child: const Text('Reroll'),
@@ -600,25 +601,25 @@ class _TodoListScreenState extends State<TodoListScreen>
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7,
+            height: 0.7.sh,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.task_alt, size: 80, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
+                  Icon(Icons.task_alt, size: 80.sp, color: Colors.grey[300]),
+                  SizedBox(height: 16.h),
                   Text(
                     'No ${type == 'daily' ? 'Daily' : 'Weekly'} Quests',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.sp,
                       color: Colors.grey[600],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8.h),
                   Text(
                     'Tap ✨ to generate new quests',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 14.sp, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -631,13 +632,13 @@ class _TodoListScreenState extends State<TodoListScreen>
     return RefreshIndicator(
       onRefresh: _loadQuests,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.w),
         itemCount: quests.length,
         itemBuilder: (context, index) {
           final quest = quests[index];
           final questId = quest['id'];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: 12.h),
             child: QuestCard(
               key: ValueKey('${type}_${quest['id'] ?? quest['task']}'),
               questId: questId,
@@ -748,7 +749,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                 icon: Icon(
                   Icons.arrow_back_ios_new,
                   color: Theme.of(context).colorScheme.onSurface,
-                  size: 20,
+                  size: 20.sp,
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -757,7 +758,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 18.sp,
                 ),
               ),
               bottom: TabBar(
@@ -766,7 +767,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                 unselectedLabelColor:
                     Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 indicatorColor: themeProvider.primaryColor,
-                indicatorWeight: 3,
+                indicatorWeight: 3.h,
                 tabs: const [
                   Tab(text: 'Todos'),
                   Tab(text: 'Daily'),
@@ -786,7 +787,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                 ? FloatingActionButton.extended(
                     onPressed: () => _showAddTaskDialog('Daily'),
                     backgroundColor: themeProvider.primaryColor,
-                    elevation: 4,
+                    elevation: 4.r,
                     icon: const Icon(Icons.add_rounded, color: Colors.white),
                     label: const Text(
                       'New Task',
@@ -799,7 +800,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                 : FloatingActionButton(
                     onPressed: _generateQuests,
                     backgroundColor: themeProvider.primaryColor,
-                    elevation: 4,
+                    elevation: 4.r,
                     child: const Icon(Icons.auto_awesome, color: Colors.white),
                   ),
           ),
@@ -820,19 +821,19 @@ class _TodoListScreenState extends State<TodoListScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.task_alt_rounded, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 16),
+            Icon(Icons.task_alt_rounded, size: 64.sp, color: Colors.grey[300]),
+            SizedBox(height: 16.h),
             Text(
               'No tasks for today',
               style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   color: Colors.grey[600],
                   fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               'Add a small step forward',
-              style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+              style: TextStyle(fontSize: 14.sp, color: Colors.grey[400]),
             ),
           ],
         ),
@@ -846,7 +847,7 @@ class _TodoListScreenState extends State<TodoListScreen>
       onRefresh: _loadData,
       color: Theme.of(context).colorScheme.primary,
       child: ListView.builder(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.w),
         itemCount: sortedTasks.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
@@ -855,16 +856,16 @@ class _TodoListScreenState extends State<TodoListScreen>
                 sortedTasks.where((t) => t['is_completed'] == true).length;
             final total = sortedTasks.length;
             return Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              margin: EdgeInsets.only(bottom: 20.h),
+              padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(context).shadowColor.withOpacity(0.05),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+                    blurRadius: 15.r,
+                    offset: Offset(0, 5.h),
                   ),
                 ],
               ),
@@ -873,10 +874,10 @@ class _TodoListScreenState extends State<TodoListScreen>
                 children: [
                   _buildStatItem(
                       'Total', total.toString(), Icons.list_alt_rounded),
-                  Container(width: 1, height: 40, color: Theme.of(context).dividerColor),
+                  Container(width: 1.w, height: 40.h, color: Theme.of(context).dividerColor),
                   _buildStatItem('Done', completed.toString(),
                       Icons.check_circle_outline_rounded),
-                  Container(width: 1, height: 40, color: Theme.of(context).dividerColor),
+                  Container(width: 1.w, height: 40.h, color: Theme.of(context).dividerColor),
                   _buildStatItem('Left', (total - completed).toString(),
                       Icons.hourglass_empty_rounded),
                 ],
@@ -901,13 +902,13 @@ class _TodoListScreenState extends State<TodoListScreen>
     return Dismissible(
         key: Key('todo_${todo['id']}'),
         background: Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: 12.h),
           decoration: BoxDecoration(
             color: const Color(0xFFEF5350).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
+          padding: EdgeInsets.only(right: 20.w),
           child: const Icon(Icons.delete_outline_rounded,
               color: Color(0xFFEF5350)),
         ),
@@ -939,24 +940,24 @@ class _TodoListScreenState extends State<TodoListScreen>
         },
         child: InkWell(
           onTap: () => _toggleTodo(todo['id'], isCompleted),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: EdgeInsets.only(bottom: 12.h),
             decoration: BoxDecoration(
               color: isCompleted
                   ? Theme.of(context).disabledColor.withOpacity(0.1)
                   : Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
                   color: Theme.of(context).shadowColor.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  blurRadius: 8.r,
+                  offset: Offset(0, 2.h),
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16.w),
               child: Row(
                 children: [
                   Expanded(
@@ -966,7 +967,7 @@ class _TodoListScreenState extends State<TodoListScreen>
                         Text(
                           todo['task_text'] ?? '',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
                             color: isCompleted
                                 ? Colors.grey
@@ -976,13 +977,13 @@ class _TodoListScreenState extends State<TodoListScreen>
                                 : null,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8.h),
                           Row(
                             children: [
                               Text(
                                 _formatDate(createdAt),
                                 style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 12.sp,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
@@ -990,27 +991,27 @@ class _TodoListScreenState extends State<TodoListScreen>
                               ),
                               if (!isCompleted) ...[
                                 if (!(todo['reward_claimed'] ?? false)) ...[
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: 8.w),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 6.w, vertical: 2.h),
                                     decoration: BoxDecoration(
                                       color: Colors.amber.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(6.r),
                                       border: Border.all(
                                           color: Colors.amber.withOpacity(0.3),
-                                          width: 0.5),
+                                          width: 0.5.w),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(Icons.bolt_rounded,
-                                            size: 10, color: Colors.amber[800]),
-                                        const SizedBox(width: 2),
+                                            size: 10.sp, color: Colors.amber[800]),
+                                        SizedBox(width: 2.w),
                                         Text(
                                           '5',
                                           style: TextStyle(
-                                            fontSize: 10,
+                                            fontSize: 10.sp,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.amber[900],
                                           ),
@@ -1019,21 +1020,21 @@ class _TodoListScreenState extends State<TodoListScreen>
                                     ),
                                   ),
                                 ],
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4.w),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 6.w, vertical: 2.h),
                                   decoration: BoxDecoration(
                                     color: Colors.blue.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(6.r),
                                     border: Border.all(
                                         color: Colors.blue.withOpacity(0.3),
-                                        width: 0.5),
+                                        width: 0.5.w),
                                   ),
                                   child: Text(
                                     '+10 XP',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 10.sp,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.blue[900],
                                     ),
@@ -1041,23 +1042,23 @@ class _TodoListScreenState extends State<TodoListScreen>
                                 ),
                               ],
                               if (isCompleted) ...[
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8.w),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                    vertical: 2.h,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Theme.of(context)
                                         .colorScheme
                                         .primary
                                         .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(4.r),
                                   ),
                                   child: Text(
                                     'Done',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 10.sp,
                                       fontWeight: FontWeight.bold,
                                       color: Theme.of(context).colorScheme.primary,
                                     ),
@@ -1069,24 +1070,24 @@ class _TodoListScreenState extends State<TodoListScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Container(
-                    width: 24,
-                    height: 24,
+                    width: 24.w,
+                    height: 24.h,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isCompleted
                             ? Theme.of(context).colorScheme.primary
                             : Colors.grey[400]!,
-                        width: 2,
+                        width: 2.w,
                       ),
                       color: isCompleted
                           ? Theme.of(context).colorScheme.primary
                           : Colors.transparent,
                     ),
                     child: isCompleted
-                        ? const Icon(Icons.check, size: 16, color: Colors.white)
+                        ? Icon(Icons.check, size: 16.sp, color: Colors.white)
                         : null,
                   ),
                 ],
@@ -1102,12 +1103,12 @@ class _TodoListScreenState extends State<TodoListScreen>
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
-          const SizedBox(height: 8),
+          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24.sp),
+          SizedBox(height: 8.h),
           Text(
             value,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 20.sp,
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -1115,7 +1116,7 @@ class _TodoListScreenState extends State<TodoListScreen>
           Text(
             label,
             style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 fontWeight: FontWeight.w500),
           ),

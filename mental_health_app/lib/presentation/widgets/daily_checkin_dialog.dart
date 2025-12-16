@@ -137,8 +137,8 @@ class _DailyCheckInDialogState extends State<DailyCheckInDialog>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.success.withValues(alpha: 0.1),
-                AppColors.primary.withValues(alpha: 0.1),
+                AppColors.success.withOpacity(0.1),
+                AppColors.primary.withOpacity(0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(24),
@@ -188,7 +188,7 @@ class _DailyCheckInDialogState extends State<DailyCheckInDialog>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.2),
+                  color: AppColors.warning.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -296,8 +296,8 @@ class _DailyCheckInDialogState extends State<DailyCheckInDialog>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.primary.withValues(alpha: 0.1),
-                AppColors.secondary.withValues(alpha: 0.1),
+                AppColors.primary.withOpacity(0.1),
+                AppColors.secondary.withOpacity(0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(24),
@@ -335,7 +335,7 @@ class _DailyCheckInDialogState extends State<DailyCheckInDialog>
                                 : 'Come back tomorrow!',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: Colors.white.withOpacity(0.9),
                             ),
                           ),
                         ],
@@ -350,10 +350,10 @@ class _DailyCheckInDialogState extends State<DailyCheckInDialog>
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColors.warning.withValues(alpha: 0.1),
+                              color: AppColors.warning.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.warning.withValues(alpha: 0.3),
+                                color: AppColors.warning.withOpacity(0.3),
                                 width: 2,
                               ),
                             ),
@@ -528,7 +528,7 @@ class _DailyCheckInDialogState extends State<DailyCheckInDialog>
                 color: claimed
                     ? AppColors.success
                     : isToday
-                        ? AppColors.warning.withValues(alpha: 0.2)
+                        ? AppColors.warning.withOpacity(0.2)
                         : Colors.grey[200],
                 shape: BoxShape.circle,
                 border: isToday

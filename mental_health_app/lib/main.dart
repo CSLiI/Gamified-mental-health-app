@@ -12,6 +12,7 @@ import 'data/services/cache_service.dart';
 import 'core/utils/image_cache_manager.dart';
 
 import 'core/providers/notification_provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() async {
   // Ensure Flutter is initialized
@@ -82,49 +83,56 @@ class _MyAppState extends State<MyApp> {
 
         final onPrimary = palette.primary.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
 
-        return MaterialApp.router(
-          title: 'Echo',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme(
-              brightness: brightness,
-              primary: palette.primary,
-              onPrimary: onPrimary,
-              secondary: palette.secondary,
-              onSecondary: Colors.white,
-              tertiary: tertiary,
-              onTertiary: onTertiary,
-              tertiaryContainer: tertiary.withOpacity(0.8),
-              onTertiaryContainer: onTertiary,
-              error: const Color(0xFFE53E3E),
-              onError: Colors.white,
-              background: palette.background,
-              onBackground: palette.textPrimary,
-              surface: palette.surface,
-              onSurface: palette.textPrimary,
-            ),
-            scaffoldBackgroundColor: palette.background,
-            cardColor: palette.surface,
-            textTheme: TextTheme(
-              displayLarge: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 32),
-              displayMedium: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 28),
-              displaySmall: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 24),
-              headlineLarge: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 22),
-              headlineMedium: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 20),
-              headlineSmall: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
-              titleLarge: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 16),
-              titleMedium: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 14),
-              titleSmall: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 12),
-              bodyLarge: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 16),
-              bodyMedium: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 14),
-              bodySmall: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 12),
-              labelLarge: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 14),
-              labelMedium: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 12),
-              labelSmall: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 10),
-            ),
-          ),
-          routerConfig: appRouter,
+        return ScreenUtilInit(
+          designSize: const Size(375, 812), // Standard mobile design size
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (context, child) {
+            return MaterialApp.router(
+              title: 'Echo',
+              debugShowCheckedModeBanner: false,
+              theme: ThemeData(
+                useMaterial3: true,
+                colorScheme: ColorScheme(
+                  brightness: brightness,
+                  primary: palette.primary,
+                  onPrimary: onPrimary,
+                  secondary: palette.secondary,
+                  onSecondary: Colors.white,
+                  tertiary: tertiary,
+                  onTertiary: onTertiary,
+                  tertiaryContainer: tertiary.withOpacity(0.8),
+                  onTertiaryContainer: onTertiary,
+                  error: const Color(0xFFE53E3E),
+                  onError: Colors.white,
+                  background: palette.background,
+                  onBackground: palette.textPrimary,
+                  surface: palette.surface,
+                  onSurface: palette.textPrimary,
+                ),
+                scaffoldBackgroundColor: palette.background,
+                cardColor: palette.surface,
+                textTheme: TextTheme(
+                  displayLarge: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 32.sp),
+                  displayMedium: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 28.sp),
+                  displaySmall: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 24.sp),
+                  headlineLarge: textTheme.copyWith(fontWeight: FontWeight.bold, fontSize: 22.sp),
+                  headlineMedium: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 20.sp),
+                  headlineSmall: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 18.sp),
+                  titleLarge: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 16.sp),
+                  titleMedium: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 14.sp),
+                  titleSmall: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 12.sp),
+                  bodyLarge: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 16.sp),
+                  bodyMedium: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 14.sp),
+                  bodySmall: textTheme.copyWith(fontWeight: FontWeight.normal, fontSize: 12.sp),
+                  labelLarge: textTheme.copyWith(fontWeight: FontWeight.w600, fontSize: 14.sp),
+                  labelMedium: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 12.sp),
+                  labelSmall: textTheme.copyWith(fontWeight: FontWeight.w500, fontSize: 10.sp),
+                ),
+              ),
+              routerConfig: appRouter,
+            );
+          },
         );
       },
     );

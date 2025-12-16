@@ -4,6 +4,7 @@ import 'achievements_tab.dart';
 import 'rewards_tab.dart';
 import 'statistics_tab.dart';
 import '../../../core/providers/theme_provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProgressScreen extends StatefulWidget {
   final int initialIndex;
@@ -82,29 +83,29 @@ class _ProgressScreenState extends State<ProgressScreen>
 
   Widget _buildHeader(ThemeProvider themeProvider) {
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: EdgeInsets.all(20.0.w),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
               color: themeProvider.primaryColor, // Solid color
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.emoji_events_rounded,
               color: Colors.white,
-              size: 28,
+              size: 28.sp,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Your Progress',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
                   color: themeProvider.primaryColor,
                 ),
@@ -112,7 +113,7 @@ class _ProgressScreenState extends State<ProgressScreen>
               Text(
                 'Track achievements & rewards',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   fontWeight: FontWeight.w500,
                 ),
@@ -126,15 +127,15 @@ class _ProgressScreenState extends State<ProgressScreen>
 
   Widget _buildTabBar(ThemeProvider themeProvider) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
@@ -142,38 +143,38 @@ class _ProgressScreenState extends State<ProgressScreen>
         controller: _tabController,
         indicator: BoxDecoration(
           color: themeProvider.primaryColor, // Consistent purple across app
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14.r),
         ),
         labelColor: Colors.white,
         unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 13, // Slightly smaller to fit text
+          fontSize: 13.sp, // Slightly smaller to fit text
         ),
-        unselectedLabelStyle: const TextStyle(
+        unselectedLabelStyle: TextStyle(
           fontWeight: FontWeight.w500,
-          fontSize: 13,
+          fontSize: 13.sp,
         ),
         indicatorSize: TabBarIndicatorSize.tab,
-        indicatorPadding: const EdgeInsets.all(4),
+        indicatorPadding: EdgeInsets.all(4.w),
         dividerColor: Colors.transparent,
-        tabs: const [
+        tabs: [
           Tab(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 12),
-              child: Text('Achieve', maxLines: 1),
+              padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 12.h),
+              child: const Text('Achieve', maxLines: 1),
             ),
           ),
           Tab(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-              child: Text('Rewards', maxLines: 1),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 12.h),
+              child: const Text('Rewards', maxLines: 1),
             ),
           ),
           Tab(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-              child: Text('Stats', maxLines: 1),
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 12.h),
+              child: const Text('Stats', maxLines: 1),
             ),
           ),
         ],

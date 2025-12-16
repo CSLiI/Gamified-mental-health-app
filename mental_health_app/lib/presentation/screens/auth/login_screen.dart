@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/storage_keys.dart';
+import '../../../core/constants/storage_keys.dart';
 import '../../../data/services/api_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -211,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen>
                     MediaQuery.of(context).padding.bottom,
               ),
               padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                  EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 20.0.h),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -223,15 +225,15 @@ class _LoginScreenState extends State<LoginScreen>
                     Hero(
                       tag: 'gameLogo',
                       child: Container(
-                        height: 100,
-                        width: 100,
-                        margin: const EdgeInsets.symmetric(horizontal: 120),
+                        height: 100.h,
+                        width: 100.h,
+                        margin: EdgeInsets.symmetric(horizontal: 120.w),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFF6C5CE7).withValues(alpha: 0.2),
+                              color: Color(0xFF6C5CE7).withOpacity(0.3),
                               blurRadius: 15,
                               spreadRadius: 2,
                             )
@@ -239,18 +241,18 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         child: ClipOval(
                           child: Padding(
-                            padding: const EdgeInsets.all(15.0),
+                            padding: EdgeInsets.all(15.0.w),
                             child: Image.asset(
                               'assets/images/app_logo.png',
-                              width: 60,
-                              height: 60,
+                              width: 60.w,
+                              height: 60.w,
                               fit: BoxFit.contain,
                             ),
                           ),
                       ),
                     ),
                   ),
-                    const SizedBox(height: 30),
+                    SizedBox(height: 30.h),
                     SlideTransition(
                       position: Tween<Offset>(
                         begin: const Offset(0, 0.3),
@@ -262,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Text(
                         'Welcome Back',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 32.sp,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF6C5CE7),
                         ),
@@ -273,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen>
                     Text(
                       'Continue your wellness journey',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -287,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen>
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withValues(alpha: 0.1),
+                            color: Color(0xFF6C5CE7).withOpacity(0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -407,7 +409,7 @@ class _LoginScreenState extends State<LoginScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFF6C5CE7).withValues(alpha: 0.4),
+                            color: Color(0xFF6C5CE7).withOpacity(0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -419,24 +421,24 @@ class _LoginScreenState extends State<LoginScreen>
                           backgroundColor: Colors.transparent,
                           foregroundColor: Colors.white,
                           shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: _isLoading
-                            ? const SizedBox(
-                                height: 24,
-                                width: 24,
+                            ? SizedBox(
+                                height: 24.h,
+                                width: 24.h,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 3,
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'SIGN IN',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 16.sp,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
                                 ),
@@ -451,7 +453,7 @@ class _LoginScreenState extends State<LoginScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.2),
+                            color: Colors.grey.withOpacity(0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -461,9 +463,9 @@ class _LoginScreenState extends State<LoginScreen>
                       child: TextButton(
                         onPressed: _isLoading ? null : _handleGoogleSignIn,
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16.r),
                           ),
                         ),
                         child: Row(
@@ -473,16 +475,16 @@ class _LoginScreenState extends State<LoginScreen>
                              // Ideally use an asset, but for native Google feel:
                              Image.network(
                                'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png',
-                               height: 24,
-                               width: 24,
+                               height: 24.h,
+                               width: 24.h,
                                errorBuilder: (context, error, stackTrace) => 
                                    const Icon(Icons.login, color: Colors.blue), // Fallback
                              ),
-                            const SizedBox(width: 12),
-                            const Text(
+                            SizedBox(width: 12.w),
+                            Text(
                               'Sign in with Google',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
                               ),
