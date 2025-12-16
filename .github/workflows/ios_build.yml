@@ -29,3 +29,9 @@ jobs:
           pod install --repo-update
 
       - run: flutter build ios --release --no-codesign
+
+      - name: Archive Production Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ios-build
+          path: mental_health_app/build/ios/iphoneos/Runner.app
