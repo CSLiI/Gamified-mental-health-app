@@ -12,14 +12,15 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:8000")
 
 
 def send_password_reset_email(to_email: str, reset_token: str) -> bool:
-    """Send password reset link to user"""
+    """Send password reset code to user"""
     try:
-        reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
+        # Use first 6 characters of token as the code
+        reset_code = reset_token[:6].upper()
         
         params = {
             "from": f"{APP_NAME} <{SENDER_EMAIL}>",
             "to": [to_email],
-            "subject": f"Reset your {APP_NAME} password",
+            "subject": f"Your {APP_NAME} password reset code",
             "html": f"""
             <!DOCTYPE html>
             <html>
@@ -29,7 +30,8 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
                     .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
                     .header {{ background: linear-gradient(135deg, #6C5CE7 0%, #667EEA 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
                     .content {{ background: #f8f9fe; padding: 30px; border-radius: 0 0 10px 10px; }}
-                    .button {{ display: inline-block; padding: 15px 30px; background: #6C5CE7; color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }}
+                    .code-box {{ background: white; border: 3px dashed #6C5CE7; border-radius: 12px; padding: 30px; text-align: center; margin: 20px 0; }}
+                    .code {{ font-size: 48px; font-weight: bold; color: #6C5CE7; letter-spacing: 8px; font-family: monospace; }}
                     .warning {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }}
                     .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 12px; }}
                 </style>
@@ -37,19 +39,24 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>Password Reset Request 🔐</h1>
+                        <h1>Password Reset Code 🔐</h1>
                     </div>
                     <div class="content">
                         <h2>Reset Your Password</h2>
-                        <p>We received a request to reset your password. Click the button below to create a new password:</p>
-                        <p style="text-align: center;">
-                            <a href="{reset_url}" class="button">Reset Password</a>
+                        <p>We received a request to reset your password. Use the code below in the app:</p>
+                        
+                        <div class="code-box">
+                            <p style="margin: 0; font-size: 14px; color: #666;">Your verification code:</p>
+                            <div class="code">{reset_code}</div>
+                        </div>
+                        
+                        <p style="text-align: center; color: #666; font-size: 14px;">
+                            Enter this code in the app to reset your password
                         </p>
-                        <p>Or copy and paste this link into your browser:</p>
-                        <p style="word-break: break-all; color: #6C5CE7;">{reset_url}</p>
+                        
                         <div class="warning">
                             <strong>⚠️ Security Notice:</strong><br>
-                            This link will expire in 1 hour. If you didn't request a password reset, please ignore this email and your password will remain unchanged.
+                            This code will expire in 1 hour. If you didn't request a password reset, please ignore this email and your password will remain unchanged.
                         </div>
                     </div>
                     <div class="footer">
