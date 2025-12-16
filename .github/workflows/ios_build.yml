@@ -10,9 +10,6 @@ jobs:
   build_ios:
     name: Build iOS
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ./mental_health_app
     steps:
       - uses: actions/checkout@v3
 
@@ -21,20 +18,25 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - run: flutter pub get
+      - run: |
+          cd mental_health_app
+          flutter pub get
 
       - name: Install CocoaPods
         run: |
-          cd ios
+          cd mental_health_app/ios
           pod install --repo-update
 
-      - run: flutter build ios --release --no-codesign
+      - name: Build iOS App
+        run: |
+          cd mental_health_app
+          flutter build ios --release --no-codesign
 
       - name: Prepare Artifact
         run: |
-          mkdir -p ../payload
-          find . -name "Runner.app" -type d -exec cp -R {} ../payload/ \;
-          ls -R ../payload
+          mkdir -p payload
+          find mental_health_app/build -name "Runner.app" -type d -exec cp -R {} payload/ \;
+          ls -R payload
 
       - name: Archive Production Artifact
         uses: actions/upload-artifact@v3
