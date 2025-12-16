@@ -393,7 +393,7 @@ class _AchievementsTabState extends State<AchievementsTab>
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.65,
         crossAxisSpacing: 14.w,
         mainAxisSpacing: 14.h,
       ),

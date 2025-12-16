@@ -282,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             _buildProfileHeader(),
                             _buildStatsSection(),
-                            if (_userInterests.isNotEmpty) _buildInterestsSection(),
+                            _buildInterestsSection(),
                             if (_equippedRewards.isNotEmpty)
                               _buildEquippedSection(),
                             _buildOptionsSection(),
@@ -1559,16 +1559,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'My Interests',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF2D3142),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'My Interests',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF2D3142),
+                ),
+              ),
+              IconButton(
+                onPressed: _showInterestsEditor,
+                icon: Icon(Icons.edit, size: 20.sp, color: const Color(0xFF667EEA)),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
           SizedBox(height: 16.h),
-          Wrap(
+          if (_userInterests.isEmpty)
+             Text(
+              'No interests selected yet. Tap the edit icon to add some!',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            )
+          else
+            Wrap(
             spacing: 8.w,
             runSpacing: 8.h,
             children: _userInterests.map((interest) {
@@ -1596,5 +1617,235 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  void _showInterestsEditor() async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final allInterests = await _apiService.getAllInterests();
+      final currentInterestIds =
+          _userInterests.map<int>((i) => i['id'] as int).toList();
+
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading
+        _showInterestsSheet(allInterests, currentInterestIds);
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Dismiss loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load interests: $e')),
+      );
+    }
+  }
+
+  void _showInterestsSheet(
+      List<dynamic> allInterests, List<int> initialSelection) {
+    // Group interests
+    final Map<String, List<Map<String, dynamic>>> groupedInterests = {};
+    for (var interest in allInterests) {
+      final category = interest['category'] ?? 'other';
+      if (!groupedInterests.containsKey(category)) {
+        groupedInterests[category] = [];
+      }
+      groupedInterests[category]!.add(interest as Map<String, dynamic>);
+    }
+
+    final categoryNames = {
+      'wellness': 'Wellness & Mental Health',
+      'creative': 'Creative & Artistic',
+      'physical': 'Physical Activities',
+      'social': 'Social & Community',
+      'growth': 'Personal Growth',
+      'nature': 'Nature & Outdoors',
+      'other': 'Other Interests',
+    };
+
+    List<int> selectedIds = List.from(initialSelection);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24.r),
+                topRight: Radius.circular(24.r),
+              ),
+            ),
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: EdgeInsets.all(24.w),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Edit Interests',
+                        style: TextStyle(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: groupedInterests.entries.map((entry) {
+                        final categoryKey = entry.key;
+                        final interests = entry.value;
+                        final categoryName =
+                            categoryNames[categoryKey] ?? categoryKey;
+
+                        // Capitalize category name if not mapped
+                        final displayCategory = categoryNames.containsKey(categoryKey)
+                            ? categoryName
+                            : categoryName[0].toUpperCase() +
+                                categoryName.substring(1);
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayCategory,
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF2D3142),
+                              ),
+                            ),
+                            SizedBox(height: 12.h),
+                            Wrap(
+                              spacing: 8.w,
+                              runSpacing: 10.h,
+                              children: interests.map((interest) {
+                                final isSelected =
+                                    selectedIds.contains(interest['id']);
+                                return FilterChip(
+                                  label: Text(interest['name']),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setSheetState(() {
+                                      if (selected) {
+                                        selectedIds.add(interest['id']);
+                                      } else {
+                                        selectedIds.remove(interest['id']);
+                                      }
+                                    });
+                                  },
+                                  selectedColor: const Color(0xFF6C5CE7),
+                                  checkmarkColor: Colors.white,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : const Color(0xFF2D3142),
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                  backgroundColor: Colors.grey.shade100,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20.r),
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? Colors.transparent
+                                          : Colors.grey.shade300,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            SizedBox(height: 24.h),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                // Footer
+                Padding(
+                  padding: EdgeInsets.all(24.w),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: selectedIds.length < 3
+                          ? null
+                          : () => _saveInterests(selectedIds),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6C5CE7),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        disabledBackgroundColor: Colors.grey.shade300,
+                      ),
+                      child: Text(
+                        selectedIds.length < 3
+                            ? 'Select at least 3 interests'
+                            : 'Save Changes',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _saveInterests(List<int> newInterestIds) async {
+    Navigator.pop(context); // Close sheet
+    
+    // Show saving loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await _apiService.updateUserInterests(newInterestIds);
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading
+        _loadData(); // Refresh profile
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Interests updated successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update interests: $e')),
+        );
+      }
+    }
   }
 }
