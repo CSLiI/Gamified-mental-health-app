@@ -104,6 +104,25 @@ def get_user_interests(db: Session, user_id: int):
         return user.user_interests
     return []
 
+def update_user_interests(db: Session, user_id: int, interest_ids: list[int]):
+    """Update user's interests (replaces all existing interests)"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return False
+    
+    # Clear existing interests
+    user.user_interests.clear()
+    
+    # Add new interests
+    for interest_id in interest_ids:
+        interest = db.query(models.Interest).filter(models.Interest.id == interest_id).first()
+        if interest:
+            user.user_interests.append(interest)
+    
+    db.commit()
+    return True
+
+
 # ==================== BIRTHDAY FUNCTIONS ====================
 def get_users_with_birthday_today(db: Session):
     """Get all users whose birthday is today"""

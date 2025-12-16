@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
@@ -32,6 +33,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
   List<dynamic> _friendTodos = [];
   List<dynamic> _friendMoodLogs = [];
   List<dynamic> _friendMessages = [];
+  List<dynamic> _friendInterests = []; // Friend's interests
   int? _currentUserId;
 
   // Tab Controller
@@ -111,6 +113,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         _apiService.getFriendMoodLogs(widget.friendId),
         _apiService.getFriendTodos(widget.friendId), // Fetch ALL, we filter manually
         _apiService.getMessages(widget.friendId),
+        _apiService.getUserInterests(widget.friendId), // Load friend's interests
       ]);
 
       final profile = results[0] as Map<String, dynamic>;
@@ -118,6 +121,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
       final moodLogs = results[2] as List<dynamic>;
       var todos = results[3] as List<dynamic>;
       final messages = results[4] as List<dynamic>;
+      final interests = results[5] as List<dynamic>; // Friend's interests
 
       // FILTER: Only show Manual Todos created TODAY. Exclude Quests.
       final now = DateTime.now();
@@ -140,6 +144,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         'todos': todos,
         'moodLogs': moodLogs,
         'messages': messages,
+        'interests': interests, // Cache interests
       });
 
       // Update UI with fresh data
@@ -151,6 +156,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           _friendMoodLogs = moodLogs;
           _friendTodos = todos;
           _friendMessages = messages;
+          _friendInterests = interests; // Set interests
           _isLoading = false;
         });
       }
@@ -302,12 +308,12 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         children: [
           // Header skeleton
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20.w),
             child: Row(
               children: [
-                SkeletonLoader.character(size: 40),
-                const SizedBox(width: 12),
-                Expanded(child: SkeletonLoader.text(width: 150, height: 24)),
+                SkeletonLoader.character(size: 40.w),
+                SizedBox(width: 12.w),
+                Expanded(child: SkeletonLoader.text(width: 150.w, height: 24.h)),
               ],
             ),
           ),
@@ -315,40 +321,40 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20.w),
                 child: Column(
                   children: [
                     // Character card skeleton
-                    SkeletonLoader.card(height: 350),
-                    const SizedBox(height: 20),
+                    SkeletonLoader.card(height: 350.h),
+                    SizedBox(height: 20.h),
                     // Stats cards skeleton
                     Row(
                       children: [
-                        Expanded(child: SkeletonLoader.card(height: 90)),
-                        const SizedBox(width: 12),
-                        Expanded(child: SkeletonLoader.card(height: 90)),
+                        Expanded(child: SkeletonLoader.card(height: 90.h)),
+                        SizedBox(width: 12.w),
+                        Expanded(child: SkeletonLoader.card(height: 90.h)),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Row(
                       children: [
-                        Expanded(child: SkeletonLoader.card(height: 90)),
-                        const SizedBox(width: 12),
-                        Expanded(child: SkeletonLoader.card(height: 90)),
+                        Expanded(child: SkeletonLoader.card(height: 90.h)),
+                        SizedBox(width: 12.w),
+                        Expanded(child: SkeletonLoader.card(height: 90.h)),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     // Action buttons skeleton
                     Row(
                       children: [
-                        Expanded(child: SkeletonLoader.card(height: 80)),
-                        const SizedBox(width: 12),
-                        Expanded(child: SkeletonLoader.card(height: 80)),
+                        Expanded(child: SkeletonLoader.card(height: 80.h)),
+                        SizedBox(width: 12.w),
+                        Expanded(child: SkeletonLoader.card(height: 80.h)),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     // Tab content skeleton
-                    SkeletonLoader.card(height: 200),
+                    SkeletonLoader.card(height: 200.h),
                   ],
                 ),
               ),
@@ -706,12 +712,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                             children: [
                               // Character Card & Stats
                               Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                                padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 0),
                                 child: Column(
                                   children: [
                                     _buildCharacterCard(),
-                                    const SizedBox(height: 20),
+                                    SizedBox(height: 20.h),
                                     _buildStatsCards(),
                                   ],
                                 ),
@@ -719,19 +724,19 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
                               // Tab Bar
                               Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 20.w,
+                                  vertical: 16.h,
                                 ),
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(16.r),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 2),
+                                        blurRadius: 10.r,
+                                        offset: Offset(0, 2.h),
                                       ),
                                     ],
                                   ),
@@ -739,21 +744,21 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                                     controller: _tabController,
                                     indicator: BoxDecoration(
                                       color: const Color(0xFF6C5CE7),
-                                      borderRadius: BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(14.r),
                                     ),
                                     labelColor: Colors.white,
                                     unselectedLabelColor:
                                         const Color(0xFF6B8BA8),
-                                    labelStyle: const TextStyle(
-                                      fontSize: 14,
+                                    labelStyle: TextStyle(
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                    unselectedLabelStyle: const TextStyle(
-                                      fontSize: 14,
+                                    unselectedLabelStyle: TextStyle(
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.w600,
                                     ),
                                     indicatorSize: TabBarIndicatorSize.tab,
-                                    indicatorPadding: const EdgeInsets.all(4),
+                                    indicatorPadding: EdgeInsets.all(4.w),
                                     dividerColor: Colors.transparent,
                                     tabs: const [
                                       Tab(text: 'Tasks'),
@@ -766,14 +771,13 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                               // Action Buttons (outside tabs)
                               Padding(
                                 padding:
-                                    const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                                    EdgeInsets.fromLTRB(20.w, 0, 20.w, 16.h),
                                 child: _buildActionButtons(),
                               ),
 
                               // Tab Content (increased height to fit content)
                               SizedBox(
-                                height:
-                                    750, // Increased height to prevent overflow
+                                height: 750.h, // Increased height to prevent overflow
                                 child: TabBarView(
                                   controller: _tabController,
                                   physics: const BouncingScrollPhysics(),
@@ -795,7 +799,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                                 ),
                               ),
 
-                              const SizedBox(height: 20), // Bottom padding
+                              SizedBox(height: 20.h), // Bottom padding
                             ],
                           ),
                         ),
@@ -1093,6 +1097,48 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
               ),
             ],
           ),
+          
+          // Interests Section
+          if (_friendInterests.isNotEmpty) ...[
+            SizedBox(height: 24.h),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Interests',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0A4B80),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: _friendInterests.map((interest) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF667EEA).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                      color: const Color(0xFF667EEA).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    interest['name'] ?? '',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: const Color(0xFF667EEA),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );

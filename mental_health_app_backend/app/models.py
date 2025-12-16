@@ -127,6 +127,9 @@ class Interest(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, unique=True)
+    icon = Column(String(50))  # Emoji icon
+    category = Column(String(50))  # wellness, creative, physical, social, growth, nature
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
     users = relationship("User", secondary="user_interests", back_populates="user_interests")

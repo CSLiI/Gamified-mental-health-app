@@ -68,3 +68,27 @@ def remove_interest_from_user(
             detail="Interest not found or not associated with user"
         )
     return None
+
+@router.put("/me/interests", status_code=status.HTTP_200_OK)
+def update_my_interests(
+    interest_ids: List[int],
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's interests (replaces all existing interests)"""
+    success = user_crud.update_user_interests(db, current_user.id, interest_ids)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to update interests"
+        )
+    return {"message": "Interests updated successfully"}
+
+@router.get("/{user_id}/interests", response_model=List[schemas.Interest])
+def get_user_interests(
+    user_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get interests for a specific user (for viewing friend profiles)"""
+    return user_crud.get_user_interests(db, user_id)

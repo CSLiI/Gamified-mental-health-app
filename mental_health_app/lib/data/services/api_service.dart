@@ -470,6 +470,36 @@ class ApiService {
     }
   }
 
+  Future<void> updateUserInterests(List<int> interestIds) async {
+    try {
+      await _dioClient.put(
+        '${ApiConstants.users}/me/interests',
+        data: interestIds,
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getUserInterests(int userId) async {
+    try {
+      final response = await _dioClient.get('${ApiConstants.users}/$userId/interests');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<dynamic>> getMyInterests() async {
+    try {
+      final response = await _dioClient.get('${ApiConstants.users}/me/interests');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+
   // ==================== Rewards ====================
 
   Future<List<dynamic>> getAllRewards() async {

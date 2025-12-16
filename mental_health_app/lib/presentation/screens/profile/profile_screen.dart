@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants/reward_catalog.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
@@ -36,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _moodState;
   Map<String, dynamic>? _levelProgress; // Store level progress data
   List<dynamic> _equippedRewards = [];
+  List<dynamic> _userInterests = []; // User's interests
   bool _isLoading = true;
 
   @override
@@ -102,6 +104,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = results[0] as Map<String, dynamic>;
       final achievements = results[1] as List<dynamic>;
       final equippedRewards = results[2] as List<dynamic>;
+      
+      // Load interests separately with error handling
+      List<dynamic> interests = [];
+      try {
+        interests = await _apiService.getMyInterests();
+      } catch (e) {
+        print('Error loading interests: $e');
+        // Continue without interests - not critical
+      }
 
       // Get character mood state if user has a character
       Map<String, dynamic>? moodState;
@@ -138,6 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _achievements = achievements;
           _moodState = moodState;
           _levelProgress = levelProgress; // Store level progress
+          _userInterests = interests; // Set user interests
           // Merge backend equipped with built-in equipped
           _equippedRewards = [
             ...equippedRewards,
@@ -270,6 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             _buildProfileHeader(),
                             _buildStatsSection(),
+                            if (_userInterests.isNotEmpty) _buildInterestsSection(),
                             if (_equippedRewards.isNotEmpty)
                               _buildEquippedSection(),
                             _buildOptionsSection(),
@@ -1536,6 +1549,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInterestsSection() {
+    return Padding(
+      padding: EdgeInsets.all(24.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'My Interests',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF2D3142),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: _userInterests.map((interest) {
+              return Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF667EEA).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(
+                    color: const Color(0xFF667EEA).withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Text(
+                  interest['name'] ?? '',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: const Color(0xFF667EEA),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
