@@ -34,4 +34,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ios-build
-          path: mental_health_app/build/ios/iphoneos/Runner.app
+          path: "**/build/ios/iphoneos/Runner.app"
