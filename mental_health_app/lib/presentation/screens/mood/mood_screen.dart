@@ -9,6 +9,10 @@ import '../../../core/utils/image_cache_manager.dart';
 import '../../widgets/level_up_dialog.dart';
 import '../../../core/utils/debouncer.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/providers/mood_provider.dart';
+import '../../../core/providers/notification_provider.dart';
+import '../../../core/providers/character_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class MoodScreen extends StatefulWidget {
   final int characterId;
@@ -35,12 +39,6 @@ class _MoodScreenState extends State<MoodScreen>
   late TabController _tabController;
   final Debouncer _moodTapDebouncer = Debouncer(milliseconds: 250);
 
-  // Character details from onboarding
-  int _characterId = 1;
-  String _characterGender = 'Boy';
-  int _characterNumber = 1;
-  bool _characterLoaded = false;
-
   bool _isLoading = false;
   bool _isLoadingHistory = true;
   List<dynamic> _moodHistory = [];
@@ -51,65 +49,20 @@ class _MoodScreenState extends State<MoodScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadCharacterDetails();
-    _loadData();
+    _loadData(); // Just load mood data, character data comes from Provider
+    
+    // Trigger initial character load if needed (though Profile/Home likely did it)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       context.read<CharacterProvider>().loadCharacter();
+    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload character when dependencies change (e.g., after account switch)
-    _loadCharacterDetails();
     _loadData();
   }
 
-  Future<void> _loadCharacterDetails() async {
-    try {
-      // Load from API first (source of truth)
-      final currentCharacter = await _apiService.getCurrentCharacter();
-
-      if (currentCharacter['character'] != null) {
-        final character = currentCharacter['character'];
-
-        if (mounted) {
-          setState(() {
-            _characterId = character['id'] ?? 1;
-            _characterGender = character['gender'] ?? 'Boy';
-            _characterNumber = character['number'] ?? 1;
-            _characterLoaded = true;
-          });
-        }
-
-        // Cache to user-specific SharedPreferences for offline access
-        final user = await _apiService.getCurrentUser();
-        final userId = user['id'];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('selected_character_id_$userId', _characterId);
-        await prefs.setString(
-            'selected_character_gender_$userId', _characterGender);
-        await prefs.setInt(
-            'selected_character_number_$userId', _characterNumber);
-      }
-    } catch (e) {
-      // print('❌ MOOD: Error loading from API: $e');
-      // Fallback to user-specific SharedPreferences
-      try {
-        final user = await _apiService.getCurrentUser();
-        final userId = user['id'];
-        final prefs = await SharedPreferences.getInstance();
-        if (mounted) {
-          setState(() {
-            _characterId = prefs.getInt('selected_character_id_$userId') ?? 1;
-            _characterGender =
-                prefs.getString('selected_character_gender_$userId') ?? 'Boy';
-            _characterNumber =
-                prefs.getInt('selected_character_number_$userId') ?? 1;
-            _characterLoaded = true;
-          });
-        }
-      } catch (e2) {}
-    }
-  }
 
   @override
   void dispose() {
@@ -119,50 +72,107 @@ class _MoodScreenState extends State<MoodScreen>
   }
 
   // Dynamically generate moods map based on selected character
-  Map<String, Map<String, dynamic>> get _moods {
+  Map<String, Map<String, dynamic>> _getMoods(String gender, int number) {
     // Base path based on gender - format: Boy_Gif_33FPS/HappyBoy1.gif
-    final String basePath = 'assets/images/${_characterGender}_Gif_33FPS';
+    final String basePath = 'assets/images/${gender}_Gif_33FPS';
 
     return {
       'happy': {
         'icon': Icons.sentiment_very_satisfied,
         'color': const Color(0xFFFFD54F), // Yellow
         'label': 'Happy',
-        'gifPath': '$basePath/Happy${_characterGender}${_characterNumber}.gif',
+        'gifPath': '$basePath/Happy$gender$number.gif',
       },
       'calm': {
         'icon': Icons.self_improvement,
         'color': const Color(0xFF42A5F5), // Blue
         'label': 'Calm',
-        'gifPath': '$basePath/Calm${_characterGender}${_characterNumber}.gif',
+        'gifPath': '$basePath/Calm$gender$number.gif',
       },
       'tired': {
         'icon': Icons.bedtime,
         'color': const Color(0xFF78909C), // Blue Grey
         'label': 'Tired',
-        'gifPath': '$basePath/Tired${_characterGender}${_characterNumber}.gif',
+        'gifPath': '$basePath/Tired$gender$number.gif',
       },
       'anxious': {
         'icon': Icons.warning_amber_rounded,
         'color': const Color(0xFFFFA726), // Orange
         'label': 'Anxious',
         'gifPath':
-            '$basePath/Anxious${_characterGender}${_characterNumber}.gif',
+            '$basePath/Anxious$gender$number.gif',
       },
       'sad': {
         'icon': Icons.sentiment_dissatisfied,
         'color': const Color(0xFF9575CD), // Purple
         'label': 'Sad',
-        'gifPath': '$basePath/Sad${_characterGender}${_characterNumber}.gif',
+        'gifPath': '$basePath/Sad$gender$number.gif',
       },
       'angry': {
         'icon': Icons.sentiment_very_dissatisfied,
         'color': const Color(0xFFEF5350), // Red
         'label': 'Angry',
-        'gifPath': '$basePath/Angry${_characterGender}${_characterNumber}.gif',
+        'gifPath': '$basePath/Angry$gender$number.gif',
       },
     };
   }
+
+  final Map<String, List<String>> _moodMotivations = {
+    'happy': [
+      "Your smile lights up the world!",
+      "Keep shining like the star you are!",
+      "Spread that joy around!",
+      "You are radiant today!",
+      "Happiness looks amazing on you!",
+      "Enjoy every moment of this feeling!",
+      "Ride this wave of positivity!",
+    ],
+    'calm': [
+      "Peace begins with a deep breath.",
+      "Stay centered and grounded.",
+      "Serenity is a superpower.",
+      "Embrace the stillness within.",
+      "You are exactly where you need to be.",
+      "Quiet the mind, and the soul will speak.",
+      "Tranquility is strength.",
+    ],
+    'tired': [
+      "Rest is not laziness, it's medicine.",
+      "Recharge your batteries, you deserve it.",
+      "Listen to your body's whisper.",
+      "Sleep is the best meditation.",
+      "It's okay to slow down and pause.",
+      "Dream big, but sleep deep first.",
+      "Tomorrow is a fresh start.",
+    ],
+    'anxious': [
+      "One step at a time is enough.",
+      "You are safe effectively right now.",
+      "This feeling will pass like a cloud.",
+      "Breathe in courage, breathe out fear.",
+      "You are stronger than your anxiety.",
+      "Focus on the present moment.",
+      "You've survived 100% of your bad days.",
+    ],
+    'sad': [
+      "Tears are how our heart speaks.",
+      "It's okay not to be okay sometimes.",
+      "You are loved more than you know.",
+      "The sun will rise again tomorrow.",
+      "Be gentle with yourself today.",
+      "Sending you a warm virtual hug.",
+      "Rainstorms help the flowers grow.",
+    ],
+    'angry': [
+      "Channel this energy into something new.",
+      "Deep breaths. You are in control.",
+      "Letting go is the real victory.",
+      "Peace is a choice you can make.",
+      "This anger does not define you.",
+      "Walk it off and find your center.",
+      "Choose to be kind to yourself.",
+    ],
+  };
 
   Future<void> _loadData() async {
     await Future.wait([
@@ -267,7 +277,9 @@ class _MoodScreenState extends State<MoodScreen>
   void _showNoteDialog(String mood) {
     _noteController.clear(); // Clear any previous text
 
-    final moodData = _moods[mood]!;
+    final provider = context.read<CharacterProvider>();
+    final moods = _getMoods(provider.characterGender, provider.characterNumber);
+    final moodData = moods[mood]!;
     final Color moodColor = moodData['color'] as Color;
     final String moodLabel = moodData['label'] as String;
     final String? gifPath = moodData['gifPath'] as String?;
@@ -299,7 +311,7 @@ class _MoodScreenState extends State<MoodScreen>
                     child: Column(
                       children: [
                         // Use character GIF if available, else fallback to icon
-                        if (gifPath != null && _characterLoaded)
+                        if (gifPath != null)
                           Container(
                             width: 120,
                             height: 120,
@@ -448,6 +460,11 @@ class _MoodScreenState extends State<MoodScreen>
       // Update quest progress for mood category
       await _apiService.updateQuestProgress('mood', increment: 1);
 
+      // Refresh global provider to update Home/Profile screens immediately
+      if (mounted) {
+        await context.read<MoodProvider>().loadMood(forceRefresh: true);
+      }
+
       // Reload data
       await _loadData();
 
@@ -456,6 +473,22 @@ class _MoodScreenState extends State<MoodScreen>
           achievementResult['xp_earned'] > 0) {
         await _checkLevelUp();
       }
+
+      // Add system notification for later viewing
+      if (mounted) {
+         final motivation = _getMotivation(mood);
+         final notificationProvider = context.read<NotificationProvider>();
+         notificationProvider.addSystemNotification(
+            title: "Echo's Encouragement",
+            message: motivation,
+            type: NotificationType.systemMotivation,
+            redirectRoute: '/mood',
+         );
+         
+         // Show immediate motivational dialog
+         _showMotivationDialog(mood);
+      }
+
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -472,6 +505,11 @@ class _MoodScreenState extends State<MoodScreen>
     }
   }
 
+  String _getMotivation(String mood) {
+    final motivations = _moodMotivations[mood] ?? ["You're doing great!"];
+    return (motivations..shuffle()).first;
+  }
+
   Future<void> _checkLevelUp() async {
     try {
       final result = await _apiService.checkLevelUp();
@@ -486,14 +524,124 @@ class _MoodScreenState extends State<MoodScreen>
             milestoneXp: result['milestone_xp'] ?? 0,
             rewardsUnlocked: List<Map<String, dynamic>>.from(
                 result['rewards_unlocked'] ?? []),
-            petsUnlocked:
-                List<Map<String, dynamic>>.from(result['pets_unlocked'] ?? []),
+            petsUnlocked: List<Map<String, dynamic>>.from(result['pets_unlocked'] ?? []),
           ),
         );
       }
     } catch (e) {
       // Error handled silently
     }
+  }
+
+  void _showMotivationDialog(String mood) {
+    final motivations = _moodMotivations[mood] ?? ["You're doing great!"];
+    final randomQuote = (motivations..shuffle()).first;
+    
+    final provider = context.read<CharacterProvider>();
+    final moods = _getMoods(provider.characterGender, provider.characterNumber);
+    final moodData = moods[mood]!;
+    
+    final Color moodColor = moodData['color'] as Color;
+    final String? gifPath = moodData['gifPath'] as String?;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 600),
+          tween: Tween(begin: 0.0, end: 1.0),
+          curve: Curves.elasticOut,
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: value,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: moodColor.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                  border: Border.all(color: moodColor.withValues(alpha: 0.5), width: 2),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Character Animation
+                    if (gifPath != null)
+                      Container(
+                        width: 140,
+                        height: 140,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: moodColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: moodColor, width: 3),
+                        ),
+                        child: ClipOval(
+                          child: ImageCacheManager().buildCachedImage(
+                            assetPath: gifPath,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    
+                    Text(
+                      moodData['label'],
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: moodColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '"$randomQuote"',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey[800],
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: moodColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                            'Continue',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -603,31 +751,35 @@ class _MoodScreenState extends State<MoodScreen>
   }
 
   Widget _buildLogMoodTab() {
-    if (!_characterLoaded) {
-      return const Center(
-          child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-      ));
-    }
+    return Consumer<CharacterProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(
+              child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ));
+        }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Mood Selection Grid with Character GIFs
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        final moods = _getMoods(provider.characterGender, provider.characterNumber);
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Mood Selection Grid with Character GIFs
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               childAspectRatio: 1,
             ),
-            itemCount: _moods.length,
+            itemCount: moods.length,
             itemBuilder: (context, index) {
-              final entry = _moods.entries.elementAt(index);
+              final entry = moods.entries.elementAt(index);
               final mood = entry.key;
               final moodData = entry.value;
               final String? gifPath = moodData['gifPath'] as String?;
@@ -711,6 +863,8 @@ class _MoodScreenState extends State<MoodScreen>
           ],
         ],
       ),
+    );
+      },
     );
   }
 
@@ -842,7 +996,11 @@ class _MoodScreenState extends State<MoodScreen>
         itemBuilder: (context, index) {
           final mood = _moodHistory[index];
           final moodType = mood['mood'] as String;
-          final moodData = _moods[moodType];
+
+          final provider = context.read<CharacterProvider>();
+          final moods = _getMoods(provider.characterGender, provider.characterNumber);
+          final moodData = moods[moodType];
+          
           final note = mood['note'];
           final loggedAt = DateTime.parse(mood['logged_at']);
 
@@ -925,7 +1083,7 @@ class _MoodScreenState extends State<MoodScreen>
               child: Row(
                 children: [
                   // Character GIF or fallback icon
-                  if (gifPath != null && _characterLoaded)
+                  if (gifPath != null)
                     Container(
                       width: 60,
                       height: 60,
@@ -1020,6 +1178,10 @@ class _MoodScreenState extends State<MoodScreen>
     final distribution =
         _moodStats!['mood_distribution'] as Map<String, dynamic>? ?? {};
 
+    // Access provider to get mood colors
+    final provider = context.read<CharacterProvider>();
+    final moods = _getMoods(provider.characterGender, provider.characterNumber);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1059,7 +1221,7 @@ class _MoodScreenState extends State<MoodScreen>
             final mood = entry.key;
             final count = entry.value;
             final percentage = totalEntries > 0 ? (count / totalEntries) : 0.0;
-            final moodData = _moods[mood];
+            final moodData = moods[mood];
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),

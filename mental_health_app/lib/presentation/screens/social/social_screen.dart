@@ -44,13 +44,14 @@ class _SocialScreenState extends State<SocialScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && _friends.isNotEmpty) {
-      _refreshMoodCache(_friends);
+      _refreshMoodCache(friendsList: _friends);
     }
   }
 
   /// Refresh friend mood data in background without showing loading spinner.
   /// Processes friends in chunks to avoid overwhelming the server.
-  Future<void> _refreshMoodCache([List<dynamic>? friendsList]) async {
+  Future<void> _refreshMoodCache(
+      {List<dynamic>? friendsList, bool forceRefresh = false}) async {
     final listToUse = friendsList ?? _friends;
     if (listToUse.isEmpty) return;
 
@@ -69,9 +70,11 @@ class _SocialScreenState extends State<SocialScreen>
           final friendId = friend['friend_id'] as int;
           try {
             final results = await Future.wait([
-              _apiService.getFriendProfile(friendId),
+              _apiService.getFriendProfile(friendId,
+                  forceRefresh: forceRefresh),
               _apiService
-                  .getFriendCharacterMoodState(friendId)
+                  .getFriendCharacterMoodState(friendId,
+                      forceRefresh: forceRefresh)
                   .catchError((_) => <String, dynamic>{}),
               _apiService
                   .getFriendMoodLogs(friendId)
@@ -111,7 +114,7 @@ class _SocialScreenState extends State<SocialScreen>
     super.dispose();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
     if (_friends.isEmpty) {
       setState(() => _isLoading = true);
     }
@@ -124,10 +127,14 @@ class _SocialScreenState extends State<SocialScreen>
       );
 
       // Load mood cache from persistent storage
-      final cachedMoods = await CacheService().get<Map<String, dynamic>>(
-        'social_mood_data',
-        maxAge: CacheService.mediumCache,
-      );
+      // Only load from cache if we are not forcing a refresh
+      Map<String, dynamic>? cachedMoods;
+      if (!forceRefresh) {
+        cachedMoods = await CacheService().get<Map<String, dynamic>>(
+          'social_mood_data',
+          maxAge: CacheService.mediumCache,
+        );
+      }
 
       if (cachedMoods != null) {
         _friendMoodCache = cachedMoods.map((key, value) =>
@@ -165,10 +172,10 @@ class _SocialScreenState extends State<SocialScreen>
         'sentRequests': sent,
       });
 
-      // Always fetch fresh mood details in background
-      if (friends.isNotEmpty) {
-        await _refreshMoodCache(friends);
-      }
+    // Always fetch fresh mood details in background
+    if (friends.isNotEmpty) {
+      await _refreshMoodCache(friendsList: friends, forceRefresh: forceRefresh);
+    }
     } catch (e) {
       debugPrint('Error loading social data: $e');
       if (mounted) {
@@ -311,7 +318,7 @@ class _SocialScreenState extends State<SocialScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: _loadData,
+      onRefresh: () => _loadData(forceRefresh: true),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         itemCount: _friends.length,
@@ -518,7 +525,8 @@ class _SocialScreenState extends State<SocialScreen>
         moodState = ''; // No fallback - show placeholder if no mood
     }
 
-    final genderPrefix = gender == 'female' ? 'Girl' : 'Boy';
+    final genderPrefix =
+        (gender as String).toLowerCase() == 'girl' ? 'Girl' : 'Boy';
     final String firstLetter =
         friendName.isNotEmpty ? friendName[0].toUpperCase() : '?';
 
@@ -527,7 +535,7 @@ class _SocialScreenState extends State<SocialScreen>
         await context
             .push('/friend/$friendId?name=${Uri.encodeComponent(friendName)}');
         // ✅ FIX: Reload entire friends list when returning from friend profile
-        await _loadData();
+        await _loadData(forceRefresh: true);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -1996,70 +2004,6 @@ class _SocialScreenState extends State<SocialScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.2),
-                      AppColors.secondary.withValues(alpha: 0.2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.person_rounded, color: AppColors.primary),
-              ),
-              title: Text(
-                'View Profile',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _viewFriendProfile(friend);
-              },
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.2),
-                      AppColors.secondary.withValues(alpha: 0.2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child:
-                    Icon(Icons.chat_bubble_rounded, color: AppColors.primary),
-              ),
-              title: Text(
-                'Send Message',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _sendMessage(friend);
-              },
-            ),
-            const SizedBox(height: 8),
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),

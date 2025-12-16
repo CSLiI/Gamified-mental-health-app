@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/reward_catalog.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:go_router/go_router.dart';
@@ -334,7 +335,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final xpInCurrentLevel =
         _levelProgress?['xp_in_current_level'] ?? (xp % 100);
     final xpForNextLevel = _levelProgress?['xp_for_next_level'] ?? 100;
-    final character = _userData?['character'];
+    
+    // Get character from CharacterProvider instead of _userData
+    final characterProvider = context.watch<CharacterProvider>();
+    final character = characterProvider.characterId != null
+        ? {
+            'gender': characterProvider.characterGender,
+            'number': characterProvider.characterNumber,
+          }
+        : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
@@ -359,34 +368,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Stack(
               alignment: Alignment.bottomRight,
               children: [
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        _getThemeColor1().withOpacity(0.15),
-                        _getThemeColor2().withOpacity(0.15),
-                      ],
+                GestureDetector(
+                  onTap: _showCharacterSelectionDialog,
+                  child: Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          _getThemeColor1().withOpacity(0.15),
+                          _getThemeColor2().withOpacity(0.15),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: _getFrameColor() ??
+                            Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        width: _getFrameColor() != null ? 4 : 3,
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: _getFrameColor() ??
-                          Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      width: _getFrameColor() != null ? 4 : 3,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: character != null
+                          ? _buildCharacterImage(character)
+                          : Icon(
+                              Icons.person_rounded,
+                              size: 55,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                     ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: character != null
-                        ? _buildCharacterImage(character)
-                        : Icon(
-                            Icons.person_rounded,
-                            size: 55,
-                            color: Theme.of(context).colorScheme.primary,
+                ),
+                // Edit Button
+                Positioned(
+                  top: -5,
+                  right: -5,
+                  child: GestureDetector(
+                    onTap: _showCharacterSelectionDialog,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            spreadRadius: 1,
                           ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ),
                 // Level badge
@@ -888,34 +927,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildOptionTile(
-            icon: Icons.tune_rounded,
-            title: 'Preferences',
-            subtitle: 'Customize your experience',
-            color: AppColors.primary,
-            onTap: () {
-              // Navigate to settings
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildOptionTile(
-            icon: Icons.notifications_outlined,
-            title: 'Notifications',
-            subtitle: 'Manage reminders',
-            color: AppColors.secondary,
-            onTap: () {
-              // Navigate to notifications settings
-            },
-          ),
-          const SizedBox(height: 12),
+          // Removed Preferences and Notifications tiles
           _buildOptionTile(
             icon: Icons.help_outline_rounded,
             title: 'Help & Support',
             subtitle: 'Get assistance',
             color: AppColors.info,
-            onTap: () {
-              // Navigate to help
-            },
+            onTap: _showHelpDialog,
           ),
           const SizedBox(height: 12),
           _buildOptionTile(
@@ -923,9 +941,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'About',
             subtitle: 'App version and info',
             color: AppColors.gameGreen,
-            onTap: () {
-              // Show about dialog
-            },
+            onTap: _showAboutDialog,
           ),
           const SizedBox(height: 24),
           // Logout Button - Standalone design
@@ -973,12 +989,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bannerReward = _getEquippedRewardByCategory('banners');
     if (bannerReward == null) return const SizedBox.shrink();
 
-    final rewardData = bannerReward['reward'] ?? bannerReward;
+    var rewardData = bannerReward['reward'] ?? bannerReward;
+    
+    // Check built-in catalog for fresh colors
+    if (rewardData['reward_id'] != null) {
+       final catalogItem = RewardCatalog.getRewardById(rewardData['reward_id']);
+       if (catalogItem != null) {
+         rewardData = catalogItem; // Use fresh data from catalog source of truth
+       }
+    } else if (rewardData['id'] != null) {
+       final catalogItem = RewardCatalog.getRewardById(rewardData['id']);
+       if (catalogItem != null) {
+         rewardData = catalogItem; // Use fresh data from catalog source of truth
+       }
+    }
+
     final color1Value = rewardData['color1'];
     final color2Value = rewardData['color2'];
-    final color1 = color1Value is int ? Color(color1Value) : AppColors.primary;
-    final color2 =
-        color2Value is int ? Color(color2Value) : AppColors.secondary;
+    final color1 = color1Value is int ? Color(color1Value) : (color1Value is Color ? color1Value : AppColors.primary);
+    final color2 = color2Value is int ? Color(color2Value) : (color2Value is Color ? color2Value : AppColors.secondary);
 
     return Container(
       height: 60,
@@ -1025,6 +1054,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Icon(Icons.star_rounded,
                 color: Colors.white.withOpacity(0.5), size: 18),
           ),
+          // Character GIF logic handled in caller/parent usually or specific widget
         ],
       ),
     );
@@ -1096,7 +1126,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
 
-    final genderPrefix = gender == 'female' ? 'Girl' : 'Boy';
+    final genderPrefix =
+        (gender as String).toLowerCase() == 'girl' ? 'Girl' : 'Boy';
 
     // Format: HappyBoy1.gif
     return ImageCacheManager().buildCachedImage(
@@ -1183,6 +1214,327 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.help_outline_rounded, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('Help & Support'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Important Disclaimer',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'This app is designed to support your mental wellness journey but is NOT a substitute for professional medical advice, diagnosis, or treatment. If you are experiencing a mental health crisis or emergency, please contact emergency services or a mental health professional immediately.',
+                        style: TextStyle(fontSize: 12, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Frequently Asked Questions',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                _buildFaqItem(
+                  'How do I track my mood?',
+                  'Navigate to the Mood tab and select how you\'re feeling. You can add notes and activities too!',
+                ),
+                _buildFaqItem(
+                  'What are the characters?',
+                  'Your character reflects your emotional journey. As your mood improves, your character thrives!',
+                ),
+                _buildFaqItem(
+                  'How do I earn rewards?',
+                  'Complete daily check-ins, maintain streaks, and achieve milestones to unlock themes, banners, and badges.',
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Emergency Support',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'If you are in danger, please contact:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                _buildContactItem('Befrienders KL', '03-7627 2929'),
+                _buildContactItem('Talian Kasih', '15999'),
+                _buildContactItem('Emergency', '999'),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFaqItem(String question, String answer) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              color: Color(0xFF2D3748),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            answer,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItem(String name, String number) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(Icons.phone, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          Text(
+            '$name: ',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          Text(
+            number,
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.favorite, size: 60, color: AppColors.primary),
+            const SizedBox(height: 16),
+            const Text(
+              'Gamified Mental Health',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            const Text('Version 1.0.0'),
+            const SizedBox(height: 16),
+            const Text(
+              'Your companion on the journey to better mental wellness. Track your moods, build healthy habits, and watch your character grow with you.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            const Text('© 2025 Mental Health App Team'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCharacterSelectionDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 20),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                'Choose Your Character',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3748),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: FutureBuilder<List<dynamic>>(
+                future: ApiService().getCharacters(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Error loading characters: ${snapshot.error}'),
+                    );
+                  }
+
+                  final characters = snapshot.data ?? [];
+                  // Debug: Log what characters we received
+                  debugPrint('📋 Characters from API: ${characters.length} total');
+                  for (var char in characters) {
+                    debugPrint('  - ${char['name']}: gender=${char['gender']}, number=${char['number']}');
+                  }
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(20),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.85,
+                    ),
+                    itemCount: characters.length,
+                    itemBuilder: (context, index) {
+                      final char = characters[index];
+                      // Use Consumer for reactive updates or Context.watch
+                      final currentId = context.watch<CharacterProvider>().characterId;
+                      final isSelected = char['id'] == currentId;
+
+                      return GestureDetector(
+                        onTap: () async {
+                          if (char['id'] != null) {
+                            try {
+                              await context.read<CharacterProvider>().setCharacter(
+                                    char['id'],
+                                    char['gender'] ?? 'Boy',
+                                    char['number'] ?? 1,
+                                  );
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                // Reload profile data to reflect changes
+                                _loadData();
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to select character: $e'),
+                                    backgroundColor: AppColors.error,
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary.withOpacity(0.1)
+                                : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ImageCacheManager().buildCachedImage(
+                                assetPath: 'assets/images/${(char['gender'] as String).toLowerCase() == 'girl' ? 'Girl' : 'Boy'}_Gif_33FPS/Happy${(char['gender'] as String).toLowerCase() == 'girl' ? 'Girl' : 'Boy'}${char['number']}.gif',
+                                height: 80,
+                                fit: BoxFit.contain,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                char['name'] ?? 'Character ${index + 1}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.grey[800],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

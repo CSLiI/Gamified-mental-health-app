@@ -15,6 +15,7 @@ import '../../../core/providers/theme_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/pet_provider.dart';
 import 'package:lottie/lottie.dart';
+import '../../../core/constants/reward_catalog.dart';
 
 class RewardsTab extends StatefulWidget {
   const RewardsTab({super.key});
@@ -43,199 +44,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
   late AnimationController _carouselController;
 
   // Built-in shop catalog (no external assets - MUST match ThemeProvider IDs)
-  late final List<Map<String, dynamic>> _builtinCatalog = [
-    // Themes (app background gradients - MUST match ThemeProvider IDs)
-    {
-      'id': 10000,
-      'name': 'Ocean Breeze',
-      'category': 'themes',
-      'xp_cost': 50,
-      'tier': 1,
-      'preview': 'theme_ocean',
-      'color1': const Color(0xFF5CACEE),
-      'color2': const Color(0xFF4A9FD8),
-    },
-    {
-      'id': 10001,
-      'name': 'Sunset Glow',
-      'category': 'themes',
-      'xp_cost': 80,
-      'tier': 1,
-      'preview': 'theme_sunset',
-      'color1': const Color(0xFFFF6B6B),
-      'color2': const Color(0xFFFFD93D),
-    },
-    {
-      'id': 10002,
-      'name': 'Forest Calm',
-      'category': 'themes',
-      'xp_cost': 100,
-      'tier': 2,
-      'preview': 'theme_forest',
-      'color1': const Color(0xFF6BCF7F),
-      'color2': const Color(0xFF4CAF50),
-    },
-    {
-      'id': 10003,
-      'name': 'Lavender Dream',
-      'category': 'themes',
-      'xp_cost': 120,
-      'tier': 2,
-      'preview': 'theme_lavender',
-      'color1': const Color(0xFF9C27B0),
-      'color2': const Color(0xFF7B1FA2),
-    },
-    {
-      'id': 10004,
-      'name': 'Midnight Sky',
-      'category': 'themes',
-      'xp_cost': 140,
-      'tier': 3,
-      'preview': 'theme_midnight',
-      'color1': const Color(0xFF1A237E),
-      'color2': const Color(0xFF0D47A1),
-    },
-    // Fonts (Global App Typography)
-    {
-      'id': 10010,
-      'name': 'Nunito (Default)',
-      'category': 'fonts',
-      'xp_cost': 0,
-      'tier': 1,
-      'preview': 'font_nunito',
-      'color1': const Color(0xFFE2E8F0),
-      'color2': const Color(0xFFCBD5E0),
-    },
-    {
-      'id': 10011,
-      'name': 'Outfit (Modern)',
-      'category': 'fonts',
-      'xp_cost': 100,
-      'tier': 2,
-      'preview': 'font_outfit',
-      'color1': const Color(0xFFE2E8F0),
-      'color2': const Color(0xFFCBD5E0),
-    },
-    {
-      'id': 10012,
-      'name': 'Inter (Professional)',
-      'category': 'fonts',
-      'xp_cost': 150,
-      'tier': 2,
-      'preview': 'font_inter',
-      'color1': const Color(0xFFE2E8F0),
-      'color2': const Color(0xFFCBD5E0),
-    },
-    {
-      'id': 10013,
-      'name': 'Quicksand (Friendly)',
-      'category': 'fonts',
-      'xp_cost': 120,
-      'tier': 2,
-      'preview': 'font_quicksand',
-      'color1': const Color(0xFFE2E8F0),
-      'color2': const Color(0xFFCBD5E0),
-    },
-    {
-      'id': 10014,
-      'name': 'Playfair (Elegant)',
-      'category': 'fonts',
-      'xp_cost': 200,
-      'tier': 3,
-      'preview': 'font_playfair',
-      'color1': const Color(0xFFE2E8F0),
-      'color2': const Color(0xFFCBD5E0),
-    },
-    // Banners (character card decorations - MUST match ThemeProvider IDs)
-    {
-      'id': 10005,
-      'name': 'Achievement Master',
-      'category': 'banners',
-      'xp_cost': 90,
-      'tier': 1,
-      'preview': 'banner_achievement',
-      'color1': const Color(0xFFFDC830), // Canary Gold
-      'color2': const Color(0xFFF37335), // Deep Orange
-    },
-    {
-      'id': 10006,
-      'name': 'Wellness Champion',
-      'category': 'banners',
-      'xp_cost': 100,
-      'tier': 1,
-      'preview': 'banner_wellness',
-      'color1': const Color(0xFF43E97B), // Emerald
-      'color2': const Color(0xFF38F9D7), // Turquoise
-    },
-    {
-      'id': 10007,
-      'name': 'Mood Warrior',
-      'category': 'banners',
-      'xp_cost': 110,
-      'tier': 2,
-      'preview': 'banner_mood',
-      'color1': const Color(0xFFFA709A), // Hot Pink
-      'color2': const Color(0xFFFF8E53), // Coral Orange
-    },
-    {
-      'id': 10008,
-      'name': 'Streak Hero',
-      'category': 'banners',
-      'xp_cost': 120,
-      'tier': 2,
-      'preview': 'banner_streak',
-      'color1': const Color(0xFFDA22FF), // Neon Purple
-      'color2': const Color(0xFF9733EE), // Deep Violet
-    },
-    {
-      'id': 10009,
-      'name': 'Journal Master',
-      'category': 'banners',
-      'xp_cost': 130,
-      'tier': 2,
-      'preview': 'banner_journal',
-      'color1': const Color(0xFFA18CD1), // Lavender
-      'color2': const Color(0xFFFBC2EB), // Rose
-    },
-    // Frames (character portrait frames)
-    {
-      'id': 30001,
-      'name': 'Golden Frame',
-      'category': 'frames',
-      'xp_cost': 140,
-      'tier': 2,
-      'preview': 'frame_gold',
-      'accent': Colors.amber,
-    },
-    {
-      'id': 30002,
-      'name': 'Crystal Frame',
-      'category': 'frames',
-      'xp_cost': 160,
-      'tier': 3,
-      'preview': 'frame_crystal',
-      'accent': const Color(0xFF7FDBFF),
-    },
-    // Profile customizations (badges, ribbons)
-    {
-      'id': 40001,
-      'name': 'Wellness Ribbon',
-      'category': 'profile',
-      'xp_cost': 70,
-      'tier': 1,
-      'preview': 'profile_ribbon',
-      'accent': AppColors.success,
-    },
-    {
-      'id': 40002,
-      'name': 'Focus Badge',
-      'category': 'profile',
-      'xp_cost': 90,
-      'tier': 1,
-      'preview': 'profile_badge',
-      'accent': AppColors.info,
-    },
-  ];
+  late final List<Map<String, dynamic>> _builtinCatalog = RewardCatalog.rewards;
 
   @override
   void initState() {
@@ -1064,11 +873,6 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
           const SizedBox(width: 8),
           _buildCategoryChip('banners', Icons.flag_rounded, 'Banners'),
           const SizedBox(width: 8),
-          _buildCategoryChip(
-              'frames', Icons.crop_square_rounded, 'Frames'),
-          const SizedBox(width: 8),
-          _buildCategoryChip('profile', Icons.badge_rounded, 'Profile'),
-          const SizedBox(width: 8),
           _buildCategoryChip('companions', Icons.pets_rounded, 'Companions'),
         ],
       ),
@@ -1329,10 +1133,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
       case 'banners':
         return _BannerPreview(
             color1: reward['color1'], color2: reward['color2']);
-      case 'frames':
-        return _FramePreview(accent: reward['accent'] ?? AppColors.primary);
-      case 'profile':
-        return _ProfilePreview(accent: reward['accent'] ?? AppColors.primary);
+
       default:
         return const SizedBox();
     }
@@ -1967,68 +1768,6 @@ class _BannerPreview extends StatelessWidget {
   }
 }
 
-class _FramePreview extends StatelessWidget {
-  final Color accent;
-  const _FramePreview({required this.accent});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16), topRight: Radius.circular(16))),
-      child: Center(
-        child: Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: accent, width: 6),
-            boxShadow: [
-              BoxShadow(color: accent.withOpacity(0.3), blurRadius: 12)
-            ],
-          ),
-          child: const Icon(Icons.person, color: AppColors.textSecondary),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfilePreview extends StatelessWidget {
-  final Color accent;
-  const _ProfilePreview({required this.accent});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16), topRight: Radius.circular(16))),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.verified_rounded, color: accent),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                  color: accent.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: accent)),
-              child: Text('PROFILE BADGE',
-                  style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _FontPreview extends StatelessWidget {
   final String fontFamily;

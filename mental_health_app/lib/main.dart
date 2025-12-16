@@ -11,6 +11,8 @@ import 'core/router/app_router.dart';
 import 'data/services/cache_service.dart';
 import 'core/utils/image_cache_manager.dart';
 
+import 'core/providers/notification_provider.dart';
+
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,7 @@ void main() async {
               characterProvider ?? CharacterProvider(userProvider),
         ),
         ChangeNotifierProvider(create: (_) => PetProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const MyApp(),
     ),

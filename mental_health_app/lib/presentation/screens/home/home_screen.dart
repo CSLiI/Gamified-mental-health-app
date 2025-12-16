@@ -5,11 +5,11 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/mood_provider.dart';
 import '../../../core/providers/character_provider.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/providers/notification_provider.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../data/services/cache_service.dart';
 import '../../widgets/level_up_dialog.dart';
-
 import '../../../core/utils/image_cache_manager.dart';
 import '../../../core/utils/debouncer.dart';
 import 'package:flutter/services.dart';
@@ -34,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _levelProgress;
   bool _isLoading = true;
 
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadCachedFirst();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CharacterProvider>().loadCharacter();
+      context.read<MoodProvider>().loadMood();
       _precacheCharacterGifs();
     });
   }
@@ -103,6 +105,28 @@ class _HomeScreenState extends State<HomeScreen> {
           _levelProgress = levelProgress;
           _isLoading = false;
         });
+        
+        // Check for low mood and show helpline dialog if needed
+        final moodProvider = context.read<MoodProvider>();
+        final moodScore = moodProvider.moodScore;
+        
+        if (moodScore < 40) {
+          final notificationProvider = context.read<NotificationProvider>();
+          if (!notificationProvider.hasShownLowMoodAlert) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _showHelpDialog();
+              }
+            });
+            
+            notificationProvider.addSystemNotification(
+              title: "We're here for you",
+              message: "It seems you're going through a tough time. Tap here for support resources.",
+              type: NotificationType.systemAlert,
+              redirectRoute: '/profile',
+            );
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -233,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onRefresh: () async {
                       await _loadData();
                       if (mounted) {
-                        await context.read<MoodProvider>().loadMood();
+                        await context.read<MoodProvider>().loadMood(forceRefresh: true);
                       }
                     },
                     color: themeProvider.primaryColor,
@@ -399,9 +423,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final mood = moodProvider.currentMood;
-        final moodColor = moodProvider.getMoodColor();
+        // Use Grey/Neutral color if mood is null (no logs yet)
+        final moodColor = mood != null ? moodProvider.getMoodColor() : Colors.grey;
 
-        final moodScore = _characterState?['mood_score'] ?? 50.0;
+        // Use provider for real-time updates
+        final moodScore = moodProvider.moodScore;
         final firstName = _userData?['first_name'] ?? 'User';
 
         // Parse level with type safety
@@ -680,7 +706,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         children: [
                           Text(
-                            'Mood: ${mood ?? 'Unknown'}',
+                            mood != null ? 'Mood: $mood' : 'Mood: ---',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -872,4 +898,44 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('We\'re Here for You'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text(
+              'Important Disclaimer',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.indigo),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'This app is a tool for self-care and habit building. It is NOT a replacement for professional mental health treatment or therapy.',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'If you are in danger or experiencing a mental health emergency, please contact:',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.red),
+            ),
+            SizedBox(height: 12),
+            Text('• Befrienders KL (24/7): 03-7627 2929', style: TextStyle(fontSize: 14)),
+            Text('• Talian Kasih (24/7): 15999', style: TextStyle(fontSize: 14)),
+            Text('• Emergency: 999', style: TextStyle(fontSize: 14)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

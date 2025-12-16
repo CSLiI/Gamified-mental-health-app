@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/storage_keys.dart';
+import '../constants/reward_catalog.dart';
 
 class ThemePalette {
   final Color primary;
@@ -152,43 +153,10 @@ class ThemeProvider extends ChangeNotifier {
     },
   ];
 
-  final List<Map<String, dynamic>> _builtinBanners = [
-    {
-      'id': 10005,
-      'category': 'banners',
-      'name': 'Achievement Master',
-      'color1': const Color(0xFFFDC830), // Canary Gold
-      'color2': const Color(0xFFF37335), // Deep Orange
-    },
-    {
-      'id': 10006,
-      'category': 'banners',
-      'name': 'Wellness Champion',
-      'color1': const Color(0xFF43E97B), // Emerald
-      'color2': const Color(0xFF38F9D7), // Turquoise
-    },
-    {
-      'id': 10007,
-      'category': 'banners',
-      'name': 'Mood Warrior',
-      'color1': const Color(0xFFFA709A), // Hot Pink
-      'color2': const Color(0xFFFF8E53), // Coral Orange
-    },
-    {
-      'id': 10008,
-      'category': 'banners',
-      'name': 'Streak Hero',
-      'color1': const Color(0xFFDA22FF), // Neon Purple
-      'color2': const Color(0xFF9733EE), // Deep Violet
-    },
-    {
-      'id': 10009,
-      'category': 'banners',
-      'name': 'Journal Master',
-      'color1': const Color(0xFFA18CD1), // Lavender
-      'color2': const Color(0xFFFBC2EB), // Rose
-    },
-  ];
+  // Use the shared catalog, filtered for banners
+  final List<Map<String, dynamic>> _builtinBanners = RewardCatalog.rewards
+      .where((r) => r['category'] == 'banners')
+      .toList();
 
   // Getters
   ThemePalette get palette => _currentPalette;

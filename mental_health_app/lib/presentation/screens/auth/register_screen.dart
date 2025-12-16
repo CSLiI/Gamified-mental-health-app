@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/storage_keys.dart';
+import '../../../data/services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,6 +15,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen>
     with SingleTickerProviderStateMixin {
+  final _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -38,6 +43,63 @@ class _RegisterScreenState extends State<RegisterScreen>
     _confirmPasswordController.dispose();
     _animController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        // User canceled the sign-in
+        setState(() => _isLoading = false);
+        return;
+      }
+      
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+      
+      if (idToken == null) {
+        throw Exception('Could not recover ID token from Google Sign-In.');
+      }
+      
+      // Send token to backend
+      final user = await _apiService.loginWithGoogle(idToken);
+      
+      if (!mounted) return;
+
+      // Same post-login logic as standard login
+      try {
+          final storage = const FlutterSecureStorage();
+          await storage.write(
+              key: StorageKeys.currentUserId, value: user['id'].toString());
+          if (user.containsKey('token')) {
+             await storage.write(key: StorageKeys.authToken, value: user['token']);
+          }
+          
+          await _apiService.getCurrentUser(); // Refresh user data cache
+      } catch (_) {
+        // Continue anyway
+      }
+
+      if (!mounted) return;
+      context.go('/home');
+      
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In failed: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _register() async {
@@ -391,6 +453,52 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   letterSpacing: 1.2,
                                 ),
                               ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Google Sign-Up Button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _handleGoogleSignIn,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                             Image.network(
+                               'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png',
+                               height: 24,
+                               width: 24,
+                               errorBuilder: (context, error, stackTrace) => 
+                                   const Icon(Icons.login, color: Colors.blue),
+                             ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Sign up with Google',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),

@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/cache_service.dart';
 import '../../widgets/level_up_dialog.dart';
+import '../../../core/utils/journal_encryption_helper.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -27,7 +28,9 @@ class _JournalScreenState extends State<JournalScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    JournalEncryptionHelper().initialize().then((_) {
+      _loadData();
+    });
   }
 
   @override
@@ -53,8 +56,16 @@ class _JournalScreenState extends State<JournalScreen> {
       );
 
       if (cachedJournals != null && mounted) {
+        final decryptedJournals = cachedJournals.map((j) {
+          final mutableJ = Map<String, dynamic>.from(j);
+          mutableJ['title'] = JournalEncryptionHelper().decrypt(j['title'] ?? '');
+          mutableJ['content'] =
+              JournalEncryptionHelper().decrypt(j['content'] ?? '');
+          return mutableJ;
+        }).toList();
+
         setState(() {
-          _journals = cachedJournals;
+          _journals = decryptedJournals;
           _isLoadingJournals = false;
         });
       }
@@ -65,8 +76,17 @@ class _JournalScreenState extends State<JournalScreen> {
       // Update cache
       await CacheService().set('journals_data', journals);
 
+      // Decrypt journals locally
+      final decryptedJournals = journals.map((j) {
+        final mutableJ = Map<String, dynamic>.from(j);
+        mutableJ['title'] = JournalEncryptionHelper().decrypt(j['title'] ?? '');
+        mutableJ['content'] =
+            JournalEncryptionHelper().decrypt(j['content'] ?? '');
+        return mutableJ;
+      }).toList();
+
       setState(() {
-        _journals = journals;
+        _journals = decryptedJournals;
         _isLoadingJournals = false;
       });
     } catch (e) {
@@ -117,18 +137,22 @@ class _JournalScreenState extends State<JournalScreen> {
       if (_editingJournalId != null) {
         // Update existing journal
         await _apiService.updateJournal(_editingJournalId!, {
-          'title': _titleController.text.trim().isEmpty
-              ? 'Journal Entry'
-              : _titleController.text.trim(),
-          'content': _contentController.text.trim(),
+          'title': JournalEncryptionHelper().encrypt(
+              _titleController.text.trim().isEmpty
+                  ? 'Journal Entry'
+                  : _titleController.text.trim()),
+          'content':
+              JournalEncryptionHelper().encrypt(_contentController.text.trim()),
         });
       } else {
         // Create new journal
         await _apiService.createJournal({
-          'title': _titleController.text.trim().isEmpty
-              ? 'Journal Entry'
-              : _titleController.text.trim(),
-          'content': _contentController.text.trim(),
+          'title': JournalEncryptionHelper().encrypt(
+              _titleController.text.trim().isEmpty
+                  ? 'Journal Entry'
+                  : _titleController.text.trim()),
+          'content':
+              JournalEncryptionHelper().encrypt(_contentController.text.trim()),
         });
       }
 

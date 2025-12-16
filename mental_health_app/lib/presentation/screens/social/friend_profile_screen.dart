@@ -105,8 +105,9 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
 
       // Fetch all data in parallel for speed
       final results = await Future.wait([
-        _apiService.getFriendProfile(widget.friendId),
-        _apiService.getFriendCharacterMoodState(widget.friendId),
+        _apiService.getFriendProfile(widget.friendId, forceRefresh: true),
+        _apiService.getFriendCharacterMoodState(widget.friendId,
+            forceRefresh: true),
         _apiService.getFriendMoodLogs(widget.friendId),
         _apiService.getFriendTodos(widget.friendId), // Fetch ALL, we filter manually
         _apiService.getMessages(widget.friendId),
@@ -418,6 +419,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     maxLines: 3,
                     maxLength: 200,
                     autofocus: true,
+                    style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       hintText: 'You got this! Keep going!',
                       border: OutlineInputBorder(
@@ -567,6 +569,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                     maxLines: 2,
                     maxLength: 100,
                     autofocus: true,
+                    style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       hintText: 'e.g., Meditate for 10 minutes today',
                       hintStyle: TextStyle(color: Colors.grey[400]),
@@ -905,10 +908,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
         return dateB.compareTo(dateA); // Descending order (newest first)
       });
 
-    // ✅ CHANGE: Use most recent mood log (updates immediately when friend logs new mood)
+    // ✅ CHANGE: Use most recent mood log
+    // If no logs, currentMood is null (neutral state)
     final currentMood = sortedMoodLogs.isNotEmpty
         ? (sortedMoodLogs.first['mood'] ?? 'calm')
-        : 'calm';
+        : null;
 
     // ✅ HANDLE NULL: Show placeholder if friend hasn't chosen character
     if (character == null) {
@@ -942,11 +946,13 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
     final number = character['number'] ?? 1;
 
     // Capitalize gender for GIF path (backend returns 'male'/'female')
-    final genderCapitalized = gender.toLowerCase() == 'female' ? 'Girl' : 'Boy';
+    final genderCapitalized = (gender as String).toLowerCase() == 'girl' ? 'Girl' : 'Boy';
     // Use current mood for GIF display, not character state
     final gifPath =
-        _getCharacterGifPath(currentMood, genderCapitalized, number);
-    final moodColor = _getMoodColor(currentMood);
+        _getCharacterGifPath(currentMood ?? 'calm', genderCapitalized, number);
+        
+    // Use Grey/Neutral color if mood is null
+    final moodColor = currentMood != null ? _getMoodColor(currentMood) : Colors.grey;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -1025,11 +1031,11 @@ class _FriendProfileScreenState extends State<FriendProfileScreen>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _getCurrentMoodDisplay(),
+                  currentMood != null ? _getCurrentMoodDisplay() : '---',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: _getCurrentMoodColor(),
+                    color: currentMood != null ? _getCurrentMoodColor() : Colors.grey,
                     letterSpacing: 1,
                   ),
                   overflow: TextOverflow.ellipsis,

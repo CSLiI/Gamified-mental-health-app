@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "233053475110",
+    "project_id": "gamified-mental-health-app",
+    "storage_bucket": "gamified-mental-health-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:233053475110:android:a64f68c3562fa2149c31e7",
+        "android_client_info": {
+          "package_name": "com.example.mental_health_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "233053475110-qrhtddvj6974202iikh93j60s5if6c74.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mental_health_app",
+            "certificate_hash": "b634e9475827d751ed759c3e6f295d8f4ddd15d7"
+          }
+        },
+        {
+          "client_id": "233053475110-38rchv0u6l08qnr02nbgpg3dd70ha32m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFUtgCfdeIjU_lcDqvtNPVOVuhkt8AQ0s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "233053475110-38rchv0u6l08qnr02nbgpg3dd70ha32m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

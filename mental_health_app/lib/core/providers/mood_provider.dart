@@ -9,14 +9,27 @@ class MoodProvider extends ChangeNotifier {
   final UserProvider _userProvider;
 
   String? _currentMood;
+  double? _moodScore;
+  String? _characterState;
   bool _isLoading = false;
   String? _error;
 
   MoodProvider(this._userProvider);
 
   String? get currentMood => _currentMood;
+  double get moodScore => _moodScore ?? 50.0;
+  String get characterState => _characterState ?? 'content';
   bool get isLoading => _isLoading;
   String? get error => _error;
+  
+  // Track if we've shown the care alert this session to prevent spam
+  bool _hasShownLowMoodAlert = false;
+  bool get hasShownLowMoodAlert => _hasShownLowMoodAlert;
+  
+  void markLowMoodAlertShown() {
+    _hasShownLowMoodAlert = true;
+    notifyListeners();
+  }
 
   // Mood color mapping
   final Map<String, Color> _moodColors = {
@@ -36,10 +49,10 @@ class MoodProvider extends ChangeNotifier {
     return const Color(0xFF5CACEE);
   }
 
-  Future<void> loadMood() async {
+  Future<void> loadMood({bool forceRefresh = false}) async {
     print('😊 MoodProvider: Loading mood...');
-    if (_isLoading) return; // Prevent duplicate calls
-
+    
+    // Allow re-loading even if already loading (for real-time updates)
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -53,35 +66,39 @@ class MoodProvider extends ChangeNotifier {
         return;
       }
 
-      // Try cache first
-      final prefs = await SharedPreferences.getInstance();
-      final cachedMood = prefs.getString(StorageKeys.lastSelectedMood(userId));
+      // Always fetch fresh data from backend for real-time updates
+      try {
+        final results = await Future.wait([
+          _apiService.getMoodLogs(limit: 1),
+          _apiService.getCharacterMoodState(forceRefresh: forceRefresh),
+        ]);
 
-      if (cachedMood != null) {
-        _currentMood = cachedMood;
-        print('✅ MoodProvider: Loaded cached mood: $_currentMood');
-        notifyListeners();
-        // Update from backend in background
-        _updateFromBackend(userId);
-      } else {
-        // Fetch from backend
-        final recentMoods = await _apiService.getMoodLogs(limit: 1);
+        final recentMoods = results[0] as List<dynamic>;
+        final moodState = results[1] as Map<String, dynamic>;
+
         if (recentMoods.isNotEmpty) {
           _currentMood = recentMoods[0]['mood'] as String;
+          final prefs = await SharedPreferences.getInstance();
           await prefs.setString(
               StorageKeys.lastSelectedMood(userId), _currentMood!);
-          print('✅ MoodProvider: Loaded mood from backend: $_currentMood');
-        } else {
-          print('ℹ️ MoodProvider: No mood logs found');
+          print('✅ MoodProvider: Loaded mood: $_currentMood');
         }
+        
+        if (moodState.containsKey('mood_score')) {
+          _moodScore = (moodState['mood_score'] as num).toDouble();
+          _characterState = moodState['character_state'] as String?;
+          print('✅ MoodProvider: Loaded mood score: $_moodScore');
+        }
+      } catch (e) {
+        print('Error loading mood data: $e');
       }
     } catch (e) {
       _error = e.toString();
       print('❌ MoodProvider: Error loading mood: $e');
     } finally {
       _isLoading = false;
-      print('✅ MoodProvider: Loading complete, isLoading = $_isLoading');
       notifyListeners();
+      print('✅ MoodProvider: notifyListeners() called');
     }
   }
 
@@ -111,19 +128,29 @@ class MoodProvider extends ChangeNotifier {
 
   Future<void> _updateFromBackend(int userId) async {
     try {
-      final recentMoods = await _apiService.getMoodLogs(limit: 1);
+      final results = await Future.wait([
+        _apiService.getMoodLogs(limit: 1),
+        _apiService.getCharacterMoodState(),
+      ]);
+
+      final recentMoods = results[0] as List<dynamic>;
+      final moodState = results[1] as Map<String, dynamic>;
+
       if (recentMoods.isNotEmpty) {
         final latestMood = recentMoods[0]['mood'] as String;
-
         if (_currentMood != latestMood) {
           _currentMood = latestMood;
-          notifyListeners();
-
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(
               StorageKeys.lastSelectedMood(userId), latestMood);
         }
       }
+
+      if (moodState.containsKey('mood_score')) {
+        _moodScore = (moodState['mood_score'] as num).toDouble();
+        _characterState = moodState['character_state'] as String?;
+      }
+      notifyListeners();
     } catch (e) {
       print('Error updating from backend: $e');
     }
@@ -133,7 +160,10 @@ class MoodProvider extends ChangeNotifier {
   Future<void> clearMood() async {
     print('🧹 MoodProvider: Clearing mood on logout...');
     _currentMood = null;
+    _moodScore = null;
+    _characterState = null;
     _error = null;
+
     _isLoading = false;
     notifyListeners();
   }

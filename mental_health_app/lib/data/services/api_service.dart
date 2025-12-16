@@ -59,6 +59,20 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    try {
+      // Determine the endpoint based on your backend implementation
+      // Usually involves sending the ID token to verify and get a session
+      final response = await _dioClient.post(
+        '${ApiConstants.auth}/google', // Update with your actual endpoint
+        data: {'id_token': idToken},
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // ==================== User ====================
 
   Future<Map<String, dynamic>> getCurrentUser() async {
@@ -133,12 +147,17 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getCharacterMoodState() async {
+  Future<Map<String, dynamic>> getCharacterMoodState(
+      {bool forceRefresh = false}) async {
     try {
+      if (forceRefresh) {
+        await CacheService().remove(CacheKeys.characterMoodState);
+      }
+
       final json = await _dioClient.getCachedJson(
         ApiConstants.characterMoodState,
         cacheKey: CacheKeys.characterMoodState,
-        maxAge: CacheService.shortCache,
+        maxAge: forceRefresh ? Duration.zero : CacheService.shortCache,
       );
       return json as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -657,13 +676,24 @@ class ApiService {
   }
 
   // Get friend's profile including character
-  Future<Map<String, dynamic>> getFriendProfile(int userId) async {
+  Future<Map<String, dynamic>> getFriendProfile(int userId,
+      {bool forceRefresh = false}) async {
     try {
+      if (forceRefresh) {
+        await CacheService().remove('friend_profile_$userId');
+      }
+
+      final queryParams = <String, dynamic>{};
+      if (forceRefresh) {
+        queryParams['_t'] = DateTime.now().millisecondsSinceEpoch;
+      }
+
       final json = await _dioClient.getCachedJson(
         '/users/$userId/profile',
         // Scope cache per user
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
         cacheKey: 'friend_profile_$userId',
-        maxAge: CacheService.shortCache,
+        maxAge: forceRefresh ? Duration.zero : CacheService.shortCache,
       );
       return json as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -699,13 +729,22 @@ class ApiService {
 
   // Get friend's character mood state
   Future<Map<String, dynamic>> getFriendCharacterMoodState(int userId,
-      {int days = 7}) async {
+      {int days = 7, bool forceRefresh = false}) async {
     try {
+      if (forceRefresh) {
+        await CacheService().remove('friend_mood_state_${userId}_d$days');
+      }
+
+      final queryParams = <String, dynamic>{'days': days};
+      if (forceRefresh) {
+        queryParams['_t'] = DateTime.now().millisecondsSinceEpoch;
+      }
+
       final json = await _dioClient.getCachedJson(
         '/users/$userId/character/mood-state',
-        queryParameters: {'days': days},
+        queryParameters: queryParams,
         cacheKey: 'friend_mood_state_${userId}_d$days',
-        maxAge: CacheService.shortCache,
+        maxAge: forceRefresh ? Duration.zero : CacheService.shortCache,
       );
       return json as Map<String, dynamic>;
     } on DioException catch (e) {

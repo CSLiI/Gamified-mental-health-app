@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -40,13 +41,71 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        // User canceled the sign-in
+        setState(() => _isLoading = false);
+        return;
+      }
+      
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+      
+      if (idToken == null) {
+        throw Exception('Could not recover ID token from Google Sign-In.');
+      }
+      
+      // Send token to backend
+      final user = await _apiService.loginWithGoogle(idToken);
+      
+      if (!mounted) return;
+
+      // Same post-login logic as standard login
+      try {
+          final storage = const FlutterSecureStorage();
+          await storage.write(
+              key: StorageKeys.currentUserId, value: user['id'].toString());
+          // Save auth token if backend returns it (assumed handled in DioClient/ApiService, but usually need to save it here too if returned)
+          if (user.containsKey('token')) {
+             await storage.write(key: StorageKeys.authToken, value: user['token']);
+          }
+          
+          await _apiService.getCurrentUser(); // Refresh user data cache
+      } catch (_) {
+        // Continue anyway
+      }
+
+      if (!mounted) return;
+      context.go('/home');
+      
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In failed: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      await _apiService.login(
+      final result = await _apiService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -55,10 +114,15 @@ class _LoginScreenState extends State<LoginScreen>
 
       // Pre-load theme before navigation for immediate visual feedback
       try {
+        final storage = const FlutterSecureStorage();
+        // Save auth token if returned
+        if (result.containsKey('token')) {
+            await storage.write(key: StorageKeys.authToken, value: result['token']);
+        }
+        
         final user = await _apiService.getCurrentUser();
         if (mounted) {
           // Store user ID first
-          final storage = const FlutterSecureStorage();
           await storage.write(
               key: StorageKeys.currentUserId, value: user['id'].toString());
           // Then load theme
@@ -325,6 +389,54 @@ class _LoginScreenState extends State<LoginScreen>
                                   letterSpacing: 1.2,
                                 ),
                               ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Google Sign-In Button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withValues(alpha: 0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _handleGoogleSignIn,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Using a font icon or asset would be better, but Icon works for now
+                             // Ideally use an asset, but for native Google feel:
+                             Image.network(
+                               'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png',
+                               height: 24,
+                               width: 24,
+                               errorBuilder: (context, error, stackTrace) => 
+                                   const Icon(Icons.login, color: Colors.blue), // Fallback
+                             ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Sign in with Google',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),

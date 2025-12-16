@@ -111,6 +111,22 @@ class CharacterProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> setCharacter(int id, String gender, int number) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _apiService.chooseCharacter(id);
+      await updateCharacter(id, gender, number);
+    } catch (e) {
+      _error = e.toString();
+      print('Error setting character: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Clear character data on logout
   Future<void> clearCharacter() async {
     print('🧹 CharacterProvider: Clearing character on logout...');
