@@ -228,18 +228,18 @@ class _LoginScreenState extends State<LoginScreen>
                         margin: const EdgeInsets.symmetric(horizontal: 120),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
-                          ),
+                          color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFF6C5CE7).withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              spreadRadius: 5,
+                              color: Color(0xFF6C5CE7).withValues(alpha: 0.2),
+                              blurRadius: 15,
+                              spreadRadius: 2,
                             )
                           ],
                         ),
-                          child: ClipOval(
+                        child: ClipOval(
+                          child: Padding(
+                            padding: const EdgeInsets.all(15.0),
                             child: Image.asset(
                               'assets/images/app_logo.png',
                               width: 60,
@@ -249,6 +249,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                       ),
                     ),
+                  ),
                     const SizedBox(height: 30),
                     SlideTransition(
                       position: Tween<Offset>(

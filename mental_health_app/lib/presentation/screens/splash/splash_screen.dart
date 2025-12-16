@@ -103,20 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
                   return Container(
                     width: 120 + (10 * _pulseController.value),
                     height: 120 + (10 * _pulseController.value),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6C5CE7), Color(0xFF667EEA)],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0xFF6C5CE7)
-                              .withValues(alpha: 0.3 * _pulseController.value),
-                          blurRadius: 30,
-                          spreadRadius: 10,
-                        ),
-                      ],
-                    ),
+                    // Removed gradient background
                     child: ClipOval(
                       child: Image.asset(
                         'assets/images/app_logo.png',

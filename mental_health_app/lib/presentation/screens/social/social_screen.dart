@@ -880,9 +880,16 @@ class _SocialScreenState extends State<SocialScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: searchController,
+            SizedBox(
+              width: 300, // Fixed width to prevent horizontal expansion
+              child: TextField(
+                controller: searchController,
+              maxLines: 2, // Allow wrapping to avoid horizontal scroll
+              minLines: 2, // Fixed height (static)
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(fontSize: 18), // Slightly larger text
               decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Bigger tap area
                 labelText: 'Email Address',
                 hintText: 'Enter friend\'s email',
                 prefixIcon: Icon(Icons.email_rounded, color: AppColors.primary),
@@ -895,6 +902,7 @@ class _SocialScreenState extends State<SocialScreen>
                   borderSide: BorderSide(color: AppColors.primary, width: 2),
                 ),
               ),
+            ),
             ),
           ],
         ),
