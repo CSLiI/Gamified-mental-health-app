@@ -48,14 +48,34 @@ Base = declarative_base()
 
 # Dependency for FastAPI
 def get_db():
-    db = SessionLocal()
+    db = None
+    retries = 3
+    for attempt in range(retries):
+        try:
+            db = SessionLocal()
+            # Explicitly check connection health to trigger pool recovery or fail fast
+            db.execute(text("SELECT 1"))
+            break
+        except Exception as e:
+            if db:
+                db.close()
+            if attempt < retries - 1:
+                # Exponential backoff: 0.5s, 1.0s, etc.
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            else:
+                # If all retries fail, log it and raise
+                logging.getLogger("database").error(f"Failed to get DB session after {retries} attempts: {e}")
+                raise
+
     try:
         yield db
     finally:
-        try:
-            db.close()
-        except Exception:
-            pass
+        if db:
+            try:
+                db.close()
+            except Exception:
+                pass
 
 
 # Proactive connection check with simple retry to surface clearer errors
