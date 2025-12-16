@@ -163,29 +163,35 @@ def reset_password(
     request: dict,
     db: Session = Depends(get_db)
 ):
-    """Reset password with token"""
-    token = request.get('token')
+    """Reset password with verification code"""
+    code = request.get('token')  # This is the 6-character code from user
     new_password = request.get('new_password')
     
-    if not token or not new_password:
+    if not code or not new_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Token and new password are required"
+            detail="Verification code and new password are required"
         )
     
-    user = db.query(models.User).filter(models.User.reset_token == token).first()
+    # Convert code to uppercase to match what we sent in email
+    code = code.upper()
+    
+    # Find user where reset_token starts with the code (first 6 chars)
+    user = db.query(models.User).filter(
+        models.User.reset_token.like(f"{code}%")
+    ).first()
     
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset token"
+            detail="Invalid or expired verification code"
         )
     
     # Check if token expired
     if user.reset_token_expires < datetime.utcnow():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Reset token has expired"
+            detail="Verification code has expired"
         )
     
     # Hash new password
