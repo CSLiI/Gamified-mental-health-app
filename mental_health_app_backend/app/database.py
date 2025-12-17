@@ -40,8 +40,8 @@ engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,            # Test connections before using
     pool_recycle=300,              # Recycle connections every 5 minutes
-    pool_size=5,                   # Increased pool for concurrent requests
-    max_overflow=10,               # Total max = 15 connections (allow bursts)
+    pool_size=20,                  # Increased pool for concurrent requests (from 5)
+    max_overflow=20,               # Allow bursts up to 40 connections total
     pool_timeout=30,               # Wait up to 30s for a connection from pool
     pool_use_lifo=True             # Return most recently used connections first
 )
@@ -62,8 +62,8 @@ def get_db():
     for attempt in range(retries):
         try:
             db = SessionLocal()
-            # Explicitly check connection health to trigger pool recovery or fail fast
-            db.execute(text("SELECT 1"))
+            # Note: pool_pre_ping=True in engine handles liveness checks efficiently.
+            # Manual 'SELECT 1' here is redundant and blocking.
             break
         except Exception as e:
             if db:

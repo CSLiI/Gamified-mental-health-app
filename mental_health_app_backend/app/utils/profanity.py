@@ -19,7 +19,16 @@ if HAS_PROFANITY_LIB:
             "cutting myself",
             "end it all",
             "rape",
-            "murder"
+            "murder",
+            "goon",
+            "masturbate",
+            "edge",
+            "blowjob",
+            "sexual",
+            "sex",
+            "cum",
+            "dick",
+            "pussy"
         ])
     except Exception as e:
         print(f"⚠️ WARNING: Failed to initialize profanity words: {e}")
