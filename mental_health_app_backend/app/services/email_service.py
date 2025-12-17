@@ -1,5 +1,7 @@
 import os
 import smtplib
+import socket
+import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -76,11 +78,25 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
         
         msg.attach(MIMEText(html_content, 'html'))
 
-        # Connect to Gmail SMTP Server using SSL
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+        # Force IPv4 resolution (Fix for Errno 101 Network Unreachable on some containers)
+        try:
+            target_ip = socket.gethostbyname(SMTP_SERVER)
+            print(f"Resolved {SMTP_SERVER} to {target_ip}")
+        except Exception as e:
+            print(f"DNS Resolution failed: {e}")
+            target_ip = SMTP_SERVER
+
+        # Create unverified context to allow IP connection without hostname mismatch error
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+        # Connect to Gmail SMTP Server using SSL and forced IP
+        with smtplib.SMTP_SSL(target_ip, SMTP_PORT, context=context) as server:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
             
+        print(f"Password reset email sent successfully to {to_email}")
         return True
     except Exception as e:
         print(f"Error sending password reset email: {e}")
