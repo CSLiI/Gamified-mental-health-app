@@ -47,6 +47,7 @@ final appRouter = GoRouter(
         registrationData: state.extra as Map<String, dynamic>?,
       ),
     ),
+    GoRoute(
       path: '/home',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
