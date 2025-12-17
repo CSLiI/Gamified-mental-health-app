@@ -44,6 +44,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==================== GLOBAL EXCEPTION HANDLER ====================
+from fastapi import Request
+from fastapi.responses import JSONResponse
+import traceback
+import logging
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api")
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all exception handler to prevent server crashes 
+    and provide consistent error responses.
+    """
+    # Log the full stack trace for the developer
+    error_msg = f"Unhandled error: {str(exc)}\nPath: {request.url.path}"
+    logger.error(error_msg)
+    traceback.print_exc()
+    
+    # Return a friendly JSON response to the user
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal Server Error",
+            "message": "Something went wrong on our end. Please try again later.",
+            # Only include error details in non-production if needed
+            # "error": str(exc) 
+        }
+    )
+# ===================================================================
+
 # ⚠️ IMPORTANT: Include all routers
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
