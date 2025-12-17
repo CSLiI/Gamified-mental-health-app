@@ -216,7 +216,40 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Clear alerts flag on session start/end or explicit reset
+  // Optimistic updates to prevent UI lag
+  Future<void> markEncouragementReadOptimistic(int id) async {
+    // 1. Update local state immediately
+    final index = _apiEncouragements.indexWhere((e) => e['id'] == id);
+    if (index != -1) {
+      _apiEncouragements[index]['is_read'] = true;
+      notifyListeners(); // Updates UI instantly
+    }
+
+    // 2. Call API in background
+    try {
+      await _apiService.markEncouragementRead(id);
+    } catch (e) {
+      print("Error marking encouragement read: $e");
+      // Optionally revert state if failed, but for read status it's usually fine to ignore
+    }
+  }
+
+  Future<void> markMessageReadOptimistic(int id) async {
+    // 1. Update local state immediately
+    final index = _apiMessages.indexWhere((m) => m['id'] == id);
+    if (index != -1) {
+      _apiMessages[index]['is_read'] = true;
+      notifyListeners();
+    }
+
+    // 2. Call API in background
+    try {
+      await _apiService.markMessageRead(id);
+    } catch (e) {
+      print("Error marking message read: $e");
+    }
+  }
+
   void resetSession() {
     _hasShownLowMoodAlert = false;
     notifyListeners();

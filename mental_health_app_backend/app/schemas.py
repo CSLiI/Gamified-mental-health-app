@@ -495,6 +495,12 @@ class UserSearchResponse(BaseModel):
 class EncouragementCreate(BaseModel):
     message: str
 
+    @validator('message')
+    def validate_no_profanity_message(cls, v):
+        if contains_profanity(v):
+            raise ValueError('Message contains inappropriate language')
+        return v
+
 class EncouragementResponse(BaseModel):
     id: int
     sender_id: int
@@ -511,6 +517,12 @@ class EncouragementResponse(BaseModel):
 # ==================== Messages ====================
 class MessageCreate(BaseModel):
     message: str
+
+    @validator('message')
+    def validate_no_profanity_message(cls, v):
+        if contains_profanity(v):
+            raise ValueError('Message contains inappropriate language')
+        return v
 
 class MessageResponse(BaseModel):
     id: int

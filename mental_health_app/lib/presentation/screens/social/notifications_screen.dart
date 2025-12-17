@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/colors.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/notification_provider.dart';
 import '../../../data/services/api_service.dart';
 import '../../../core/utils/profanity_filter.dart';
@@ -440,8 +440,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   label: const Text('Mark as read'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.success,
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                   ),
                 ),
               ),
