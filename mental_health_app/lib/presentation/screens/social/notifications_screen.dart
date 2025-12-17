@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../data/services/api_service.dart';
-import '../../../data/services/cache_service.dart';
 import 'package:provider/provider.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/providers/notification_provider.dart';
+import '../../../data/services/api_service.dart';
+import '../../../core/utils/profanity_filter.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -320,7 +320,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     final senderName =
         '${encouragement['sender_first_name'] ?? ''} ${encouragement['sender_last_name'] ?? ''}'
             .trim();
-    final message = encouragement['message'] ?? '';
+    final message = ProfanityFilter.censor(encouragement['message'] ?? '');
     final isRead = encouragement['is_read'] ?? false;
     final createdAt = DateTime.parse(encouragement['created_at']).toLocal();
     final timeAgo = _getTimeAgo(createdAt);
@@ -428,23 +428,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  onPressed: () async {
+                  onPressed: () {
                     if (isSystem) {
                       context.read<NotificationProvider>().markSystemRead(encouragement['id']);
                       return;
                     }
-                    
-                    try {
-                      await _apiService
-                          .markEncouragementRead(encouragement['id']);
-                      _loadData();
-                    } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    }
+                    // Optimistic update
+                     context.read<NotificationProvider>().markEncouragementReadOptimistic(int.parse(encouragement['id'].toString()));
                   },
                   icon: Icon(Icons.check, size: 16.sp),
                   label: const Text('Mark as read'),
@@ -467,7 +457,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     final senderName =
         '${message['sender_first_name'] ?? ''} ${message['sender_last_name'] ?? ''}'
             .trim();
-    final content = message['message'] ?? '';
+    final content = ProfanityFilter.censor(message['message'] ?? '');
     final isRead = message['is_read'] ?? false;
     final createdAt = DateTime.parse(message['created_at']).toLocal();
     final timeAgo = _getTimeAgo(createdAt);
