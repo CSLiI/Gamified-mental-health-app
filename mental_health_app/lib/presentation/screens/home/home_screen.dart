@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: "We're here for you",
               message: "It seems you're going through a tough time. Tap here for support resources.",
               type: NotificationType.systemAlert,
-              redirectRoute: '/profile',
+              redirectRoute: '/home?initialIndex=4&action=help',
             );
           }
         }
@@ -372,29 +372,66 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            IconButton(
-              icon: Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.secondary],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8.r,
-                      offset: Offset(0, 2.h),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppColors.primary, AppColors.secondary],
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.3),
+                          blurRadius: 8.r,
+                          offset: Offset(0, 2.h),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: Icon(
+                      Icons.notifications,
+                      color: Colors.white,
+                      size: 24.sp,
+                    ),
+                  ),
+                  onPressed: () => context.go('/notifications'),
                 ),
-                child: Icon(
-                  Icons.notifications,
-                  color: Colors.white,
-                  size: 24.sp,
+                Consumer<NotificationProvider>(
+                  builder: (context, notifProvider, child) {
+                    final count = notifProvider.unreadCount;
+                    if (count == 0) return const SizedBox.shrink();
+                    
+                    return Positioned(
+                      right: 8.w,
+                      top: 8.h,
+                      child: Container(
+                        padding: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16.w,
+                          minHeight: 16.w,
+                        ),
+                        child: Text(
+                          count > 9 ? '9+' : count.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ),
-              onPressed: () => context.go('/notifications'),
+              ],
             ),
           ],
         ),

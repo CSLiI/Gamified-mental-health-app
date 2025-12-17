@@ -67,11 +67,15 @@ def assign_character_to_user(db: Session, user_id: int, character_id: int):
     ).first()
     
     if existing:
+        existing.chosen_at = datetime.utcnow()
+        db.commit()
+        db.refresh(existing)
         return existing
     
     user_character = models.UserCharacter(
         user_id=user_id,
-        character_id=character_id
+        character_id=character_id,
+        chosen_at=datetime.utcnow() 
     )
     db.add(user_character)
     db.commit()

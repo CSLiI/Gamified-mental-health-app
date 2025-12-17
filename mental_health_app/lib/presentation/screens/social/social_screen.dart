@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/api_service.dart';
@@ -32,12 +33,22 @@ class _SocialScreenState extends State<SocialScreen>
   // Cache for friend mood data to avoid repeated API calls
   Map<int, Map<String, dynamic>> _friendMoodCache = {};
 
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addObserver(this);
     _loadData();
+    
+    // Auto-refresh every 30 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        // Refresh silently (background)
+        _loadData(forceRefresh: true);
+      }
+    });
   }
 
   // ✅ FIX: Refresh when app comes to foreground
@@ -110,6 +121,7 @@ class _SocialScreenState extends State<SocialScreen>
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _tabController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();

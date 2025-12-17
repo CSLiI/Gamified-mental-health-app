@@ -35,15 +35,23 @@ class QuestCategoryEnum(str, Enum):
     streak = "streak"
     general = "general"
 
+from app.utils.profanity import contains_profanity
+
 # ==================== Users ====================
 class UserBase(BaseModel):
     first_name: str
     last_name: Optional[str] = None
     email: EmailStr
+    
+    @validator('first_name', 'last_name')
+    def validate_no_profanity_name(cls, v):
+        if v and contains_profanity(v):
+            raise ValueError('Name contains inappropriate language.')
+        return v
 
 class UserCreate(UserBase):
     password_hash: str
-    date_of_birth: Optional[date] = None  # Changed from age
+    date_of_birth: Optional[date] = None
     gender: Optional[GenderEnum] = None
     
     @validator('date_of_birth')
@@ -51,31 +59,79 @@ class UserCreate(UserBase):
         if v is None:
             return v
         if v > date.today():
-            raise ValueError('Date of birth cannot be in the future')
+             raise ValueError('Date of birth cannot be in the future')
         if v.year < 1900:
-            raise ValueError('Date of birth must be after 1900')
+             raise ValueError('Date of birth must be after 1900')
         # Check if user is at least 13 years old
         today = date.today()
         age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
         if age < 13:
-            raise ValueError('User must be at least 13 years old')
+             raise ValueError('User must be at least 13 years old')
         return v
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    date_of_birth: Optional[date] = None  # Changed from age
+    date_of_birth: Optional[date] = None
     gender: Optional[GenderEnum] = None
+    
+    @validator('first_name', 'last_name')
+    def validate_no_profanity_update(cls, v):
+        if v and contains_profanity(v):
+            raise ValueError('Name contains inappropriate language.')
+        return v
     
     @validator('date_of_birth')
     def validate_date_of_birth(cls, v):
         if v is None:
             return v
         if v > date.today():
-            raise ValueError('Date of birth cannot be in the future')
+             raise ValueError('Date of birth cannot be in the future')
         if v.year < 1900:
-            raise ValueError('Date of birth must be after 1900')
+             raise ValueError('Date of birth must be after 1900')
         return v
+
+# ... [User Class remains same] ...
+
+# ==================== Encouragements ====================
+class EncouragementCreate(BaseModel):
+    message: str
+    
+    @validator('message')
+    def validate_clean_message(cls, v):
+        if contains_profanity(v):
+            raise ValueError('Message contains inappropriate language.')
+        return v
+
+# ...
+
+# ==================== Messages ====================
+class MessageCreate(BaseModel):
+    message: str
+
+    @validator('message')
+    def validate_clean_message(cls, v):
+        if contains_profanity(v):
+            raise ValueError('Message contains inappropriate language.')
+        return v
+
+# ...
+
+# ==================== Pet Schemas ====================
+class PetBase(BaseModel):
+    name: str
+    emoji: str
+    description: Optional[str] = None
+    unlock_level: int = 1
+    rarity: str = "common"
+    lottie_file: Optional[str] = None
+    
+    @validator('name', 'description')
+    def validate_clean_pet(cls, v):
+        if v and contains_profanity(v):
+            raise ValueError('Contains inappropriate language.')
+        return v
+
 
 class User(UserBase):
     id: int

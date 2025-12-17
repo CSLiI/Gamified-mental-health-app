@@ -47,15 +47,23 @@ final appRouter = GoRouter(
         registrationData: state.extra as Map<String, dynamic>?,
       ),
     ),
-    GoRoute(
       path: '/home',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        final initialIndex = extra?['initialIndex'] as int? ?? 0;
-        final initialTabIndex = extra?['initialTabIndex'] as int? ?? 0;
+        
+        // Support both extra object and query parameters for deep linking
+        final queryIndex = int.tryParse(state.uri.queryParameters['initialIndex'] ?? '');
+        final queryTabIndex = int.tryParse(state.uri.queryParameters['initialTabIndex'] ?? '');
+        final queryAction = state.uri.queryParameters['action'];
+        
+        final initialIndex = queryIndex ?? extra?['initialIndex'] as int? ?? 0;
+        final initialTabIndex = queryTabIndex ?? extra?['initialTabIndex'] as int? ?? 0;
+        final action = queryAction ?? extra?['action'] as String?;
+        
         return HomeNavigation(
           initialIndex: initialIndex,
           initialTabIndex: initialTabIndex,
+          action: action,
         );
       },
     ),

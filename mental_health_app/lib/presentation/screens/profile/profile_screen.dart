@@ -20,7 +20,12 @@ import '../../../core/providers/character_provider.dart';
 import '../../../core/providers/pet_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool showHelp;
+  
+  const ProfileScreen({
+    super.key,
+    this.showHelp = false,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -43,7 +48,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.showHelp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showHelpDialog());
+    }
     _loadData();
+  }
+
+  @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.showHelp && !oldWidget.showHelp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showHelpDialog());
+    }
   }
 
   Future<void> _loadData() async {

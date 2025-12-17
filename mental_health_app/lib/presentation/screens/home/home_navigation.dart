@@ -20,10 +20,13 @@ class HomeNavigation extends StatefulWidget {
   final int initialIndex;
   final int initialTabIndex;
   
+  final String? action;
+  
   const HomeNavigation({
     super.key, 
     this.initialIndex = 0,
     this.initialTabIndex = 0,
+    this.action,
   });
 
   @override
@@ -201,7 +204,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
               characterNumber: characterProvider.characterNumber,
               onMoodSelected: _onMoodSelected,
             ),
-            const ProfileScreen(),
+            ProfileScreen(showHelp: widget.action == 'help'),
           ];
 
           final currentMoodColor = moodProvider.getMoodColor();
