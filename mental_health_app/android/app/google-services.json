@@ -7,6 +7,43 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:233053475110:android:5dc640b98dd6b7a29c31e7",
+        "android_client_info": {
+          "package_name": "com.chansli.mentalhealth"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "233053475110-8uboh8lammnq503r0fijl3kunehd5onp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.chansli.mentalhealth",
+            "certificate_hash": "b634e9475827d751ed759c3e6f295d8f4ddd15d7"
+          }
+        },
+        {
+          "client_id": "233053475110-38rchv0u6l08qnr02nbgpg3dd70ha32m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFUtgCfdeIjU_lcDqvtNPVOVuhkt8AQ0s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "233053475110-38rchv0u6l08qnr02nbgpg3dd70ha32m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:233053475110:android:a64f68c3562fa2149c31e7",
         "android_client_info": {
           "package_name": "com.example.mental_health_app"

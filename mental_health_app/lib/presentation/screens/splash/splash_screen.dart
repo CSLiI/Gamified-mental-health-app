@@ -63,11 +63,16 @@ class _SplashScreenState extends State<SplashScreen>
           context.go('/home');
         }
       } catch (e) {
-        // Token is invalid or expired
-        // print('❌ Token invalid: $e');
-        await _dioClient.logout(); // Clear invalid token
-        if (mounted) {
-          context.go('/login');
+        final errorMsg = e.toString();
+        // Only logout on valid auth errors
+        if (errorMsg.contains('401') || 
+            errorMsg.contains('Unauthorized') || 
+            errorMsg.contains('Validation error')) {
+          await _dioClient.logout(); 
+          if (mounted) context.go('/login');
+        } else {
+          // Server/Network error - Assume token is fine and go to home (Offline/Retry mode)
+          if (mounted) context.go('/home');
         }
       }
     } catch (e) {
