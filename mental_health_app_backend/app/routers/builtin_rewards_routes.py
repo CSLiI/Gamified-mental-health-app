@@ -17,7 +17,7 @@ router = APIRouter(prefix="/builtin-rewards", tags=["Builtin Rewards"])
 
 
 @router.get("/me/data", response_model=BuiltinRewardsDataResponse)
-async def get_my_builtin_rewards(
+def get_my_builtin_rewards(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -34,7 +34,7 @@ async def get_my_builtin_rewards(
 
 
 @router.get("/me/purchased", response_model=List[BuiltinUserRewardResponse])
-async def get_my_purchased_rewards(
+def get_my_purchased_rewards(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -43,7 +43,7 @@ async def get_my_purchased_rewards(
 
 
 @router.get("/me/equipped", response_model=List[BuiltinEquippedRewardResponse])
-async def get_my_equipped_rewards(
+def get_my_equipped_rewards(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -52,7 +52,7 @@ async def get_my_equipped_rewards(
 
 
 @router.post("/me/purchase", response_model=BuiltinUserRewardResponse)
-async def purchase_reward(
+def purchase_reward(
     purchase_data: BuiltinRewardPurchase,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -80,7 +80,7 @@ async def purchase_reward(
 
 
 @router.post("/me/equip", response_model=BuiltinEquippedRewardResponse)
-async def equip_reward(
+def equip_reward(
     equip_data: BuiltinRewardEquip,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -101,7 +101,7 @@ async def equip_reward(
 
 
 @router.delete("/me/unequip/{reward_id}")
-async def unequip_reward(
+def unequip_reward(
     reward_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -117,7 +117,7 @@ async def unequip_reward(
 
 
 @router.post("/me/sync")
-async def sync_builtin_rewards(
+def sync_builtin_rewards(
     purchased: List[dict],
     equipped: List[dict],
     xp_spent: int,

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/pets", tags=["Pets"])
 
 
 @router.get("/catalog", response_model=List[PetResponse])
-async def get_pet_catalog(
+def get_pet_catalog(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -28,7 +28,7 @@ async def get_pet_catalog(
 
 
 @router.get("/my-pets", response_model=List[UserPetResponse])
-async def get_my_pets(
+def get_my_pets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -37,7 +37,7 @@ async def get_my_pets(
 
 
 @router.post("/unlock/{pet_id}", response_model=PetUnlockResponse)
-async def unlock_pet(
+def unlock_pet(
     pet_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -60,7 +60,7 @@ async def unlock_pet(
 
 
 @router.post("/equip/{pet_id}", response_model=PetEquipResponse)
-async def equip_pet(
+def equip_pet(
     pet_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -76,7 +76,7 @@ async def equip_pet(
 
 
 @router.post("/interact", response_model=PetInteractResponse)
-async def interact_with_pet(
+def interact_with_pet(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -110,7 +110,7 @@ async def interact_with_pet(
 
 
 @router.post("/feed", response_model=PetFeedResponse)
-async def feed_pet(
+def feed_pet(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -139,7 +139,7 @@ async def feed_pet(
 
 
 @router.put("/{pet_id}/rename")
-async def rename_pet(
+def rename_pet(
     pet_id: int,
     name: str,
     db: Session = Depends(get_db),

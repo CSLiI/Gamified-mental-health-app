@@ -49,7 +49,7 @@ def get_friend_user_id(db: Session, user_id: int, friendship_id: int) -> int:
 # ==================== User Profile ====================
 
 @router.get("/users/{user_id}/profile", response_model=UserProfileResponse)
-async def get_user_profile(
+def get_user_profile(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -149,7 +149,7 @@ async def get_user_profile(
 # ==================== Friend's Todos ====================
 
 @router.get("/users/{user_id}/todos", response_model=List[TodoSchema])
-async def get_friend_todos(
+def get_friend_todos(
     user_id: int,
     period_type: Optional[str] = None,
     db: Session = Depends(get_db),
@@ -183,7 +183,7 @@ async def get_friend_todos(
 # ==================== Friend's Streak ====================
 
 @router.get("/users/{user_id}/streak")
-async def get_friend_streak(
+def get_friend_streak(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -261,7 +261,7 @@ async def get_friend_streak(
 # ==================== Friend's Character Mood State ====================
 
 @router.get("/users/{user_id}/character/mood-state")
-async def get_friend_character_mood_state(
+def get_friend_character_mood_state(
     user_id: int,
     days: int = 7,
     db: Session = Depends(get_db),
@@ -283,7 +283,7 @@ async def get_friend_character_mood_state(
     return result
 
 @router.get("/users/{user_id}/mood-logs")
-async def get_friend_mood_logs(
+def get_friend_mood_logs(
     user_id: int,
     days: int = 7,
     db: Session = Depends(get_db),
@@ -314,7 +314,7 @@ async def get_friend_mood_logs(
 # ==================== Encouragement ====================
 
 @router.post("/friends/{friend_id}/encouragement", status_code=status.HTTP_201_CREATED)
-async def send_encouragement(
+def send_encouragement(
     friend_id: int,
     encouragement: EncouragementCreate,
     db: Session = Depends(get_db),
@@ -345,7 +345,7 @@ async def send_encouragement(
     return {"message": "Encouragement sent successfully"}
 
 @router.get("/encouragements/", response_model=List[EncouragementResponse])
-async def get_encouragements(
+def get_encouragements(
     unread_only: Optional[bool] = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -377,7 +377,7 @@ async def get_encouragements(
     return result
 
 @router.put("/encouragements/{encouragement_id}/read")
-async def mark_encouragement_read(
+def mark_encouragement_read(
     encouragement_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -399,7 +399,7 @@ async def mark_encouragement_read(
 # ==================== Messaging ====================
 
 @router.post("/friends/{friend_id}/messages", status_code=status.HTTP_201_CREATED)
-async def send_message(
+def send_message(
     friend_id: int,
     message: MessageCreate,
     db: Session = Depends(get_db),
@@ -427,7 +427,7 @@ async def send_message(
     return {"message": "Message sent successfully"}
 
 @router.get("/friends/{friend_id}/messages", response_model=List[MessageResponse])
-async def get_messages(
+def get_messages(
     friend_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -483,7 +483,7 @@ async def get_messages(
     return result
 
 @router.get("/messages/", response_model=List[MessageResponse])
-async def get_all_messages(
+def get_all_messages(
     unread_only: Optional[bool] = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -520,7 +520,7 @@ async def get_all_messages(
     return result
 
 @router.put("/messages/{message_id}/completion")
-async def update_message_completion(
+def update_message_completion(
     message_id: int,
     completion_data: dict,
     db: Session = Depends(get_db),
@@ -573,7 +573,7 @@ async def update_message_completion(
     }
 
 @router.post("/challenges/cleanup")
-async def cleanup_completed_challenges(
+def cleanup_completed_challenges(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
