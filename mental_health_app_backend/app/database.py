@@ -38,12 +38,19 @@ if DATABASE_URL:
 
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,            # Test connections before using
-    pool_recycle=300,              # Recycle connections every 5 minutes
-    pool_size=20,                  # Increased pool for concurrent requests (from 5)
-    max_overflow=20,               # Allow bursts up to 40 connections total
-    pool_timeout=30,               # Wait up to 30s for a connection from pool
-    pool_use_lifo=True             # Return most recently used connections first
+    pool_pre_ping=True,            # Test connections before using (critical!)
+    pool_recycle=60,               # Recycle connections every 60s (was 300s - too long for Supabase)
+    pool_size=5,                   # Reduced from 20 - Supabase free tier has limits
+    max_overflow=5,                # Allow bursts up to 10 connections total
+    pool_timeout=10,               # Reduced from 30s - fail fast, let retry logic handle it
+    pool_use_lifo=True,            # Return most recently used connections first
+    connect_args={
+        "connect_timeout": 10,     # Connection timeout in seconds
+        "keepalives": 1,           # Enable TCP keepalives
+        "keepalives_idle": 30,     # Start keepalive after 30s idle
+        "keepalives_interval": 10, # Keepalive every 10s
+        "keepalives_count": 5      # Give up after 5 failed keepalives
+    }
 )
 SessionLocal = sessionmaker(
     autocommit=False,
