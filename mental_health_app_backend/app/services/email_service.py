@@ -1,35 +1,28 @@
 import os
-import smtplib
-import socket
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
+import json
 
 # Configuration
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587  # TLS Port (Less likely to be firewalled than 465)
-# Use environment variables for security
-SENDER_EMAIL = os.getenv("EMAIL_HOST_USER")
-SENDER_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
+# Use environment variables
+BREVO_API_KEY = os.getenv("BREVO_API_KEY") # User provided key
+SENDER_EMAIL = os.getenv("EMAIL_HOST_USER", "echogmh123@gmail.com") # User provided email
 APP_NAME = "Mental Health App"
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:8000")
 
-
 def send_password_reset_email(to_email: str, reset_token: str) -> bool:
-    """Send password reset code to user via Gmail SMTP"""
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        print("Error: EMAIL_HOST_USER or EMAIL_HOST_PASSWORD not set in environment variables.")
+    """Send password reset code to user via Brevo HTTP API (Bypasses SMTP Firewalls)"""
+    
+    # Check if API Key is set
+    if not BREVO_API_KEY:
+        print("Error: BREVO_API_KEY not set in environment variables.")
         return False
-
+        
     try:
         # Use first 6 characters of token as the code
         reset_code = reset_token[:6].upper()
         
-        msg = MIMEMultipart()
-        msg['From'] = f"{APP_NAME} <{SENDER_EMAIL}>"
-        msg['To'] = to_email
-        msg['Subject'] = f"Your {APP_NAME} password reset code"
-
+        # HTML Content
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -76,31 +69,37 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
         </html>
         """
         
-        msg.attach(MIMEText(html_content, 'html'))
-
-        # Force IPv4 resolution
-        try:
-            target_ip = socket.gethostbyname(SMTP_SERVER)
-            print(f"Resolved {SMTP_SERVER} to {target_ip}")
-        except Exception as e:
-            print(f"DNS Resolution failed: {e}")
-            target_ip = SMTP_SERVER
-
-        # Create unverified context
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-
-        # Connect to Gmail SMTP Server using STARTTLS (Standard Port 587)
-        with smtplib.SMTP(target_ip, SMTP_PORT) as server:
-            server.ehlo()
-            server.starttls(context=context) # Upgrade to SSL/TLS
-            server.ehlo()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.send_message(msg)
+        # Brevo API Payload
+        headers = {
+            "accept": "application/json",
+            "api-key": BREVO_API_KEY,
+            "content-type": "application/json"
+        }
+        
+        payload = {
+            "sender": {
+                "name": APP_NAME,
+                "email": SENDER_EMAIL
+            },
+            "to": [
+                {
+                    "email": to_email
+                }
+            ],
+            "subject": f"Your {APP_NAME} password reset code",
+            "htmlContent": html_content
+        }
+        
+        # Send Request
+        response = requests.post(BREVO_API_URL, json=payload, headers=headers)
+        
+        if response.status_code == 201:
+            print(f"Brevo: Email sent successfully to {to_email}")
+            return True
+        else:
+            print(f"Brevo Error {response.status_code}: {response.text}")
+            return False
             
-        print(f"Password reset email sent successfully to {to_email}")
-        return True
     except Exception as e:
-        print(f"Error sending password reset email: {e}")
+        print(f"Error sending email via Brevo: {e}")
         return False
