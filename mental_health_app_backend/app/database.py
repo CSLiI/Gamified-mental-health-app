@@ -39,18 +39,18 @@ if DATABASE_URL:
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,            # Test connections before using (critical!)
-    pool_recycle=30,               # Recycle connections every 30s (aggressive recycling for Supabase)
-    pool_size=8,                   # Increased from 5 - better for concurrent requests
+    pool_recycle=60,               # Recycle every 60s - balance between freshness and stability
+    pool_size=8,                   # Larger pool for concurrent requests
     max_overflow=7,                # Allow bursts up to 15 connections total
-    pool_timeout=15,               # Slightly increased - balance between fast fail and tolerance
+    pool_timeout=10,               # Fail fast, let retry logic handle it
     pool_use_lifo=True,            # Return most recently used connections first
     pool_reset_on_return='rollback',  # Explicit cleanup when returning connections
     connect_args={
-        "connect_timeout": 15,     # Connection timeout in seconds (increased for cold starts)
+        "connect_timeout": 10,     # Connection timeout in seconds
         "keepalives": 1,           # Enable TCP keepalives
-        "keepalives_idle": 20,     # Start keepalive after 20s idle (more aggressive)
-        "keepalives_interval": 5,  # Keepalive every 5s (more frequent)
-        "keepalives_count": 3      # Give up after 3 failed keepalives (faster detection)
+        "keepalives_idle": 30,     # Start keepalive after 30s idle
+        "keepalives_interval": 10, # Keepalive every 10s
+        "keepalives_count": 3      # Give up after 3 failed keepalives
     }
 )
 SessionLocal = sessionmaker(
@@ -68,19 +68,8 @@ def get_db():
     db = None
     retries = 3
     
-    # Log pool status periodically (every 50 calls or when pool is stressed)
-    pool = engine.pool
-    checked_out = pool.checkedout()
-    pool_size = pool.size()
-    overflow = pool.overflow()
-    total_capacity = pool_size + overflow + 7  # Include max_overflow
-    
-    # Warn if pool is more than 80% utilized
-    if checked_out > total_capacity * 0.8:
-        logging.getLogger("database").warning(
-            f"Pool near capacity: {checked_out}/{total_capacity} connections in use "
-            f"(size={pool_size}, overflow={overflow})"
-        )
+    # NOTE: Pool monitoring moved to /health/deep endpoint
+    # Running it on every request was adding overhead
     
     for attempt in range(retries):
         try:

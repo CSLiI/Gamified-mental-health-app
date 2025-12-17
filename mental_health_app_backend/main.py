@@ -26,8 +26,10 @@ from app import models
 import uvicorn
 import logging
 import traceback
+import asyncio
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +40,31 @@ app = FastAPI(
     description="Backend API for a gamified mental health application for students",
     version="2.0.0"
 )
+
+
+# ==================== REQUEST TIMEOUT MIDDLEWARE ====================
+class TimeoutMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to timeout slow requests and prevent worker hangs.
+    This is critical for single-worker deployments like Render free tier.
+    """
+    async def dispatch(self, request: Request, call_next):
+        # Skip timeout for health checks (they should be fast)
+        if request.url.path in ["/health", "/health/deep", "/"]:
+            return await call_next(request)
+        
+        try:
+            # 60 second timeout for most requests
+            return await asyncio.wait_for(call_next(request), timeout=60.0)
+        except asyncio.TimeoutError:
+            logger.warning(f"Request timeout: {request.method} {request.url.path}")
+            return JSONResponse(
+                status_code=504,
+                content={"detail": "Request timeout - please try again"}
+            )
+
+app.add_middleware(TimeoutMiddleware)
+# =====================================================================
 
 
 # ==================== NON-BLOCKING STARTUP EVENT ====================
