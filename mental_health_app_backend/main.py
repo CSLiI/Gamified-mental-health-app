@@ -33,20 +33,42 @@ from fastapi.responses import JSONResponse
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
 
-# Create database tables (will only create if they don't exist)
-# WRAPPED in try/except to prevent deployment crash if DB is temporarily unreachable (e.g. Render/Supabase timeout handshake)
-try:
-    models.Base.metadata.create_all(bind=engine)
-    logger.info("Database tables verified/created successfully.")
-except Exception as e:
-    logger.error(f"WARNING: Database table creation failed on startup: {e}")
-    logger.error("App will continue starting, but database features may fail until connection is restored.")
-
 app = FastAPI(
     title="Mental Health Gamified App API",
     description="Backend API for a gamified mental health application for students",
     version="2.0.0"
 )
+
+
+# ==================== NON-BLOCKING STARTUP EVENT ====================
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initialize database tables on app startup (non-blocking).
+    Runs in a thread pool to avoid blocking the async event loop
+    and preventing Gunicorn worker timeouts.
+    """
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+
+    def sync_create_tables():
+        models.Base.metadata.create_all(bind=engine)
+
+    try:
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as pool:
+            await asyncio.wait_for(
+                loop.run_in_executor(pool, sync_create_tables),
+                timeout=60.0  # 60 second timeout for table creation
+            )
+        logger.info("Database tables verified/created successfully.")
+    except asyncio.TimeoutError:
+        logger.error("WARNING: Database table creation timed out after 60s")
+        logger.error("App will continue, but database features may fail.")
+    except Exception as e:
+        logger.error(f"WARNING: Database table creation failed on startup: {e}")
+        logger.error("App will continue starting, but database features may fail until connection is restored.")
+# =====================================================================
 
 # CORS configuration for Flutter app
 app.add_middleware(
