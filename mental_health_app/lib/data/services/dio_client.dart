@@ -11,8 +11,8 @@ import 'cache_service.dart';
 class DioClient {
   late final Dio _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  static const _defaultConnectTimeout = Duration(seconds: 8);
-  static const _defaultReceiveTimeout = Duration(seconds: 12);
+  static const _defaultConnectTimeout = Duration(seconds: 12);
+  static const _defaultReceiveTimeout = Duration(seconds: 15);
   // Circuit-breaker: track recent failures per path
   final Map<String, int> _failureCounts = {};
   final Map<String, DateTime> _openUntil = {};
@@ -26,9 +26,9 @@ class DioClient {
   final Map<String, Future<Response>> _inflightGet = {};
 
   // Global concurrency limiter for GETs to avoid flooding backend
-  // Set to 2 to be conservative with backend pool (size 8 + overflow 3 = 11 max)
+  // Increased to 4 - backend pool now has size 8 + overflow 7 = 15 max
   // Auth cache on backend reduces DB load significantly
-  static const int _maxConcurrentGets = 2;
+  static const int _maxConcurrentGets = 4;
   int _activeGets = 0;
   final List<Completer<void>> _getWaiters = [];
 

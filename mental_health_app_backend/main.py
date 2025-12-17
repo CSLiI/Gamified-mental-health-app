@@ -68,7 +68,23 @@ async def startup_event():
     except Exception as e:
         logger.error(f"WARNING: Database table creation failed on startup: {e}")
         logger.error("App will continue starting, but database features may fail until connection is restored.")
+
+
+# ==================== SHUTDOWN EVENT ====================
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    Clean up database connections on app shutdown.
+    This prevents connection leaks and ensures graceful shutdown.
+    """
+    from app.database import dispose_engine
+    try:
+        dispose_engine()
+        logger.info("Database engine disposed successfully.")
+    except Exception as e:
+        logger.error(f"Error disposing database engine: {e}")
 # =====================================================================
+
 
 # CORS configuration for Flutter app
 app.add_middleware(
@@ -151,9 +167,48 @@ def read_root():
 
 @app.get("/health")
 def health_check():
+    """Lightweight health check for load balancers - doesn't hit the database."""
     return {
         "status": "healthy",
-        "database": "connected",
+        "version": "2.0.0"
+    }
+
+
+@app.get("/health/deep")
+def deep_health_check():
+    """
+    Deep health check that tests actual database connectivity.
+    Use sparingly as it consumes a connection from the pool.
+    """
+    from sqlalchemy import text
+    from app.database import engine
+    
+    db_status = "unknown"
+    pool_info = {}
+    
+    try:
+        # Get pool status
+        pool = engine.pool
+        pool_info = {
+            "size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "invalid": pool.invalidatedcount() if hasattr(pool, 'invalidatedcount') else 0
+        }
+        
+        # Test actual connection
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            conn.commit()
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)[:100]}"
+    
+    return {
+        "status": "healthy" if db_status == "connected" else "degraded",
+        "database": db_status,
+        "pool": pool_info,
         "version": "2.0.0"
     }
 

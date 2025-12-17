@@ -369,7 +369,7 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
         if (builtinData['xp_spent'] is int) {
           backendBuiltinXcSpent = builtinData['xp_spent'];
         }
-        print('✅ Loaded ${backendBuiltinPurchased.length} builtin rewards from Backend');
+        print('✅ Backend Rewards: ${backendBuiltinPurchased.length} purchased, XP spent: $backendBuiltinXcSpent');
       } catch (e) {
         print('⚠️ Failed to load backend builtin data: $e');
       }
@@ -412,14 +412,24 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
            // ... (Sync logic remains, though likely unused if backend has data)
       }
 
-        // Correct Logic:
-        final finalSpentXp = (spentXp > backendBuiltinXcSpent) ? spentXp : backendBuiltinXcSpent;
+        // CRITICAL FIX: Backend is the SINGLE SOURCE OF TRUTH for XP spent
+        // Don't compare with local storage - use backend value directly
+        // This prevents stale local data from causing wrong XP display
+        final finalSpentXp = backendBuiltinXcSpent;
+        
+        // Sync local storage to match backend (for ThemeProvider compatibility)
+        await _secureStorage.write(
+          key: StorageKeys.builtinXpSpent(userId),
+          value: finalSpentXp.toString(),
+        );
+        
+        print('💰 XP Calculation: total=$totalXp, spent=$finalSpentXp, available=${totalXp - finalSpentXp}');
         
         setState(() {
           // FIXED: user.xp from backend is TOTAL lifetime XP, not available
           // Available XP = Total XP - Spent XP
           _totalXP = totalXp;                    // Total lifetime XP earned
-          _spentXP = finalSpentXp;               // XP spent on rewards
+          _spentXP = finalSpentXp;               // XP spent on rewards (from backend)
           _userXP = _totalXP - _spentXP;         // Available XP to spend
           
           _userLevel = correctLevel;
@@ -531,14 +541,8 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
           value: jsonEncode(builtinUserRewards),
         );
 
-        // Save XP spent
-        final spentXpJson =
-            await _secureStorage.read(key: StorageKeys.builtinXpSpent(userId));
-        final spentXp = spentXpJson != null ? int.parse(spentXpJson) : 0;
-        await _secureStorage.write(
-          key: StorageKeys.builtinXpSpent(userId),
-          value: (spentXp + cost).toString(),
-        );
+        // NOTE: Don't manually update XP spent in local storage!
+        // The backend is the source of truth. We'll refresh from backend below.
 
         if (mounted) {
           // Clear cache to force refresh with new XP
@@ -554,6 +558,9 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
               onEquip: () => _equipReward(rewardId),
             ),
           );
+          
+          // CRITICAL: Reload rewards from backend to get correct XP values
+          _loadRewards(forceRefresh: true);
         }
       } else {
         // Backend rewards - make API call
