@@ -67,6 +67,19 @@ class NotificationProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get hasShownLowMoodAlert => _hasShownLowMoodAlert;
 
+  int get unreadCount {
+    int count = 0;
+    // Count unread system notifications locally
+    count += _systemNotifications.where((n) => !n.isRead).length;
+    
+    // Count unread API messages (if available in object)
+    // Assuming API objects have 'is_read' field
+    count += _apiEncouragements.where((e) => e['is_read'] == false).length;
+    count += _apiMessages.where((m) => m['is_read'] == false).length;
+    
+    return count;
+  }
+
   List<dynamic> get allEncouragements {
     // Combine API encouragements + System Motivations
     final system = _systemNotifications
