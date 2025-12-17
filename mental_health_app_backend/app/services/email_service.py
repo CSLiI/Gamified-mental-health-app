@@ -7,7 +7,7 @@ from email.mime.multipart import MIMEMultipart
 
 # Configuration
 SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 465  # SSL Port
+SMTP_PORT = 587  # TLS Port (Less likely to be firewalled than 465)
 # Use environment variables for security
 SENDER_EMAIL = os.getenv("EMAIL_HOST_USER")
 SENDER_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
@@ -78,7 +78,7 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
         
         msg.attach(MIMEText(html_content, 'html'))
 
-        # Force IPv4 resolution (Fix for Errno 101 Network Unreachable on some containers)
+        # Force IPv4 resolution
         try:
             target_ip = socket.gethostbyname(SMTP_SERVER)
             print(f"Resolved {SMTP_SERVER} to {target_ip}")
@@ -86,13 +86,16 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
             print(f"DNS Resolution failed: {e}")
             target_ip = SMTP_SERVER
 
-        # Create unverified context to allow IP connection without hostname mismatch error
+        # Create unverified context
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 
-        # Connect to Gmail SMTP Server using SSL and forced IP
-        with smtplib.SMTP_SSL(target_ip, SMTP_PORT, context=context) as server:
+        # Connect to Gmail SMTP Server using STARTTLS (Standard Port 587)
+        with smtplib.SMTP(target_ip, SMTP_PORT) as server:
+            server.ehlo()
+            server.starttls(context=context) # Upgrade to SSL/TLS
+            server.ehlo()
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(msg)
             
