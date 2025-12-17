@@ -18,6 +18,9 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
         print("Error: BREVO_API_KEY not set in environment variables.")
         return False
         
+    # Clean key (remove accidentally pasted newlines)
+    api_key_clean = BREVO_API_KEY.strip()
+        
     try:
         # Use first 6 characters of token as the code
         reset_code = reset_token[:6].upper()
@@ -72,7 +75,7 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
         # Brevo API Payload
         headers = {
             "accept": "application/json",
-            "api-key": BREVO_API_KEY,
+            "api-key": api_key_clean,
             "content-type": "application/json"
         }
         
