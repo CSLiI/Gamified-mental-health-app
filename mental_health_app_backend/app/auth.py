@@ -112,6 +112,14 @@ async def get_current_user(
         
         return user
         
-    except Exception as e:
-        print(f"Auth error: {e}")
+    except JWTError:
+        # Token is invalid or expired
         raise credentials_exception
+    except Exception as e:
+        # Database or system error - DO NOT raise 401
+        # Raising 500 will let the client retry instead of logging out
+        print(f"Auth system error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Authentication system unavailable"
+        )

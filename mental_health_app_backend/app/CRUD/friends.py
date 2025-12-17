@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
+from sqlalchemy.orm import joinedload
 from app import models
 from typing import List, Optional
 
@@ -120,7 +121,9 @@ def cancel_friend_request(db: Session, request_id: int, user_id: int):
 
 # Get friends list
 def get_friends(db: Session, user_id: int):
-    return db.query(models.Friendship).filter(
+    return db.query(models.Friendship).options(
+        joinedload(models.Friendship.friend)
+    ).filter(
         models.Friendship.user_id == user_id
     ).all()
 

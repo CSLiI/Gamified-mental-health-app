@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app import models, schemas
 from typing import List, Optional
 from datetime import datetime, timedelta
@@ -36,7 +36,9 @@ def get_achievements_by_category(db: Session, category: str):
 # ==================== USER ACHIEVEMENT CRUD ====================
 def get_user_achievements(db: Session, user_id: int, claimed_only: bool = False):
     """Get all achievements for a user"""
-    query = db.query(models.UserAchievement).filter(models.UserAchievement.user_id == user_id)
+    query = db.query(models.UserAchievement).options(
+        joinedload(models.UserAchievement.achievement)
+    ).filter(models.UserAchievement.user_id == user_id)
     
     if claimed_only:
         query = query.filter(models.UserAchievement.is_claimed == True)
