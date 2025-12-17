@@ -1,27 +1,34 @@
 import os
-import resend
-from typing import Optional
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-# Initialize Resend with API key
-resend.api_key = os.getenv("RESEND_API_KEY", "re_UTYcSmbe_6eZAqDhgsGwvJJXcYTxE6V8r")
-
-# Your app's sender email (must be verified in Resend dashboard)
-SENDER_EMAIL = "onboarding@resend.dev"  # Use Resend's test domain for now
+# Configuration
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+# Use environment variables for security
+SENDER_EMAIL = os.getenv("EMAIL_HOST_USER")
+SENDER_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 APP_NAME = "Mental Health App"
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:8000")
 
 
 def send_password_reset_email(to_email: str, reset_token: str) -> bool:
-    """Send password reset code to user"""
+    """Send password reset code to user via Gmail SMTP"""
+    if not SENDER_EMAIL or not SENDER_PASSWORD:
+        print("Error: EMAIL_HOST_USER or EMAIL_HOST_PASSWORD not set in environment variables.")
+        return False
+
     try:
         # Use first 6 characters of token as the code
         reset_code = reset_token[:6].upper()
         
-        params = {
-            "from": f"{APP_NAME} <{SENDER_EMAIL}>",
-            "to": [to_email],
-            "subject": f"Your {APP_NAME} password reset code",
-            "html": f"""
+        msg = MIMEMultipart()
+        msg['From'] = f"{APP_NAME} <{SENDER_EMAIL}>"
+        msg['To'] = to_email
+        msg['Subject'] = f"Your {APP_NAME} password reset code"
+
+        html_content = f"""
             <!DOCTYPE html>
             <html>
             <head>
@@ -66,9 +73,15 @@ def send_password_reset_email(to_email: str, reset_token: str) -> bool:
             </body>
             </html>
             """
-        }
         
-        email = resend.Emails.send(params)
+        msg.attach(MIMEText(html_content, 'html'))
+
+        # Connect to Gmail SMTP Server
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()  # Secure the connection
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+            
         return True
     except Exception as e:
         print(f"Error sending password reset email: {e}")
