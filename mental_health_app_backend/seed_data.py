@@ -186,6 +186,32 @@ def seed_achievements(db):
             "requirement_count": 7,
             "icon_url": "/assets/achievements/thriving.png",
             "is_hidden": True
+        },
+        
+        # Social Achievements
+        {
+            "name": "First Challenge",
+            "description": "Complete your first social challenge",
+            "category": "social",
+            "xp_reward": 50,
+            "requirement_count": 1,
+            "icon_url": "/assets/achievements/social_first.png"
+        },
+        {
+            "name": "Team Player",
+            "description": "Complete 10 social challenges",
+            "category": "social",
+            "xp_reward": 100,
+            "requirement_count": 10,
+            "icon_url": "/assets/achievements/social_team.png"
+        },
+        {
+            "name": "Challenge Champion",
+            "description": "Complete 50 social challenges",
+            "category": "social",
+            "xp_reward": 250,
+            "requirement_count": 50,
+            "icon_url": "/assets/achievements/social_champion.png"
         }
     ]
     

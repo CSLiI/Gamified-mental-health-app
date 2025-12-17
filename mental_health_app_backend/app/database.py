@@ -23,9 +23,18 @@ if DATABASE_URL is None:
 
 # Add SSL and timeout parameters to URL if not already present
 if DATABASE_URL and "?" not in DATABASE_URL:
-    DATABASE_URL += "?sslmode=require&connect_timeout=10"
+    DATABASE_URL += "?sslmode=require&connect_timeout=30"
 elif DATABASE_URL and "sslmode" not in DATABASE_URL:
-    DATABASE_URL += "&sslmode=require&connect_timeout=10"
+    DATABASE_URL += "&sslmode=require&connect_timeout=30"
+
+# Log connection target for debugging (masking credentials)
+if DATABASE_URL:
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(DATABASE_URL)
+        print(f"[DB INIT] Target Host: {parsed.hostname}, Port: {parsed.port}")
+    except Exception:
+        pass
 
 engine = create_engine(
     DATABASE_URL,

@@ -198,11 +198,17 @@ def check_social_achievements(db: Session, user_id: int):
     
     total_challenges = user.completed_challenges or 0
     
-    achievements_to_check = [
-        (14, 1),    # First Challenge (achievement ID will be 14 after seeding)
-        (15, 10),   # Team Player
-        (16, 50),   # Challenge Champion
-    ]
+    target_achievements = {
+        "First Challenge": 1,
+        "Team Player": 10,
+        "Challenge Champion": 50
+    }
+    
+    achievements_to_check = []
+    for name, requirement in target_achievements.items():
+        achievement = db.query(models.Achievement).filter(models.Achievement.name == name).first()
+        if achievement:
+            achievements_to_check.append((achievement.id, requirement))
     
     awarded = []
     for achievement_id, requirement in achievements_to_check:
