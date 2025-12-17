@@ -416,10 +416,11 @@ class _RewardsTabState extends State<RewardsTab> with TickerProviderStateMixin {
         final finalSpentXp = (spentXp > backendBuiltinXcSpent) ? spentXp : backendBuiltinXcSpent;
         
         setState(() {
-          // Track total and spent XP separately
-          _spentXP = finalSpentXp;
-          _userXP = totalXp;
-          _totalXP = _userXP + _spentXP;
+          // FIXED: user.xp from backend is TOTAL lifetime XP, not available
+          // Available XP = Total XP - Spent XP
+          _totalXP = totalXp;                    // Total lifetime XP earned
+          _spentXP = finalSpentXp;               // XP spent on rewards
+          _userXP = _totalXP - _spentXP;         // Available XP to spend
           
           _userLevel = correctLevel;
           // Merge backend rewards with builtin catalog
