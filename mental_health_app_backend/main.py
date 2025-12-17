@@ -24,7 +24,14 @@ from app.routers import (
 from app.database import engine
 from app import models
 import uvicorn
+import logging
+import traceback
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api")
 
 # Create database tables (will only create if they don't exist)
 # WRAPPED in try/except to prevent deployment crash if DB is temporarily unreachable (e.g. Render/Supabase timeout handshake)
@@ -51,15 +58,6 @@ app.add_middleware(
 )
 
 # ==================== GLOBAL EXCEPTION HANDLER ====================
-from fastapi import Request
-from fastapi.responses import JSONResponse
-import traceback
-import logging
-
-# Configure logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("api")
-
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
