@@ -27,7 +27,13 @@ import uvicorn
 
 
 # Create database tables (will only create if they don't exist)
-models.Base.metadata.create_all(bind=engine)
+# WRAPPED in try/except to prevent deployment crash if DB is temporarily unreachable (e.g. Render/Supabase timeout handshake)
+try:
+    models.Base.metadata.create_all(bind=engine)
+    logger.info("Database tables verified/created successfully.")
+except Exception as e:
+    logger.error(f"WARNING: Database table creation failed on startup: {e}")
+    logger.error("App will continue starting, but database features may fail until connection is restored.")
 
 app = FastAPI(
     title="Mental Health Gamified App API",

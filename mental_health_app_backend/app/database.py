@@ -118,13 +118,13 @@ def _ping_database_with_retries(max_attempts: int = 3, delay_seconds: int = 2) -
     )
 
 
-# Attempt ping on module import to fail fast with retries
-try:
-    _ping_database_with_retries()
-except RuntimeError:
-    # Do not crash import; FastAPI will surface errors on first request.
-    # Logging provides guidance while keeping app boot resilient.
-    pass
+# Attempt ping on module import?? NO.
+# This blocks app startup for 60s+ if the DB is down, causing Render boot timeouts.
+# We will let the app start, and the first request will fail (and be caught by our new Global Exception Handler).
+# try:
+#     _ping_database_with_retries()
+# except RuntimeError:
+#     pass
 
 
 # Optional: utility to dispose engine on app shutdown to free connections
