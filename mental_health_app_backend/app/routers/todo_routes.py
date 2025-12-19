@@ -115,6 +115,10 @@ def complete_todo(
     from app.CRUD import level_system
     level_system.check_level_up(db, current_user.id)
     
+    # Check for todo achievements
+    from app.CRUD import achievements as achievement_crud
+    achievement_crud.check_todo_achievements(db, current_user.id)
+    
     # Convert to dict for JSON serialization
     todo_dict = schemas.Todo.from_orm(todo).dict()
     

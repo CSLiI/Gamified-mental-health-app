@@ -193,29 +193,76 @@ def calculate_user_streak(db: Session, user_id: int):
     return streak
 
 def check_social_achievements(db: Session, user_id: int):
-    """Check and award social challenge achievements"""
+    """Check and award social achievements (friends + challenges)"""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         return []
     
+    awarded = []
+    
+    # ===== FRIEND COUNT ACHIEVEMENTS =====
+    # Count user's friends from the Friendship table
+    friend_count = db.query(models.Friendship).filter(
+        models.Friendship.user_id == user_id
+    ).count()
+    
+    friend_achievements = {
+        "Social Butterfly": 5,
+        "Squad Goals": 10,
+        "Support Network": 20,
+        "Social Star": 50
+    }
+    
+    for name, requirement in friend_achievements.items():
+        achievement = db.query(models.Achievement).filter(
+            models.Achievement.name == name
+        ).first()
+        if achievement and friend_count >= requirement:
+            result = award_achievement(db, user_id, achievement.id)
+            if result:
+                awarded.append(result)
+    
+    # ===== CHALLENGE COMPLETION ACHIEVEMENTS =====
     total_challenges = user.completed_challenges or 0
     
-    target_achievements = {
+    challenge_achievements = {
         "First Challenge": 1,
         "Team Player": 10,
         "Challenge Champion": 50
     }
     
-    achievements_to_check = []
-    for name, requirement in target_achievements.items():
-        achievement = db.query(models.Achievement).filter(models.Achievement.name == name).first()
-        if achievement:
-            achievements_to_check.append((achievement.id, requirement))
+    for name, requirement in challenge_achievements.items():
+        achievement = db.query(models.Achievement).filter(
+            models.Achievement.name == name
+        ).first()
+        if achievement and total_challenges >= requirement:
+            result = award_achievement(db, user_id, achievement.id)
+            if result:
+                awarded.append(result)
+    
+    return awarded
+
+def check_todo_achievements(db: Session, user_id: int):
+    """Check and award todo completion achievements"""
+    # Count completed todos
+    total_completed = db.query(models.Todo).filter(
+        models.Todo.user_id == user_id,
+        models.Todo.is_completed == True
+    ).count()
+    
+    todo_achievements = {
+        "Task Master": 50,
+        "Completion King": 100,
+        "Quest Conqueror": 500
+    }
     
     awarded = []
-    for achievement_id, requirement in achievements_to_check:
-        if total_challenges >= requirement:
-            result = award_achievement(db, user_id, achievement_id)
+    for name, requirement in todo_achievements.items():
+        achievement = db.query(models.Achievement).filter(
+            models.Achievement.name == name
+        ).first()
+        if achievement and total_completed >= requirement:
+            result = award_achievement(db, user_id, achievement.id)
             if result:
                 awarded.append(result)
     
@@ -227,7 +274,8 @@ def check_all_achievements(db: Session, user_id: int):
         "mood_tracking": check_mood_tracking_achievements(db, user_id),
         "journaling": check_journaling_achievements(db, user_id),
         "consistency": check_consistency_achievements(db, user_id),
-        "social": check_social_achievements(db, user_id)
+        "social": check_social_achievements(db, user_id),
+        "todos": check_todo_achievements(db, user_id)
     }
     return results
 

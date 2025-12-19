@@ -110,9 +110,16 @@ def accept_friend_request(
     current_user: models.User = Depends(get_current_user)
 ):
     """Accept a friend request"""
+    from app.CRUD import achievements as achievements_crud
+    
     request = friends_crud.accept_friend_request(db, request_id, current_user.id)
     if not request:
         raise HTTPException(status_code=404, detail="Friend request not found")
+    
+    # Check social achievements for both users (sender and receiver)
+    achievements_crud.check_social_achievements(db, current_user.id)
+    achievements_crud.check_social_achievements(db, request.sender_id)
+    
     return {"message": "Friend request accepted"}
 
 # Reject friend request

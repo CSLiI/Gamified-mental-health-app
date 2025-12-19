@@ -1,0 +1,48 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment files (secrets should be set via Cloud Run env vars)
+.env
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in container)
+*.md
+!requirements.txt
+
+# Local database
+*.db
+*.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Alembic migrations history (keep alembic folder but not version files)
+alembic/versions/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/

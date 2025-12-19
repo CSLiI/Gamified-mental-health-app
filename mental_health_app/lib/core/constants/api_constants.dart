@@ -5,7 +5,7 @@ class ApiConstants {
 
   // FOR ANDROID EMULATOR (default):
   // FOR ANDROID EMULATOR (default):
-  static const String baseUrl = 'https://app-fyp.onrender.com';
+  static const String baseUrl = 'https://mental-health-api-233053475110.asia-southeast1.run.app';
 
   // FOR PHYSICAL DEVICE: Uncomment and use your computer's IP
   // FOR iOS SIMULATOR (uncomment this and comment above):

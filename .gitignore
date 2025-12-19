@@ -14,8 +14,17 @@ __pycache__/
 .venv/
 venv/
 
-# Environment files
+# Environment files (contains secrets!)
 .env
+env.yaml
+*.env
+
+# Temporary analysis & build logs
+analysis*.txt
+build_log.txt
+
+# Debug/utility scripts
+verify_crash_handler.py
 
 # Gradle wrapper copies (auto-generated backup files)
 **/gradle-wrapper - Copy.jar

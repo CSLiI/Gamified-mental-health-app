@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mental_health_app"
+    namespace = "com.chansli.mentalhealth"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.mental_health_app"
+        applicationId = "com.chansli.mentalhealth"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

@@ -14,7 +14,14 @@ def create_mood_entry(
     db: Session = Depends(get_db)
 ):
     """Create a new mood log entry"""
-    return mood_crud.create_mood_log(db, current_user.id, mood)
+    result = mood_crud.create_mood_log(db, current_user.id, mood)
+    
+    # Check for achievements after logging mood
+    from app.CRUD import achievements as achievement_crud
+    achievement_crud.check_mood_tracking_achievements(db, current_user.id)
+    achievement_crud.check_consistency_achievements(db, current_user.id)
+    
+    return result
 
 @router.get("/", response_model=List[schemas.MoodLog])
 def get_mood_history(

@@ -14,7 +14,14 @@ def create_journal_entry(
     db: Session = Depends(get_db)
 ):
     """Create a new journal entry"""
-    return journal_crud.create_journal_entry(db, current_user.id, entry)
+    result = journal_crud.create_journal_entry(db, current_user.id, entry)
+    
+    # Check for achievements after creating journal entry
+    from app.CRUD import achievements as achievement_crud
+    achievement_crud.check_journaling_achievements(db, current_user.id)
+    achievement_crud.check_consistency_achievements(db, current_user.id)
+    
+    return result
 
 @router.get("/", response_model=List[schemas.JournalEntry])
 def get_journal_entries(
